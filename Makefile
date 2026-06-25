@@ -1,13 +1,33 @@
-build:
-	nasm -f elf32 kernel/loader.s
-	ld.lld -m elf_i386 -T kernel/link.ld kernel/loader.o -o kernel/kernel.elf
+OBJECTS = kernel/loader.o
+#C compiler
+CC = gcc
+CFLAGS = -m32 -nostdlib -nostdinc -fno-builtin -fno-stack-protector \
+	-no-startfiles -nodefaultlibs \
+	-Wall -Wextra -Werror -c
+#Linker
+LDFLAGS = -m elf_i386 -T kernel/link.ld
+#Assembly compiler
+AS = nasm
+ASFLAGS = -f elf32
 
-	cp kernel/kernel.elf iso/boot/kernel.elf
+all: kernel.elf
+
+kernel.elf: $(OBJECTS)
+	ld.lld $(LDFLAGS) $(OBJECTS) -o output/kernel.elf
+
+os.iso: kernel.elf
+	cp output/kernel.elf iso/boot/kernel.elf
 	i686-elf-grub-mkrescue -o neoos.iso iso
+	mv neoos.iso output/neoos.iso
 
-run:
-	qemu-system-i386 -cdrom neoos.iso
+run: os.iso
+	qemu-system-i386 -cdrom output/neoos.iso
+
+%.o: %.c
+	$(CC) $(CFLAGS) $< -o $@
+%.o: %.s
+	$(AS) $(ASFLAGS) $< -o $@
 
 clean:
-	rm -f *.iso iso/boot/kernel.elf
-	rm -f kernel/*.o kernel/kernel.elf
+	rm -f output/*
+	rm -f kernel/*.o output/kernel.elf iso/boot/kernel.elf
