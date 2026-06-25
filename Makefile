@@ -1,11 +1,14 @@
-OBJECTS = kernel/loader.o
+OBJECTS = kernel/loader.o kernel/kmain.o
+
 #C compiler
-CC = gcc
+CC = i686-elf-gcc
 CFLAGS = -m32 -nostdlib -nostdinc -fno-builtin -fno-stack-protector \
-	-no-startfiles -nodefaultlibs \
+	-nostartfiles -nodefaultlibs \
 	-Wall -Wextra -Werror -c
+
 #Linker
 LDFLAGS = -m elf_i386 -T kernel/link.ld
+
 #Assembly compiler
 AS = nasm
 ASFLAGS = -f elf32
