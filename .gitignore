@@ -1,0 +1,4 @@
+output/
+kernel/*.o
+kernel/*.elf
+iso/boot/*.elf
