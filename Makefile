@@ -1,4 +1,4 @@
-OBJECTS = kernel/loader.o kernel/kmain.o kernel/io.o
+OBJECTS = kernel/loader.o kernel/kmain.o kernel/drivers/io/io.o
 
 #C compiler
 CC = i686-elf-gcc
