@@ -34,23 +34,49 @@ uint16_t fb_get_cursor_position(void) {
     outb(0x3D4, 0x0E);
     pos |= ((uint16_t)inb(0x3D5)) << 8;
 
-    int x = pos % 80;
-    int y = pos / 80;
-
-    pos = x + y;
-
     return pos;
 }
 
-int writer(char *buf, unsigned int len) {
+void fb_new_line() {
+    uint16_t pos = fb_get_cursor_position();
+
+    int y = pos / 80;
+    pos = y * 80 + 80;
+    
+    fb_move_cursor(pos);
+}
+
+int writer(char *buf) {
 
     uint16_t pos = fb_get_cursor_position();
 
+    int x = pos % 80;
+    int y = pos / 80;
+
+    pos = x + y * 80;
+
     unsigned char *bytes = (unsigned char *)buf;
 
-    for (unsigned int i = 0; i < len; i++) {
-        fb_write_cell(pos * 2, bytes[i], 0x0F, 0x00);
-        pos++;
+    int i = 0;
+    while (bytes[i] != 0) {
+        if (bytes[i] == 0x0A) {
+
+            fb_move_cursor(pos);
+            fb_new_line();
+
+            pos = fb_get_cursor_position();
+
+            int x = pos % 80;
+            int y = pos / 80;
+
+            pos = x + y * 80;
+            
+            i++;
+        } else {
+            fb_write_cell(pos * 2, bytes[i], 0x0F, 0x00);
+            pos++;
+            i++;
+        }
     }
 
     fb_move_cursor(pos);

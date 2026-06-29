@@ -5,9 +5,7 @@ int kmain() {
     gdt_init();
 
     fb_clear();
-    writer("GDT Initialized", 15);
-
-    writer("hello", 5);
+    writer("GDT Initialized\n");
 
     while (1) {
         
