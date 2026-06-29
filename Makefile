@@ -1,4 +1,5 @@
-OBJECTS = kernel/loader.o kernel/kmain.o kernel/drivers/io/io.o kernel/drivers/io/io_asm.o
+OBJECTS = kernel/loader.o kernel/kmain.o kernel/drivers/io/io.o \
+	kernel/drivers/io/io_asm.o kernel/gdt/gdt_asm.o kernel/gdt/gdt.o
 
 #C compiler
 CC = i686-elf-gcc
@@ -34,4 +35,5 @@ run: os.iso
 clean:
 	rm -f output/*
 	rm -f kernel/drivers/io/*.o
+	rm -f kernel/gdt/*.o
 	rm -f kernel/*.o output/kernel.elf iso/boot/kernel.elf

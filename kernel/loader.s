@@ -8,7 +8,7 @@ CHECKSUM equ -MAGIC_NUMBER
 KERNEL_STACK_SIZE equ 4096
 
 ; Make GRUB know that this is actually a OS
-section .text:
+section .text
 align 4
     dd MAGIC_NUMBER
     dd FLAGS
@@ -18,8 +18,8 @@ section .bss
 align 4
 kernel_stack:
     resb KERNEL_STACK_SIZE
-    mov esp, kernel_stack + KERNEL_STACK_SIZE
 
 section .text
 loader:
+    mov esp, kernel_stack + KERNEL_STACK_SIZE
     call kmain
