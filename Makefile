@@ -1,5 +1,6 @@
 OBJECTS = kernel/loader.o kernel/kmain.o kernel/drivers/io/io.o \
-	kernel/drivers/io/io_asm.o kernel/gdt/gdt_asm.o kernel/gdt/gdt.o
+	kernel/drivers/io/io_asm.o kernel/gdt/gdt_asm.o kernel/gdt/gdt.o \
+	kernel/drivers/io/kprint.o
 
 #C compiler
 CC = i686-elf-gcc

@@ -7,4 +7,6 @@ unsigned char inb(unsigned short port);
 int writer(char *buf);
 int fb_clear();
 
+int kprintf(char *buf, ...);
+
 #endif

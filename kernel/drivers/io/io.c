@@ -71,7 +71,7 @@ int writer(char *buf) {
 
             pos = x + y * 80;
             
-            i++;
+            break;
         } else {
             fb_write_cell(pos * 2, bytes[i], 0x0F, 0x00);
             pos++;
