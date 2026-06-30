@@ -1,9 +1,7 @@
 #ifndef GDT_H
 #define GDT_H
 
-typedef unsigned char uint8_t;
-typedef unsigned short uint16_t;
-typedef unsigned int uint32_t;
+#include "../include/stdint.h"
 
 struct gdt_entry {
     unsigned short limit;
@@ -20,10 +18,9 @@ struct gdt {
     unsigned int base;
 } __attribute__((packed));
 
+void load_gdt(uint32_t);
+
 int gdt_init();
-
-void load_gdt(struct gdt * address);
-
 void setGdtGate(uint32_t num, uint32_t base, uint32_t limit, uint8_t access, uint8_t gran);
 
 #endif

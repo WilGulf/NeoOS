@@ -1,4 +1,6 @@
 #include "gdt.h"
+#include "../drivers/io/io.h"
+#include "../include/stdint.h"
 
 struct gdt gdt_ptr;
 struct gdt_entry gdt_entries[3];
@@ -12,6 +14,8 @@ int gdt_init() {
     setGdtGate(2, 0, 0xFFFFFFFF, 0x92, 0xCF);
 
     load_gdt(&gdt_ptr);
+
+    kprintf("GDT Initialized\n");
 
     return 0;
 }

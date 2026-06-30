@@ -1,8 +1,5 @@
 #include "io.h"
-
-typedef unsigned char uint8_t;
-typedef unsigned short uint16_t;
-typedef unsigned int uint32_t;
+#include "../../include/stdint.h"
 
 void fb_write_cell(unsigned int i, char c, unsigned char fg, unsigned char bg) {
     char *fb = (char *) 0x000B8000;
