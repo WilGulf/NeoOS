@@ -20,12 +20,6 @@ stack_bottom:
     resb 16384 * 8
 stack_top:
 
-section .boot
-
-;align 4
-;kernel_stack:
-;    resb KERNEL_STACK_SIZE
-
 section .text
 loader:
     mov eax, (initial_page_dir - 0xC0000000)

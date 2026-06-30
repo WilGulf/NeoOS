@@ -1,3 +1,4 @@
+#Files to be output of compilation
 OBJECTS = kernel/loader.o kernel/kmain.o \
 	kernel/drivers/io/io.o kernel/drivers/io/io_asm.o kernel/drivers/io/kprint.o \
 	kernel/gdt/gdt_asm.o kernel/gdt/gdt.o \
@@ -40,4 +41,5 @@ clean:
 	rm -f kernel/drivers/io/*.o
 	rm -f kernel/gdt/*.o
 	rm -f kernel/idt/*.o
+	rm -f kernel/include/*.o
 	rm -f kernel/*.o output/kernel.elf iso/boot/kernel.elf
