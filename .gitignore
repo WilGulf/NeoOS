@@ -5,3 +5,4 @@ kernel/drivers/*/*.o
 kernel/*/*.o
 kernel/*/*/*.o
 iso/boot/*.elf
+bochs/
