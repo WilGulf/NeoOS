@@ -2,8 +2,8 @@ global loader
 extern kmain
 
 MAGIC_NUMBER equ 0x1BADB002
-FLAGS equ 1 << 0 | 1 << 1 | 0 ; PAGE_ALIGN | MEM_INFO | USE_GFX
-CHECKSUM equ -(MAGIC_NUMBER + FLAGS)
+FLAGS equ 0x0
+CHECKSUM equ -MAGIC_NUMBER
 
 KERNEL_STACK_SIZE equ 4096
 
