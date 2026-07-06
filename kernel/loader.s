@@ -8,7 +8,7 @@ CHECKSUM equ -MAGIC_NUMBER
 KERNEL_STACK_SIZE equ 4096
 
 ; Make GRUB know that this is actually a OS
-section .text
+section .multiboot
 align 4
     dd MAGIC_NUMBER
     dd FLAGS
@@ -20,7 +20,7 @@ stack_bottom:
     resb 16384 * 8
 stack_top:
 
-section .text
+section .boot
 loader:
     mov eax, (initial_page_dir - 0xC0000000)
     mov cr3, eax

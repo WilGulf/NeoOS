@@ -1,7 +1,24 @@
 ENTRY(loader)
 
 SECTIONS {
-    . = 0xC0100000  ;
+    . = 0x00100000  ;
+
+    .multiboot ALIGN (0x1000):
+    {
+        *(.multiboot)
+    }
+
+    .note.gnu.build-id ALIGN (0x1000):
+    {
+        *(note.gnu.build-id)
+    }
+
+    .boot ALIGN (0x1000):
+    {
+        *(.boot)
+    }
+
+    . += 0xC0100000  ;
 
     .text ALIGN (0x1000) : AT(ADDR(.text)-0xC0000000)
     {
