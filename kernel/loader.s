@@ -2,8 +2,8 @@ global loader
 extern kmain
 
 MAGIC_NUMBER equ 0x1BADB002
-FLAGS equ 0x0
-CHECKSUM equ -MAGIC_NUMBER
+FLAGS equ 1 << 0 | 1 << 1 |0 ; page align | mem info | use gfx
+CHECKSUM equ -(MAGIC_NUMBER + FLAGS)
 
 KERNEL_STACK_SIZE equ 4096
 
@@ -13,6 +13,8 @@ align 4
     dd MAGIC_NUMBER
     dd FLAGS
     dd CHECKSUM
+
+    dd 0, 0, 0, 0, 0
 
 section .bss
 align 16
