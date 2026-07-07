@@ -1,4 +1,5 @@
 #include "io.h"
+#include "../../include/util.h"
 
 typedef __builtin_va_list va_list;
 
@@ -6,17 +7,7 @@ typedef __builtin_va_list va_list;
 #define va_arg(ap, type) __builtin_va_arg(ap, type)
 #define va_end(ap) __builtin_va_end(ap)
 
-int pow(int x, int power) {
-    long int result = 1;
-
-    for (int i = 1; i <= power; i++) {
-        result = result * x;
-    }
-    
-    return result;
-}
-
-int intToStr(int x, char str[], int d) {
+int int_to_str(int x, char str[], int d) {
     int i = 0;
     while (x) {
         str[i++] = (x % 10) + '0'; 
@@ -76,7 +67,7 @@ int kprintf(char *buf, ...) {
 
             case 'd': {
                 char str[32];
-                intToStr(va_arg(args, int), str, 0);
+                int_to_str(va_arg(args, int), str, 0);
 
                 int i = 0;
                 while (str[i] != 0) {
@@ -97,14 +88,14 @@ int kprintf(char *buf, ...) {
                 int ipart = (int)n;
                 float fpart = n - (float)ipart;
 
-                int i = intToStr(ipart, res, 0);
+                int i = int_to_str(ipart, res, 0);
 
                 int afterpoint = 5;
 
                 if (afterpoint != 0) {
                     res[i] = '.';
                     fpart = fpart * pow(10, afterpoint) + 0.5;
-                    intToStr((int)fpart, res + i + 1, afterpoint);
+                    int_to_str((int)fpart, res + i + 1, afterpoint);
                 }
 
                 i = 0;

@@ -1,8 +1,8 @@
 #include "memory.h"
 #include "../include/util.h"
 
-static uint32_t pageFrameMin;
-static uint32_t pageFrameMax;
+static uint32_t page_frame_min;
+static uint32_t page_frame_max;
 static uint32_t totalAlloc;
 
 #define NUM_PAGE_DIRS 256
@@ -11,8 +11,8 @@ static uint32_t totalAlloc;
 uint8_t physicalMemoryBitmap[NUM_PAGE_FRAMES / 8];
 
 void pmm_init(uint32_t memLow, uint32_t memHigh) {
-    pageFrameMin = CEIL_DIV(memLow, 0x1000);
-    pageFrameMax = memHigh / 0x1000;
+    page_frame_min = CEIL_DIV(memLow, 0x1000);
+    page_frame_max = memHigh / 0x1000;
     totalAlloc = 0;
 
     memset(physicalMemoryBitmap, 0, sizeof(physicalMemoryBitmap));

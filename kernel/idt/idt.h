@@ -28,7 +28,7 @@ struct interrupt_registers {
 void load_idt(uint32_t);
 
 int idt_init();
-void setIdtGate(uint8_t num, uint32_t base, uint16_t sel, uint8_t flags);
+void set_idt_gate(uint8_t num, uint32_t base, uint16_t sel, uint8_t flags);
 
 void interrupt_handler(struct interrupt_registers* regs);
 void irq_handler(struct interrupt_registers *regs);

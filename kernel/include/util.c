@@ -7,3 +7,13 @@ void memset(void *dest, char val, uint32_t count){
         *temp++ = val;
     }
 }
+
+int pow(int x, int power) {
+    long int result = 1;
+
+    for (int i = 1; i <= power; i++) {
+        result = result * x;
+    }
+    
+    return result;
+}

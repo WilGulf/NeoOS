@@ -21,6 +21,6 @@ struct gdt {
 void load_gdt(struct gdt *);
 
 int gdt_init();
-void setGdtGate(uint32_t num, uint32_t base, uint32_t limit, uint8_t access, uint8_t gran);
+void set_gdt_gate(uint32_t num, uint32_t base, uint32_t limit, uint8_t access, uint8_t gran);
 
 #endif
