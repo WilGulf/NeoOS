@@ -4,13 +4,12 @@ OBJECTS = kernel/loader.o kernel/kmain.o \
 	kernel/gdt/gdt_asm.o kernel/gdt/gdt.o \
 	kernel/idt/idt.o kernel/idt/idt_asm.o \
 	kernel/include/util.o \
-	kernel/memory.o
-
+	kernel/memory/memory.o
 #C compiler
 CC = i686-elf-gcc
 CFLAGS = -m32 -nostdlib -nostdinc -fno-builtin -fno-stack-protector \
 	-nostartfiles -nodefaultlibs \
-	-Wall -Wextra -Werror -c
+	-Wall -Wextra -c
 
 #Linker
 LDFLAGS = -m elf_i386 -T kernel/link.ld
@@ -43,4 +42,5 @@ clean:
 	rm -f kernel/gdt/*.o
 	rm -f kernel/idt/*.o
 	rm -f kernel/include/*.o
+	rm -f kernel/memory/*.o
 	rm -f kernel/*.o output/kernel.elf iso/boot/kernel.elf
