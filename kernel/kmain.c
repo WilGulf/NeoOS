@@ -19,7 +19,7 @@ int kmain(uint32_t magic, struct multiboot_info* bootInfo) {
 
     memory_init(bootInfo->mem_upper * 1024, physicalAllocStart);
 
-    kprintf("Memory allocation done");
+    kprintf("Memory Allocation Done");
 
     while (1) {
         
