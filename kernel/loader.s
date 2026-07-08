@@ -44,6 +44,16 @@ higher_half:
     push eax
     xor ebp, ebp
 
+    extern kernel_virtual_start
+    extern kernel_virtual_end
+    extern kernel_physical_start
+    extern kernel_physical_end
+
+    push kernel_virtual_start
+    push kernel_virtual_end
+    push kernel_physical_start
+    push kernel_physical_end
+
     call kmain
 halt:
     hlt

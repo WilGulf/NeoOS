@@ -4,7 +4,7 @@ OBJECTS = kernel/loader.o kernel/kmain.o \
 	kernel/gdt/gdt_asm.o kernel/gdt/gdt.o \
 	kernel/idt/idt.o kernel/idt/idt_asm.o \
 	kernel/include/util.o \
-	kernel/memory/memory.o
+	kernel/memory/memory.o kernel/memory/kmalloc.o
 #C compiler
 CC = i686-elf-gcc
 CFLAGS = -m32 -nostdlib -nostdinc -fno-builtin -fno-stack-protector \

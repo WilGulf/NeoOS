@@ -54,10 +54,10 @@ struct multiboot_info {
 
 struct multiboot_mmap_entry {
     uint32_t size;
-    uint32_t addr_high;
     uint32_t addr_low;
-    uint32_t len_high;
+    uint32_t addr_high;
     uint32_t len_low;
+    uint32_t len_high;
 
 #define MULTIBOOT_MEMORY_AVAILABLE 1
 #define MULTIBOOT_MEMORY_RESERVED 2

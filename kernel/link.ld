@@ -1,7 +1,7 @@
 ENTRY(loader)
 
 SECTIONS {
-    . = 0x00100000  ;
+    . = 0x00100000;
 
     .multiboot ALIGN (0x1000):
     {
@@ -10,7 +10,7 @@ SECTIONS {
 
     .note.gnu.build-id ALIGN (0x1000):
     {
-        *(note.gnu.build-id)
+        *(.note.gnu.build-id)
     }
 
     .boot ALIGN (0x1000):
@@ -18,7 +18,10 @@ SECTIONS {
         *(.boot)
     }
 
-    . += 0xC0100000  ;
+    . += 0xC0000000;
+
+    kernel_virtual_start = .;
+    kernel_physical_start = . - 0xC00000000;
 
     .text ALIGN (0x1000) : AT(ADDR(.text)-0xC0000000)
     {
@@ -38,5 +41,6 @@ SECTIONS {
         *(.bss)
     }
 
-    _kernel_end = .;
+    kernel_virtual_end = .;
+    kernel_physical_end = . - 0xC00000000;
 }
