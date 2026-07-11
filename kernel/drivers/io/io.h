@@ -6,6 +6,7 @@ unsigned char inb(unsigned short port);
 
 int writer(char *buf);
 int fb_clear();
+void fb_scroll();
 
 int kprintf(char *buf, ...);
 

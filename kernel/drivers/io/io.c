@@ -1,8 +1,9 @@
 #include "io.h"
 #include "../../include/stdint.h"
 
+char *fb = (char *) 0xC00B8000;
+
 void fb_write_cell(unsigned int i, char c, unsigned char fg, unsigned char bg) {
-    char *fb = (char *) 0xC00B8000;
     fb[i] = c;
     fb[i + 1] = (bg << 4) | (fg & 0x0F);
 }
@@ -41,6 +42,16 @@ void fb_new_line() {
     pos = y * 80 + 80;
     
     fb_move_cursor(pos);
+}
+
+void fb_scroll() {
+    uint16_t pos = fb_get_cursor_position();
+    int y = pos / 80;
+
+    int i = 0 * 80;
+    for (; i < 24 * 80; i++) {
+        fb[i] = fb[i + 160];
+    }
 }
 
 int writer(char *buf) {
