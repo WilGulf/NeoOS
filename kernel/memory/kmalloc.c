@@ -2,9 +2,14 @@
 #include "memory.h"
 #include "../include/util.h"
 
+#define ALIGN_UP(n, align)  (((uint32_t)(n) + (align) - 1) & ~((uint32_t)(align) - 1))
+
 static uint32_t heap_start;
 static uint32_t heap_size;
 static uint32_t threshold;
+
+uint32_t next_free_byte;
+
 static kbool kmalloc_initialized = false;
 
 void change_heap_size(int new_size) {
@@ -31,5 +36,23 @@ void kmalloc_init(uint32_t initial_heap_size) {
     kmalloc_initialized = true;//tell the rest that kmalloc is initialized
 
     change_heap_size(initial_heap_size);//change the heap size to what is specified as initial size
+    next_free_byte = heap_start;
     *((uint32_t*)heap_start) = 0;
+}
+
+void* kmalloc(uint32_t size) {
+    if (size == 0) {
+        return 0;
+    }
+
+    size = ALIGN_UP(size, 8);
+
+    if (next_free_byte + size > heap_start + heap_size) {
+        kprintf("Out Of Memory");
+        return 0;
+    }
+
+    void *ptr = (void*)next_free_byte;
+    next_free_byte += size;
+    return ptr;
 }
