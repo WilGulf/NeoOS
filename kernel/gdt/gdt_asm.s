@@ -1,4 +1,5 @@
 global load_gdt
+global flush_tss
 
 load_gdt:
     mov eax, [esp + 4]
@@ -14,4 +15,9 @@ load_gdt:
     jmp 0x08:flush_cs
 
 flush_cs:
+    ret
+
+flush_tss:
+    mov ax, 0x2B
+    ltr ax
     ret

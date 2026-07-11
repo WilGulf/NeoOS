@@ -6,3 +6,4 @@ kernel/*/*.o
 kernel/*/*/*.o
 iso/boot/*.elf
 bochs/
+out.txt
