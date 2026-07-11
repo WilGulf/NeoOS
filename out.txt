@@ -6,6 +6,8 @@ Source Tree:
 kernel
 ├── drivers
 │   ├── fs
+│   │   ├── fs.c
+│   │   └── fs.h
 │   └── io
 │       ├── io.c
 │       ├── io.h
@@ -31,8 +33,125 @@ kernel
 │   ├── kmalloc.h
 │   ├── memory.c
 │   └── memory.h
-└── multiboot.h
+├── multiboot.h
+└── syscall
 
+```
+
+`drivers/fs/fs.c`:
+
+```c
+#include "fs.h"
+
+fs_node_t *fs_root = 0;
+
+uint32_t read_fs(fs_node_t *node, uint32_t offset, uint32_t size, uint8_t *buffer) {
+    if (node->read != 0) {
+        return node->read(node, offset, size, buffer);
+    } else {
+        return 0;
+    }
+}
+
+uint32_t write_fs(fs_node_t *node, uint32_t offset, uint32_t size, uint8_t *buffer) {
+    if (node->write != 0) {
+        return node->write(node, offset, size, buffer);
+    } else {
+        return 0;
+    }
+}
+
+uint32_t open_fs(fs_node_t *node, uint8_t read, uint8_t write) {
+    if (node->open != 0) {
+        return node->open(node);
+    } else {
+        return 0;
+    }
+}
+
+uint32_t close_fs(fs_node_t *node, uint8_t read, uint8_t write) {
+    if (node->close != 0) {
+        return node->close(node);
+    } else {
+        return 0;
+    }
+}
+
+struct dirent *readdir_fs(fs_node_t *node, uint32_t index) {
+    if ((node->flags&0x7) == FS_DIR && node->readdir != 0) {
+        return node->readdir(node, index);
+    } else {
+        return 0;
+    }
+}
+fs_node_t *finddir_fs(fs_node_t *node, char *name) {
+    if ((node->flags&0x7) == FS_DIR && node->finddir != 0) {
+        return node->finddir(node, name);
+    } else {
+        return 0;
+    }
+}
+```
+
+`drivers/fs/fs.h`:
+
+```h
+#ifndef FS_H
+#define FS_H
+
+#include "../../include/stdint.h"
+
+struct fs_node;
+struct dirent;
+
+typedef uint32_t (*read_type_t)(struct fs_node*, uint32_t, uint32_t, uint8_t*);
+typedef uint32_t (*write_type_t)(struct fs_node*, uint32_t, uint32_t, uint8_t*);
+typedef uint32_t (*open_type_t)(struct fs_node*);
+typedef uint32_t (*close_type_t)(struct fs_node*);
+typedef struct dirent * (*readdir_type_t)(struct fs_node*, uint32_t);
+typedef struct fs_node * (*finddir_type_t)(struct fs_node*, char *name);
+
+typedef struct fs_node {
+    char name[128];
+    uint32_t mask;
+    uint32_t uid;
+    uint32_t gid;
+    uint32_t flags;
+    uint32_t inode;
+    uint32_t length;
+    uint32_t impl;
+    read_type_t read;
+    write_type_t write;
+    open_type_t open;
+    close_type_t close;
+    readdir_type_t readdir;
+    finddir_type_t finddir;
+    struct fs_node *ptr;
+}fs_node_t;
+
+struct dirent {
+    char name[128];
+    uint32_t ino;
+};
+
+#define FS_FILE 0x01
+#define FS_DIR 0x02
+#define FS_CHARDEV 0x03
+#define FS_BLOCKDEV 0x04
+#define FS_PIPE 0x05
+#define FS_SYMLINK 0x06
+#define FS_MOUNTPOINT 0x08
+
+extern fs_node_t *fs_root;
+
+uint32_t read_fs(fs_node_t *node, uint32_t offset, uint32_t size, uint8_t *buffer);
+uint32_t write_fs(fs_node_t *node, uint32_t offset, uint32_t size, uint8_t *buffer);
+uint32_t open_fs(fs_node_t *node, uint8_t read, uint8_t write);
+uint32_t close_fs(fs_node_t *node, uint8_t read, uint8_t write);
+struct dirent *readdir_fs(fs_node_t *node, uint32_t index);
+fs_node_t *finddir_fs(fs_node_t *node, char *name);
+
+#endif
 ```
 
 `drivers/io/io.c`:
@@ -308,6 +427,8 @@ int gdt_init() {
     set_gdt_gate(0, 0, 0, 0, 0);
     set_gdt_gate(1, 0, 0xFFFFFFFF, 0x9A, 0xCF);
     set_gdt_gate(2, 0, 0xFFFFFFFF, 0x92, 0xCF);
+    //set_gdt_gate(3, 0, 0xFFFFFFFF, 0xFA, 0xCF); USERMODE
+    //set_gdt_gate(4, 0, 0xFFFFFFFF, 0xF2, 0xCF); USERMODE
 
     load_gdt(&gdt_ptr);
 
@@ -812,6 +933,10 @@ typedef unsigned char uint8_t;
 typedef unsigned short uint16_t;
 typedef unsigned int uint32_t;
 
+typedef char int8_t;
+typedef short int16_t;
+typedef int int32_t;
+
 typedef _Bool kbool;
 #define true 1
 #define false 0
@@ -830,6 +955,49 @@ void memset(void *dest, char val, uint32_t count){
     for (; count != 0; count --){
         *temp++ = val;
     }
+}
+
+void memcpy(uint8_t *dest, const uint8_t *src, uint32_t len) {
+    const uint8_t *sp = (const uint8_t *)src;
+    uint8_t *dp = (uint8_t *)dest;
+    for(; len != 0; len--) {
+        *dp++ = *sp++;
+    }
+}
+
+char *strcpy(char *dest, const char *src) {
+    do {
+        *dest++ = *src++;
+    }
+
+    while ((*dest++ = *src++));
+}
+
+int strlen(char *src) {
+    int i = 0;
+    while (*src++) {
+        i++;
+    }
+    return i;
+}
+
+int strcmp(char *str1, char *str2) {
+    int i = 0;
+    int failed = 0;
+    while(str1[i] != '\0' && str2[i] != '\0') {
+        if (str1[i] != str2[i]) {
+            failed = 1;
+            break;
+        }
+
+        i++;
+    }
+
+    if ((str1[i] == '\0' && str2[i] != '\0') || (str1[i] != '\0' && str2[i] == '\0')) {
+        failed = 1;
+    }
+
+    return failed;
 }
 
 int pow(int x, int power) {
@@ -853,7 +1021,22 @@ int pow(int x, int power) {
 
 #define CEIL_DIV(a, b) (((a) + (b) - 1) / (b))
 
+#define ASSERT(expression) ((void)0)
+
+#define ASSERT(expression) \
+        do { \
+            if (!(expression)) { \
+                __builtin_trap(); \
+            } \
+        } while (0)
+
 void memset(void *dest, char val, uint32_t count);
+void memcpy(uint8_t *dest, const uint8_t *src, uint32_t len);
+
+char *strcpy(char *dest, const char *src);
+int strlen(char *src);
+int strcmp(char *str1, char *str2);
+
 int pow(int x, int power);
 
 #endif
@@ -870,6 +1053,13 @@ int pow(int x, int power);
 #include "idt/idt.h"
 #include "memory/memory.h"
 #include "memory/kmalloc.h"
+#include "include/util.h"
+
+extern uint32_t kernel_virtual_start;
+extern uint32_t kernel_virtual_end;
+extern uint32_t kernel_physical_start;
+extern uint32_t kernel_physical_end;
+
 
 int kmain(uint32_t magic, struct multiboot_info* bootInfo) {
     fb_clear();
@@ -877,15 +1067,15 @@ int kmain(uint32_t magic, struct multiboot_info* bootInfo) {
     gdt_init();
     idt_init();
 
-    kprintf("Kprint %s%c %d %f\n", "Tes", 't', 1234, 124.121546);
-    //kprintf("Divide %d", 1/0);
+    kprintf("kernel_virtual_start: %d\n", kernel_virtual_start);
+
+    kprintf("Kprintf %s%c %d %f\n", "Tes", 't', 1234, 124.121546);
 
     uint32_t mod1 = *(uint32_t*)(bootInfo->mods_addr + 4);
     uint32_t physicalAllocStart = (mod1 + 0xFFF) & ~0xFFF;
 
-    memory_init(bootInfo->mem_upper * 1024, physicalAllocStart);
+    memory_init(bootInfo->mem_upper * 1024, 0x00400000);
     kmalloc_init(0x1000);
-
     kprintf("Memory Allocation Done\n");
 
     while (1) {
@@ -902,7 +1092,7 @@ int kmain(uint32_t magic, struct multiboot_info* bootInfo) {
 ENTRY(loader)
 
 SECTIONS {
-    . = 0x00100000  ;
+    . = 0x00100000;
 
     .multiboot ALIGN (0x1000):
     {
@@ -911,7 +1101,7 @@ SECTIONS {
 
     .note.gnu.build-id ALIGN (0x1000):
     {
-        *(note.gnu.build-id)
+        *(.note.gnu.build-id)
     }
 
     .boot ALIGN (0x1000):
@@ -919,7 +1109,10 @@ SECTIONS {
         *(.boot)
     }
 
-    . += 0xC0100000  ;
+    . += 0xC0000000;
+
+    kernel_virtual_start = .;
+    kernel_physical_start = . - 0xC00000000;
 
     .text ALIGN (0x1000) : AT(ADDR(.text)-0xC0000000)
     {
@@ -939,7 +1132,8 @@ SECTIONS {
         *(.bss)
     }
 
-    _kernel_end = .;
+    kernel_virtual_end = .;
+    kernel_physical_end = . - 0xC00000000;
 }
 ```
 
@@ -992,6 +1186,16 @@ higher_half:
     push eax
     xor ebp, ebp
 
+    extern kernel_virtual_start
+    extern kernel_virtual_end
+    extern kernel_physical_start
+    extern kernel_physical_end
+
+    push kernel_virtual_start
+    push kernel_virtual_end
+    push kernel_physical_start
+    push kernel_physical_end
+
     call kmain
 halt:
     hlt
@@ -1018,9 +1222,14 @@ initial_page_dir:
 #include "memory.h"
 #include "../include/util.h"
 
+#define ALIGN_UP(n, align)  (((uint32_t)(n) + (align) - 1) & ~((uint32_t)(align) - 1))
+
 static uint32_t heap_start;
 static uint32_t heap_size;
 static uint32_t threshold;
+
+static char next_free_byte;
+
 static kbool kmalloc_initialized = false;
 
 void change_heap_size(int new_size) {
@@ -1032,7 +1241,8 @@ void change_heap_size(int new_size) {
 
         for (int i = 0; i < diff; i++) {//loop through all new pages needed
             uint32_t phys = pmm_alloc_page_frame();//allocate a new physical page
-            mem_map_page(KERNEL_MALLOC + old_page_top * 0x1000 + i * 0x1000, phys, PAGE_FLAG_WRITE);
+            kprintf("addr: %d\n", phys);
+            mem_map_page(KERNEL_MALLOC + old_page_top * 0x1000 + i * 0x1000, phys, PAGE_FLAG_WRITE);//update the map to include all the new pages
         }
     }
 
@@ -1046,7 +1256,25 @@ void kmalloc_init(uint32_t initial_heap_size) {
     kmalloc_initialized = true;//tell the rest that kmalloc is initialized
 
     change_heap_size(initial_heap_size);//change the heap size to what is specified as initial size
+    next_free_byte = heap_start;
     *((uint32_t*)heap_start) = 0;
+}
+
+void* kmalloc(uint32_t size) {
+    if (size == 0) {
+        return 0;
+    }
+
+    size = ALIGN_UP(size, 8);
+
+    if (next_free_byte + size > heap_start + heap_size) {
+        kprintf("Out Of Memory");
+        return 0;
+    }
+
+    void *ptr = &next_free_byte;
+    next_free_byte += size;
+    return ptr;
 }
 ```
 
@@ -1059,6 +1287,7 @@ void kmalloc_init(uint32_t initial_heap_size) {
 #include "../include/stdint.h"
 
 void kmalloc_init(uint32_t initial_heap_size);
+void *kmalloc(uint32_t size);
 
 #endif
 ```
@@ -1109,7 +1338,7 @@ uint32_t pmm_alloc_page_frame() {
                 physical_memory_bitmap[b] = byte;
                 total_alloc++;
 
-                uint32_t addr = (b * 8 * i) * 0x1000;
+                uint32_t addr = (b * 8 + i) * 0x1000;
                 return addr;
             }
         }
@@ -1168,6 +1397,7 @@ void mem_map_page(uint32_t vaddr, uint32_t addr, uint32_t flags) {
         uint32_t ptp_addr = pmm_alloc_page_frame();
         page_dir[pd_index] = ptp_addr | PAGE_FLAG_PRESENT | PAGE_FLAG_WRITE | PAGE_FLAG_OWNER | flags;
         invalidate_page(vaddr);
+        invalidate_page((uint32_t)pt);
 
         for (uint32_t i = 0; i < 1024; i++) {
             pt[i] = 0;

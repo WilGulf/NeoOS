@@ -12,6 +12,8 @@ int gdt_init() {
     set_gdt_gate(0, 0, 0, 0, 0);
     set_gdt_gate(1, 0, 0xFFFFFFFF, 0x9A, 0xCF);
     set_gdt_gate(2, 0, 0xFFFFFFFF, 0x92, 0xCF);
+    //set_gdt_gate(3, 0, 0xFFFFFFFF, 0xFA, 0xCF); USERMODE
+    //set_gdt_gate(4, 0, 0xFFFFFFFF, 0xF2, 0xCF); USERMODE
 
     load_gdt(&gdt_ptr);
 
