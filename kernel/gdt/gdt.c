@@ -57,3 +57,21 @@ void write_tss(uint32_t num, uint16_t ss0, uint32_t esp0) {
 void set_tss_stack(uint32_t stack) {
     tss_entry.esp0 = stack;
 }
+
+void switch_to_usermode(uint32_t entry_eip, uint32_t user_esp) {
+    /*asm volatile(" \
+        cli; \
+        mov $0x23, %%ax; \
+        mov %%ax, %%ds; \
+        mov %%ax, %%es; \
+        mov %%ax, %%fs; \
+        mov %%ax, %%gs; \
+                      \
+        pushl $0x23; \
+        pushl %0; \
+        pushf; \
+        pushl $0x1B; \
+        pushl %1; \
+        iret; \
+        " :: "r" (user_esp), "r" (entry_eip));*/
+}

@@ -11,6 +11,7 @@
 #define PAGE_FLAG_PRESENT (1 << 0)
 #define PAGE_FLAG_WRITE (1 << 1)
 #define PAGE_FLAG_OWNER (1 << 9)
+#define PAGE_FLAG_USER (1 << 2)
 
 #define REC_PAGE_DIR ((uint32_t*)0xFFFFF000)
 #define REC_PAGE_TABLE(i) ((uint32_t*) (0xFFC00000 + ((i) << 12)))

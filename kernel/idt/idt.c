@@ -1,6 +1,7 @@
 #include "idt.h"
 #include "../drivers/io/io.h"
 #include "../include/util.h"
+#include "../syscall/syscall.h"
 
 struct idt_entry idt_entries[256];
 struct idt idt_ptr;
@@ -96,7 +97,7 @@ void set_idt_gate(uint8_t num, uint32_t base, uint16_t sel, uint8_t flags) {
 
 }
 
-/*unsigned */char* exception_messages[] = {
+char* exception_messages[] = {
     "Division By Zero",
     "Debug",
     "Non Maskable Interrupt",
@@ -134,11 +135,14 @@ void set_idt_gate(uint8_t num, uint32_t base, uint16_t sel, uint8_t flags) {
 
 void interrupt_handler(struct interrupt_registers* regs) {
     if (regs->int_no < 32) {
-        //char* msg = (char*)exception_messages[regs->int_no];
         kprintf(exception_messages[regs->int_no]);
         kprintf("\n");
         kprintf("Exception! System Halted\n");
         for (;;);
+    }
+
+    if (regs->int_no == 128) {
+        syscall_handler(regs);
     }
 }
 

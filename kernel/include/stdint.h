@@ -9,6 +9,8 @@ typedef char int8_t;
 typedef short int16_t;
 typedef int int32_t;
 
+typedef long unsigned int size_t;
+
 typedef _Bool kbool;
 #define true 1
 #define false 0

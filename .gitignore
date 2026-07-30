@@ -7,4 +7,3 @@ kernel/*/*/*.o
 iso/boot/*.elf
 bochs/
 out.txt
-kernel/syscall/*
