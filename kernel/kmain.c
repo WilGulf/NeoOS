@@ -5,8 +5,11 @@
 #include "gdt/gdt.h"
 #include "idt/idt.h"
 #include "memory/memory.h"
-#include "memory/kmalloc.h"
+//#include "memory/kmalloc.h"
+#include "memory/kheap.h"
+#include "memory/heap.h"
 #include "include/util.h"
+#include "include/va_list.h"
 #include "syscall/syscall.h"
 
 extern uint32_t kernel_virtual_start;
@@ -17,21 +20,34 @@ extern uint32_t kernel_physical_end;
 
 int kmain(uint32_t magic, struct multiboot_info* bootInfo) {
     fb_clear();
-    
+
+    kheap_init();
+    kprintf("Inititalized kernel heap\n");
+
     gdt_init();
     idt_init();
+
+    void *ptr = kmalloc(50);
+    kprintf("ptr: %d\n", ptr);
+    void *ptr2 = kmalloc(5000);
+    void *ptr3 = kmalloc(5600);
+    kfree(ptr);
+    void *ptr4 = kmalloc(50);
+
+    kprintf("ptr2: %d\n", ptr2);
+    kprintf("ptr3: %d\n", ptr3);
+    kprintf("ptr4: %d\n", ptr4);
 
     kprintf("kernel_virtual_start: %d\n", kernel_virtual_start);
 
     kprintf("Kprintf %s%c %d %f\n", "Tes", 't', 1234, 124.121546);
     //kprintf("%d", 0/0);
 
-    uint32_t mod1 = *(uint32_t*)(bootInfo->mods_addr + 4);
-    uint32_t physicalAllocStart = (mod1 + 0xFFF) & ~0xFFF;
+    //uint32_t mod1 = *(uint32_t*)(bootInfo->mods_addr + 4);
+    //uint32_t physicalAllocStart = (mod1 + 0xFFF) & ~0xFFF;
 
-    memory_init(bootInfo->mem_upper * 1024, 0x00400000);
-    kmalloc_init(0x1000);
-    kprintf("Memory Allocation Done\n");
+    //memory_init(bootInfo->mem_upper * 1024, 0x00400000);
+    //kmalloc_init(0x1000);
 
     /*uint32_t user_code_phys = pmm_alloc_page_frame();
     mem_map_page(0x08048000 , user_code_phys, PAGE_FLAG_WRITE | PAGE_FLAG_USER);
@@ -52,4 +68,19 @@ int kmain(uint32_t magic, struct multiboot_info* bootInfo) {
     }
 
     return 0;
+}
+
+void _panic(const char *file, int line, const char *fmt, ...) {
+    va_list list;
+    va_start(list, fmt);
+
+    kprintf("%d, line %d: ");
+    kprintf(fmt, list);
+
+    va_end(list);
+
+    asm volatile("cli");
+    for (;;) {
+        asm volatile("hlt");
+    }
 }

@@ -3,6 +3,8 @@
 
 #include "../../include/stdint.h"
 
+#define SECT_SIZE 512
+
 struct fs_node;
 struct dirent;
 

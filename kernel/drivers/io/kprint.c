@@ -1,11 +1,6 @@
 #include "io.h"
 #include "../../include/util.h"
-
-typedef __builtin_va_list va_list;
-
-#define va_start(ap, last) __builtin_va_start(ap, last)
-#define va_arg(ap, type) __builtin_va_arg(ap, type)
-#define va_end(ap) __builtin_va_end(ap)
+#include "../../include/va_list.h"
 
 int int_to_str(int x, char str[], int d) {
     int i = 0;

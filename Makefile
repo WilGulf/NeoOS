@@ -1,11 +1,10 @@
 #Files to be output of compilation
 OBJECTS = kernel/loader.o kernel/kmain.o \
-	kernel/drivers/io/io.o kernel/drivers/io/io_asm.o kernel/drivers/io/kprint.o \
+	kernel/drivers/io/fb_io.o kernel/drivers/io/io.o kernel/drivers/io/io_asm.o kernel/drivers/io/kprint.o \
 	kernel/gdt/gdt_asm.o kernel/gdt/gdt.o \
 	kernel/idt/idt.o kernel/idt/idt_asm.o \
 	kernel/include/util.o \
-	kernel/memory/memory.o kernel/memory/kmalloc.o \
-	kernel/drivers/fs/fs.o \
+	kernel/memory/memory.o kernel/memory/heap.o kernel/memory/kheap.o\
 	kernel/syscall/syscall.o
 	
 #C compiler

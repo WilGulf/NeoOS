@@ -5,5 +5,8 @@ kernel/drivers/*/*.o
 kernel/*/*.o
 kernel/*/*/*.o
 iso/boot/*.elf
+kernel/*.bak
+kernel/*/*.bak
+kernel/*/*/*.bak
 bochs/
 out.txt
