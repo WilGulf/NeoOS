@@ -1,6 +1,14 @@
 #include "util.h"
 #include "stdint.h"
 
+char char_upper_to_lower(char s1) {
+    if (s1 >= 65 && s1 <= 90) {
+        s1 += 32;
+    }
+
+    return s1;
+}
+
 void *memset(void *ptr, int c, size_t size) {
     char *c_ptr = (char*) ptr;
     for (int i = 0; i < size; i++){
@@ -10,12 +18,14 @@ void *memset(void *ptr, int c, size_t size) {
     return ptr;
 }
 
-void memcpy(uint8_t *dest, const uint8_t *src, uint32_t len) {
-    const uint8_t *sp = (const uint8_t *)src;
-    uint8_t *dp = (uint8_t *)dest;
-    for(; len != 0; len--) {
-        *dp++ = *sp++;
+void *memcpy(void *dest, void *src, uint32_t len) {
+    char *d = dest;
+    char *s = src;
+    while (len--) {
+        *d++ = *s++;
     }
+
+    return dest;
 }
 
 int memcmp(void* s1, void* s2, int count) {
@@ -33,11 +43,16 @@ int memcmp(void* s1, void* s2, int count) {
 }
 
 char *strcpy(char *dest, const char *src) {
-    do {
-        *dest++ = *src++;
+    char *res = dest;
+    while (*src != 0) {
+        *dest = *src;
+        src += 1;
+        dest += 1;
     }
 
-    while ((*dest++ = *src++));
+    *dest = 0x00;
+
+    return res;
 }
 
 int strlen(char *src) {
@@ -76,6 +91,36 @@ int strcmp(char *str1, char *str2) {
     }
 
     return failed;
+}
+
+int strncmp(char *str1, char *str2, int max) {
+    unsigned char u1, u2;
+
+    while (max-- > 0) {
+        u1 = (unsigned char)*str1++;
+        u2 = (unsigned char)*str2++;
+        if (u1 != u2)
+            return u1 - u2;
+        if (u1 == '\0')
+            return 0;
+    }
+
+    return 0;
+}
+
+
+int istrncmp(const char* s1, const char* s2, int n) {
+    unsigned char u1, u2;
+    while(n-- > 0) {
+        u1 = (unsigned char)*s1++;
+        u2 = (unsigned char)*s2++;
+        if (u1 != u2 && char_upper_to_lower(u1) != char_upper_to_lower(u2))
+            return u1 - u2;
+        if (u1 == '\0')
+            return 0;
+    }
+
+    return 0;
 }
 
 kbool char_is_digit(char c) {

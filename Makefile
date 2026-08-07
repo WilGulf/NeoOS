@@ -6,8 +6,9 @@ OBJECTS = kernel/loader.o kernel/kmain.o \
 	kernel/include/util.o \
 	kernel/memory/paging.o kernel/memory/paging_asm.o kernel/memory/heap.o kernel/memory/kheap.o\
 	kernel/syscall/syscall.o \
-	kernel/drivers/fs/disk.o kernel/drivers/fs/path_parser.o kernel/drivers/fs/disk_streamer.o
-	
+	kernel/drivers/fs/disk.o kernel/drivers/fs/path_parser.o kernel/drivers/fs/disk_streamer.o kernel/drivers/fs/file.o \
+	kernel/drivers/fs/fat/fat16.o
+
 #C compiler
 CC = i686-elf-gcc
 CFLAGS = -m32 -nostdlib -nostdinc -fno-builtin -fno-stack-protector \
@@ -42,6 +43,8 @@ run: os.iso
 clean:
 	rm -f output/*
 	rm -f kernel/drivers/io/*.o
+	rm -f kernel/drivers/fs/*.o
+	rm -f kernel/drivers/io/*/*.o
 	rm -f kernel/gdt/*.o
 	rm -f kernel/idt/*.o
 	rm -f kernel/include/*.o

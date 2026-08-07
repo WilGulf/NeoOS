@@ -6,7 +6,7 @@
 
 static int path_is_valid_format(const char *path) {
     int len = strnlen(path, MAX_PATH);
-    if (len >= 3 && char_is_digit(path[0]) && memcmp((void *)&path[1], ":/", 2) == 0);
+    return len >= 3 && char_is_digit(path[0]) && memcmp((void *)&path[1], ":/", 2) == 0;
 }
 
 static int get_drive_by_path(const char **path) {

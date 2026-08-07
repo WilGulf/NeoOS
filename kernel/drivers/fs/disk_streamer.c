@@ -1,7 +1,7 @@
 #include "disk_streamer.h"
 #include "../../memory/kheap.h"
 
-struct disk_stream *disk_steamer_new(int disk_id) {
+struct disk_stream *disk_streamer_new(int disk_id) {
     struct disk *disk = disk_get(disk_id);
     if (!disk) {
         return 0;

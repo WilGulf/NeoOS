@@ -22,8 +22,14 @@ outw:
     ret
 
 inb:
-    mov dx, [esp + 4]
+    push ebp
+    mov ebp, esp
+
+    xor eax, eax
+    mov edx, [ebp+8]
     in al, dx
+
+    pop ebp
     ret
 
 inw:

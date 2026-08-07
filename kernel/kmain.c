@@ -56,6 +56,18 @@ int kmain(uint32_t magic, struct multiboot_info* bootInfo) {
     enable_interrupts();
     kprintf("Interrupts enabled\n");
 
+    fs_init();
+    disk_search_and_init();
+
+    int fd = fopen("0:/hello.txt", "r");
+    kprintf("fd: %d\n", fd);
+    if (fd) {
+        char buf[64];
+        memset(buf, 0, sizeof(buf));
+        int res = fread(buf, 1, 32, fd);
+        kprintf("read res: %d, data: %s\n", res, buf);
+    }
+
     //kprintf("%d", 0/0);
 
     //uint32_t mod1 = *(uint32_t*)(bootInfo->mods_addr + 4);
