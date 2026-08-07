@@ -9,4 +9,5 @@ kernel/*.bak
 kernel/*/*.bak
 kernel/*/*/*.bak
 bochs/
+disk.img
 out.txt
