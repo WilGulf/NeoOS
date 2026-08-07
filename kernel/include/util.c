@@ -18,6 +18,20 @@ void memcpy(uint8_t *dest, const uint8_t *src, uint32_t len) {
     }
 }
 
+int memcmp(void* s1, void* s2, int count) {
+    char* c1 = s1;
+    char* c2 = s2;
+    while(count-- > 0)
+    {
+        if (*c1++ != *c2++)
+        {
+            return c1[-1] < c2[-1] ? -1 : 1;
+        }
+    }
+
+    return 0;
+}
+
 char *strcpy(char *dest, const char *src) {
     do {
         *dest++ = *src++;
@@ -31,6 +45,17 @@ int strlen(char *src) {
     while (*src++) {
         i++;
     }
+    return i;
+}
+
+int strnlen(char *src, int max) {
+    int i = 0;
+    for (; i < max; i++) {
+        if (src[i] == 0) {
+            break;
+        }
+    }
+
     return i;
 }
 
@@ -51,6 +76,14 @@ int strcmp(char *str1, char *str2) {
     }
 
     return failed;
+}
+
+kbool char_is_digit(char c) {
+    return c >= 48 && c <= 57;
+}
+
+int char_to_int(char c) {
+    return c - '0';
 }
 
 int pow(int x, int power) {

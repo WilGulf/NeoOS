@@ -7,6 +7,8 @@
 #include "memory/paging.h"
 #include "memory/kheap.h"
 #include "memory/heap.h"
+#include "drivers/fs/disk.h"
+#include "drivers/fs/path_parser.h"
 #include "include/util.h"
 #include "include/va_list.h"
 #include "syscall/syscall.h"
@@ -24,7 +26,7 @@ int kmain(uint32_t magic, struct multiboot_info* bootInfo) {
     kheap_init();
     kprintf("Inititalized kernel heap\n");
 
-    disable_interrupts();
+    disk_search_and_init();
 
     gdt_init();
     idt_init();
@@ -40,8 +42,6 @@ int kmain(uint32_t magic, struct multiboot_info* bootInfo) {
     kprintf("ptr3: %d\n", ptr3);
     kprintf("ptr4: %d\n", ptr4);
 
-    kprintf("kernel_virtual_start: %d\n", kernel_virtual_start);
-
     kprintf("Kprintf %s%c %d %f\n", "Tes", 't', 1234, 124.121546);
 
     kernel_chunk = paging_new_4gb(PAGING_IS_WRITEABLE | PAGING_IS_PRESENT | PAGING_ACCESS_FROM_ALL);
@@ -52,9 +52,10 @@ int kmain(uint32_t magic, struct multiboot_info* bootInfo) {
 
     enable_paging();
     kprintf("Paging enabled\n");
-    
+
     enable_interrupts();
     kprintf("Interrupts enabled\n");
+
     //kprintf("%d", 0/0);
 
     //uint32_t mod1 = *(uint32_t*)(bootInfo->mods_addr + 4);
@@ -74,8 +75,6 @@ int kmain(uint32_t magic, struct multiboot_info* bootInfo) {
     user_code[1] = 0xFE;
 
     switch_to_usermode(0x08048000, 0x08050000 + 0x1000);*/
-
-    syscall_kprintf("Hello from usermode\n");
 
     while (1) {
         

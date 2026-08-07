@@ -5,7 +5,8 @@ OBJECTS = kernel/loader.o kernel/kmain.o \
 	kernel/idt/idt.o kernel/idt/idt_asm.o \
 	kernel/include/util.o \
 	kernel/memory/paging.o kernel/memory/paging_asm.o kernel/memory/heap.o kernel/memory/kheap.o\
-	kernel/syscall/syscall.o
+	kernel/syscall/syscall.o \
+	kernel/drivers/fs/disk.o kernel/drivers/fs/path_parser.o kernel/drivers/fs/disk_streamer.o
 	
 #C compiler
 CC = i686-elf-gcc

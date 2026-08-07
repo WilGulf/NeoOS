@@ -2,9 +2,10 @@
 #define INCLUDE_IO_H
 
 void outb(unsigned short port, unsigned char data);
+void outw(unsigned short port, unsigned short data);
+
 unsigned char inb(unsigned short port);
-static inline void insl(int port, void *addr, int cnt);
-static inline void outsl(int port, const void *addr, int cnt);
+unsigned short inw(unsigned short port);
 
 int writer(char *buf);
 int fb_clear();

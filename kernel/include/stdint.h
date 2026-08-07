@@ -12,6 +12,9 @@ typedef int int32_t;
 typedef long unsigned int size_t;
 
 typedef _Bool kbool;
+
+#define NULL ((void *)0)
+
 #define true 1
 #define false 0
 
