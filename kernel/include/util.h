@@ -5,7 +5,7 @@
 
 #define CEIL_DIV(a, b) (((a) + (b) - 1) / (b))
 
-void memset(void *dest, char val, uint32_t count);
+void *memset(void *ptr, int c, size_t size);
 void memcpy(uint8_t *dest, const uint8_t *src, uint32_t len);
 
 char *strcpy(char *dest, const char *src);

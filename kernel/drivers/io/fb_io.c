@@ -1,7 +1,7 @@
 #include "io.h"
 #include "../../include/stdint.h"
 
-char *fb = (char *) 0xC00B8000;
+char *fb = (char *) 0x000B8000;
 
 void fb_write_cell(unsigned int i, char c, unsigned char fg, unsigned char bg) {
     fb[i] = c;

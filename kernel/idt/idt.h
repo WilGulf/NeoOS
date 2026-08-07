@@ -27,6 +27,9 @@ struct interrupt_registers {
 //void interrupt_handler(struct cpu_state cpu, struct stack_state stack, unsigned int interrupt);
 void load_idt(uint32_t);
 
+void enable_interrupts();
+void disable_interrupts();
+
 int idt_init();
 void set_idt_gate(uint8_t num, uint32_t base, uint16_t sel, uint8_t flags);
 

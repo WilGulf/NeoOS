@@ -4,8 +4,7 @@
 #include "drivers/io/io.h"
 #include "gdt/gdt.h"
 #include "idt/idt.h"
-#include "memory/memory.h"
-//#include "memory/kmalloc.h"
+#include "memory/paging.h"
 #include "memory/kheap.h"
 #include "memory/heap.h"
 #include "include/util.h"
@@ -17,12 +16,15 @@ extern uint32_t kernel_virtual_end;
 extern uint32_t kernel_physical_start;
 extern uint32_t kernel_physical_end;
 
+static struct paging_4gb_chunk *kernel_chunk = 0;
 
 int kmain(uint32_t magic, struct multiboot_info* bootInfo) {
     fb_clear();
 
     kheap_init();
     kprintf("Inititalized kernel heap\n");
+
+    disable_interrupts();
 
     gdt_init();
     idt_init();
@@ -41,6 +43,18 @@ int kmain(uint32_t magic, struct multiboot_info* bootInfo) {
     kprintf("kernel_virtual_start: %d\n", kernel_virtual_start);
 
     kprintf("Kprintf %s%c %d %f\n", "Tes", 't', 1234, 124.121546);
+
+    kernel_chunk = paging_new_4gb(PAGING_IS_WRITEABLE | PAGING_IS_PRESENT | PAGING_ACCESS_FROM_ALL);
+    kprintf("Paging new\n");
+    
+    paging_switch(paging_4gb_chunk_get_directory(kernel_chunk));
+    kprintf("Paging switch\n");
+
+    enable_paging();
+    kprintf("Paging enabled\n");
+    
+    enable_interrupts();
+    kprintf("Interrupts enabled\n");
     //kprintf("%d", 0/0);
 
     //uint32_t mod1 = *(uint32_t*)(bootInfo->mods_addr + 4);
@@ -68,19 +82,4 @@ int kmain(uint32_t magic, struct multiboot_info* bootInfo) {
     }
 
     return 0;
-}
-
-void _panic(const char *file, int line, const char *fmt, ...) {
-    va_list list;
-    va_start(list, fmt);
-
-    kprintf("%d, line %d: ");
-    kprintf(fmt, list);
-
-    va_end(list);
-
-    asm volatile("cli");
-    for (;;) {
-        asm volatile("hlt");
-    }
 }

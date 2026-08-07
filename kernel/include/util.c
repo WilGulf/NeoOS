@@ -1,11 +1,13 @@
 #include "util.h"
 #include "stdint.h"
 
-void memset(void *dest, char val, uint32_t count){
-    char *temp = (char*) dest;
-    for (; count != 0; count --){
-        *temp++ = val;
+void *memset(void *ptr, int c, size_t size) {
+    char *c_ptr = (char*) ptr;
+    for (int i = 0; i < size; i++){
+        c_ptr[i] = (char) c;
     }
+
+    return ptr;
 }
 
 void memcpy(uint8_t *dest, const uint8_t *src, uint32_t len) {

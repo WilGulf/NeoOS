@@ -18,29 +18,27 @@ SECTIONS {
         *(.boot)
     }
 
-    . += 0xC0000000;
-
-    kernel_virtual_start = .;
-    kernel_physical_start = . - 0xC00000000;
-
-    .text ALIGN (0x1000) : AT(ADDR(.text)-0xC0000000)
+    .text ALIGN (0x1000) : AT(ADDR(.text))
     {
         *(.text)
     }
-    .rodata ALIGN (0x1000) : AT(ADDR(.rodata)-0xC0000000)
+    .rodata ALIGN (0x1000) : AT(ADDR(.rodata))
     {
         *(.rodata*)
     }
-    .data ALIGN (0x1000) : AT(ADDR(.data)-0xC0000000)
+    .data ALIGN (0x1000) : AT(ADDR(.data))
     {
         *(.data)
     }
-    .bss ALIGN (0x1000) : AT(ADDR(.bss)-0xC0000000)
+    .bss ALIGN (0x1000) : AT(ADDR(.bss))
     {
         *(COMMON)
         *(.bss)
     }
 
+    kernel_virtual_start = 0x00100000;
     kernel_virtual_end = .;
-    kernel_physical_end = . - 0xC00000000;
+    kernel_physical_start = 0x00100000;
+    kernel_physical_end = .;
+
 }

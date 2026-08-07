@@ -4,6 +4,16 @@ load_idt:
     lidt [eax]
     ret
 
+global enable_interrupts
+enable_interrupts:
+    sti
+    ret
+
+global disable_interrupts
+disable_interrupts:
+    cli
+    ret
+
 %macro no_error_code_interrupt_handler 1
     global interrupt_handler_%1
     interrupt_handler_%1:

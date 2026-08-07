@@ -86,6 +86,10 @@ int heap_get_start_block(struct heap *heap, uint32_t total_blocks) {
         return -ERROR_NO_MEM;
     }
 
+    if (bc != total_blocks) {
+        return -ERROR_NO_MEM;
+    }
+
     return bs;
 }
 
