@@ -12,6 +12,7 @@
 #include "include/util.h"
 #include "include/va_list.h"
 #include "syscall/syscall.h"
+#include "panic.h"
 
 extern uint32_t kernel_virtual_start;
 extern uint32_t kernel_virtual_end;
@@ -49,7 +50,6 @@ int kmain(uint32_t magic, struct multiboot_info* bootInfo) {
     
     paging_switch(paging_4gb_chunk_get_directory(kernel_chunk));
     kprintf("Paging switch\n");
-    kprintf("new");
 
     enable_paging();
     kprintf("Paging enabled\n");
@@ -62,7 +62,7 @@ int kmain(uint32_t magic, struct multiboot_info* bootInfo) {
 
     int fd = fopen("0:/hello.txt", "r");
     kprintf("fd: %d\n", fd);
-    if (true) {
+    if (fd) {
         kprintf("Opened hello.txt\n");
         char buf[18];
         int res = fread(buf, 17, 1, fd);

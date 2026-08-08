@@ -7,7 +7,8 @@ OBJECTS = kernel/loader.o kernel/kmain.o \
 	kernel/memory/paging.o kernel/memory/paging_asm.o kernel/memory/heap.o kernel/memory/kheap.o\
 	kernel/syscall/syscall.o \
 	kernel/drivers/fs/disk.o kernel/drivers/fs/path_parser.o kernel/drivers/fs/disk_streamer.o kernel/drivers/fs/file.o \
-	kernel/drivers/fs/fat/fat16.o
+	kernel/drivers/fs/fat/fat16.o \
+	kernel/panic.o
 
 #C compiler
 CC = i686-elf-gcc
