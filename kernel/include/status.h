@@ -8,6 +8,7 @@
 #define ERROR_BAD_PATH 4
 #define ERROR_FS_NOT_US 5
 #define ERROR_RO 6
+#define ERROR_UNIMPL 7
 
 #define ERROR(value) (void *)(value)
 #define ERROR_I(value) (int)(value)
