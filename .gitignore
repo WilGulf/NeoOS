@@ -2,6 +2,7 @@ output/
 kernel/*.o
 kernel/*.elf
 kernel/drivers/*/*.o
+kernel/drivers/*/*/*.o
 kernel/*/*.o
 kernel/*/*/*.o
 iso/boot/*.elf

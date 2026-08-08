@@ -13,7 +13,7 @@ OBJECTS = kernel/loader.o kernel/kmain.o \
 CC = i686-elf-gcc
 CFLAGS = -m32 -nostdlib -nostdinc -fno-builtin -fno-stack-protector \
 	-nostartfiles -nodefaultlibs \
-	-Wall -Wextra -c
+	-Wall -Wextra -Wno-int-conversion -c
 
 #Linker
 LDFLAGS = -m elf_i386 -T kernel/link.ld
@@ -41,7 +41,8 @@ run: os.iso
 	$(AS) $(ASFLAGS) $< -o $@
 
 clean:
-	rm -f output/*
+	rm -f output/*.elf
+	rm -f output/*.iso
 	rm -f kernel/drivers/io/*.o
 	rm -f kernel/drivers/fs/*.o
 	rm -f kernel/drivers/io/*/*.o

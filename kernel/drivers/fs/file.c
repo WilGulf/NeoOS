@@ -165,7 +165,8 @@ int fread(void *ptr, uint32_t size, uint32_t nmemb, int fd) {
         goto out;
     }
 
-    res = desc->filesystem->read(desc->disk, desc->private, size, nmemb, (char*) ptr);
+    res = desc->filesystem->read(desc->disk, desc->private, size, nmemb, (char *)ptr);
 out:
     return res;
 }
+

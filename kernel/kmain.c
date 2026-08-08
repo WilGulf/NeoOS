@@ -61,11 +61,11 @@ int kmain(uint32_t magic, struct multiboot_info* bootInfo) {
 
     int fd = fopen("0:/hello.txt", "r");
     kprintf("fd: %d\n", fd);
-    if (fd) {
-        char buf[64];
-        memset(buf, 0, sizeof(buf));
-        int res = fread(buf, 1, 32, fd);
-        kprintf("read res: %d, data: %s\n", res, buf);
+    if (true) {
+        kprintf("Opened hello.txt\n");
+        char buf[18];
+        int res = fread(buf, 17, 1, fd);
+        kprintf("data: %s\n", buf);
     }
 
     //kprintf("%d", 0/0);
