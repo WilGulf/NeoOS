@@ -31,7 +31,7 @@ int kprintf(char *buf, ...) {
     va_list args;
     va_start(args, buf);
 
-    char output[256];
+    char output[256] = "";
 
     int buf_i = 0;
     int output_i = 0;

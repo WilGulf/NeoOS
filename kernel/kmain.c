@@ -49,6 +49,7 @@ int kmain(uint32_t magic, struct multiboot_info* bootInfo) {
     
     paging_switch(paging_4gb_chunk_get_directory(kernel_chunk));
     kprintf("Paging switch\n");
+    kprintf("new");
 
     enable_paging();
     kprintf("Paging enabled\n");
