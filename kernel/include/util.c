@@ -55,6 +55,20 @@ char *strcpy(char *dest, const char *src) {
     return res;
 }
 
+char *strncpy(char *dest, const char *src, int n) {
+    int i = 0;
+    for (; i < n - 1; i++) {
+        if (src[i] == 0x00) {
+            break;
+        }
+
+        dest[i] = src[i];
+    }
+
+    dest[i] = 0x00;
+    return dest;
+}
+
 int strlen(char *src) {
     int i = 0;
     while (*src++) {

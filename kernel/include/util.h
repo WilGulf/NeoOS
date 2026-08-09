@@ -10,6 +10,7 @@ void *memcpy(void *dest, void *src, uint32_t len);
 int memcmp(void* s1, void* s2, int count);
 
 char *strcpy(char *dest, const char *src);
+char *strncpy(char *dest, const char *src, int n);
 int strlen(char *src);
 int strnlen(char *src, int max);
 int strcmp(char *str1, char *str2);

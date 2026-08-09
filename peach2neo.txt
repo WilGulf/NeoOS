@@ -1,0 +1,33 @@
+So for example, if PeachOS has something like:
+
+tss_set_stack(stack);
+
+you can simply turn it into:
+
+set_tss_stack(stack);
+
+That's exactly the sort of translation you're talking about.
+
+But variable order is important
+
+Suppose a PeachOS file has:
+
+tss_set_stack(&tss, stack);
+
+and yours is:
+
+set_tss_stack(stack);
+
+You cannot just rename the function. You need to remove the TSS argument too:
+
+set_tss_stack(stack);
+
+Likewise, if PeachOS has:
+
+tss_write(5, 0x10, stack);
+
+and yours is:
+
+write_tss(5, 0x10, stack);
+
+then that's a direct replacement.

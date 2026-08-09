@@ -6,7 +6,7 @@
 struct gdt gdt_ptr;
 struct gdt_entry_struct gdt_entries[6];
 
-struct tss_entry_struct tss_entry;
+struct tss tss_entry;
 
 int gdt_init() {
     gdt_ptr.base = (uint32_t)(void*)&gdt_entries;

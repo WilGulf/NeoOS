@@ -3,6 +3,7 @@
 #include "../../memory/kheap.h"
 #include "../../include/status.h"
 #include "../../include/util.h"
+#include "../../include/config.h"
 
 static int path_is_valid_format(const char *path) {
     int len = strnlen(path, MAX_PATH);

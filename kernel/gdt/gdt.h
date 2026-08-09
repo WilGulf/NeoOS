@@ -18,8 +18,8 @@ struct gdt {
     unsigned int base;
 } __attribute__((packed));
 
-struct tss_entry_struct {
-    uint32_t prev_tss;
+struct tss {
+    uint32_t link;
     uint32_t esp0;
     uint32_t ss0;
     uint32_t esp1;
@@ -44,9 +44,9 @@ struct tss_entry_struct {
     uint32_t ds;
     uint32_t fs;
     uint32_t gs;
-    uint32_t ldt;
-    uint32_t trap;
-    uint32_t iomap_base;
+    uint32_t ldtr;
+    uint32_t iobp;
+    uint32_t ssp;
 } __attribute__((packed));
 
 void load_gdt(struct gdt *);

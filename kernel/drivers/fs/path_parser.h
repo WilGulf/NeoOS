@@ -1,8 +1,6 @@
 #ifndef PATH_PARSER_H
 #define PATH_PARSER_H
 
-#define MAX_PATH 108
-
 struct path_root {
     int drive_no;
     struct path_part *first;

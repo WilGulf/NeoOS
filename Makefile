@@ -8,7 +8,8 @@ OBJECTS = kernel/loader.o kernel/kmain.o \
 	kernel/syscall/syscall.o \
 	kernel/drivers/fs/disk.o kernel/drivers/fs/path_parser.o kernel/drivers/fs/disk_streamer.o kernel/drivers/fs/file.o \
 	kernel/drivers/fs/fat/fat16.o \
-	kernel/panic.o
+	kernel/panic.o \
+	kernel/task/task.o kernel/task/task_asm.o kernel/task/process.o
 
 #C compiler
 CC = i686-elf-gcc
