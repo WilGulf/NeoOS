@@ -1,3 +1,5 @@
+#include "kernel.h"
+
 #include "include/stdint.h"
 
 #include "multiboot.h"
@@ -9,12 +11,12 @@
 #include "memory/heap.h"
 #include "task/task.h"
 #include "task/process.h"
+#include "syscalls/isr80h.h"
 #include "drivers/fs/disk.h"
 #include "drivers/fs/path_parser.h"
 #include "include/util.h"
 #include "include/status.h"
 #include "include/va_list.h"
-#include "syscall/syscall.h"
 #include "panic.h"
 
 extern uint32_t kernel_virtual_start;
@@ -25,6 +27,11 @@ extern uint32_t stack_top;
 
 static struct paging_4gb_chunk *kernel_chunk = 0;
 
+void kernel_page() {
+    kernel_registers();
+    paging_switch(kernel_chunk);
+}
+
 int kmain(uint32_t magic, struct multiboot_info* bootInfo) {
     fb_clear();
 
@@ -34,7 +41,9 @@ int kmain(uint32_t magic, struct multiboot_info* bootInfo) {
     disk_search_and_init();
 
     gdt_init();
+    kprintf("GDT Initialized\n");
     idt_init();
+    kprintf("IDT Initialized\n");
 
     void *kernel_stack = kzalloc(4096);          // 1 page is plenty for ISR handling
     set_tss_stack(&stack_top);
@@ -61,6 +70,8 @@ int kmain(uint32_t magic, struct multiboot_info* bootInfo) {
     enable_paging();
     kprintf("Paging enabled\n");
 
+    isr80h_register_commands();
+
     enable_interrupts();
     kprintf("Interrupts enabled\n");
 
@@ -68,9 +79,9 @@ int kmain(uint32_t magic, struct multiboot_info* bootInfo) {
     disk_search_and_init();
 
     struct process *process = 0;
-    int res = process_load("0:/blank.bin", &process);
+    int res = process_load("0:/print.bin", &process);
     if (res != ALL_OK) {
-        panic("Failed to load blank.bin", res);
+        panic("Failed to load print.bin", res);
     }
 
     task_run_first_ever_task();
