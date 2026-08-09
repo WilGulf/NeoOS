@@ -35,9 +35,9 @@ struct paging_4gb_chunk *paging_new_4gb(uint8_t flags) {
     return chunk_4gb;
 }
 
-void paging_switch(uint32_t *directory) {
-    paging_load_directory(directory);
-    current_directory = directory;
+void paging_switch(struct paging_4gb_chunk *directory) {
+    paging_load_directory(directory->directory_entry);
+    current_directory = directory->directory_entry;
 }
 
 void paging_free_4gb(struct paging_4gb_chunk *chunk) {
@@ -90,7 +90,7 @@ int paging_set(uint32_t *directory, void *vaddr, uint32_t val) {
     table[table_index] = val;
 } 
 
-int paging_map(uint32_t *directory, void *virt, void *phys, int flags) {
+int paging_map(struct paging_4gb_chunk *directory, void *virt, void *phys, int flags) {
     if (
         ((uint32_t)virt % PAGE_SIZE) || 
         ((uint32_t)phys % PAGE_SIZE)
@@ -98,10 +98,10 @@ int paging_map(uint32_t *directory, void *virt, void *phys, int flags) {
         return -ERROR_INVALID_ARG;
     }
 
-    return paging_set(directory, virt, (uint32_t)phys | flags);
+    return paging_set(directory->directory_entry, virt, (uint32_t)phys | flags);
 }
 
-int paging_map_range(uint32_t directory, void *virt, void *phys, int count, int flags) {
+int paging_map_range(struct paging_4gb_chunk *directory, void *virt, void *phys, int count, int flags) {
     int res = 0;
     for (int i = 0; i < count; i++) {
         res = paging_map(directory, virt, phys, flags);
@@ -116,7 +116,7 @@ int paging_map_range(uint32_t directory, void *virt, void *phys, int count, int 
     return res;
 }
 
-int paging_map_to(uint32_t *directory, void *virt, void *phys, void *phys_end, int flags) {
+int paging_map_to(struct paging_4gb_chunk *directory, void *virt, void *phys, void *phys_end, int flags) {
     int res = 0;
     if (
         ((uint32_t)virt % PAGE_SIZE) || 
