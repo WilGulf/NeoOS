@@ -69,6 +69,7 @@ int task_init(struct task *task, struct process *process) {
 
     task->registers.ip = PROGRAM_VIRTUAL_ADDRESS;
     task->registers.ss = USER_DATA_SEGMENT;
+    task->registers.cs = USER_CODE_SEGMENT;
     task->registers.esp = PROGRAM_VIRTUAL_STACK_ADDRESS_START;
     task->process = process;
 
@@ -76,7 +77,7 @@ int task_init(struct task *task, struct process *process) {
 }
 
 void task_run_first_ever_task() {
-    if (current_task) {
+    if (!current_task) {
         panic(" task_run_first_ever_task(): No current task exists!\n", 0);
     }
 
@@ -100,6 +101,7 @@ struct task *task_new(struct process *process) {
     if (task_head == 0) {
         task_head = task;
         task_tail = task;
+        current_task = task;
         goto out;
     }
 

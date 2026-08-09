@@ -5,7 +5,7 @@ task_return:
     push dword [ebx+44]
     push dword [ebx+40]
 
-    push f
+    pushf
     pop eax
     or eax, 0x200
     push eax
@@ -19,7 +19,7 @@ task_return:
     mov fs, ax
     mov gs, ax
 
-    push dword [ebx+4]
+    push dword [ebp+4]
     call restore_general_purpose_registers
     add esp, 4
 
@@ -37,13 +37,13 @@ restore_general_purpose_registers:
     mov ecx, [ebx+20]
     mov eax, [ebx+24]
     mov ebx, [ebx+12]
-    pop esp
+    pop ebp
     ret
 
 global user_registers
 user_registers:
     mov ax, 0x23
-    moc ds, ax
+    mov ds, ax
     mov es, ax
     mov fs, ax
     mov gs, ax

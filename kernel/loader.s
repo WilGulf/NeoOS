@@ -1,4 +1,5 @@
 global loader
+global stack_top
 extern kmain
 
 MAGIC_NUMBER equ 0x1BADB002

@@ -105,7 +105,7 @@ int paging_map_range(uint32_t directory, void *virt, void *phys, int count, int 
     int res = 0;
     for (int i = 0; i < count; i++) {
         res = paging_map(directory, virt, phys, flags);
-        if (res == 0) {
+        if (res < 0) {
             break;
         }
 

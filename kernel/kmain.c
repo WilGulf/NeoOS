@@ -7,9 +7,12 @@
 #include "memory/paging.h"
 #include "memory/kheap.h"
 #include "memory/heap.h"
+#include "task/task.h"
+#include "task/process.h"
 #include "drivers/fs/disk.h"
 #include "drivers/fs/path_parser.h"
 #include "include/util.h"
+#include "include/status.h"
 #include "include/va_list.h"
 #include "syscall/syscall.h"
 #include "panic.h"
@@ -18,6 +21,7 @@ extern uint32_t kernel_virtual_start;
 extern uint32_t kernel_virtual_end;
 extern uint32_t kernel_physical_start;
 extern uint32_t kernel_physical_end;
+extern uint32_t stack_top;
 
 static struct paging_4gb_chunk *kernel_chunk = 0;
 
@@ -31,6 +35,9 @@ int kmain(uint32_t magic, struct multiboot_info* bootInfo) {
 
     gdt_init();
     idt_init();
+
+    void *kernel_stack = kzalloc(4096);          // 1 page is plenty for ISR handling
+    set_tss_stack(&stack_top);
 
     void *ptr = kmalloc(50);
     kprintf("ptr: %d\n", ptr);
@@ -60,14 +67,13 @@ int kmain(uint32_t magic, struct multiboot_info* bootInfo) {
     fs_init();
     disk_search_and_init();
 
-    int fd = fopen("0:/hello.txt", "r");
-    kprintf("fd: %d\n", fd);
-    if (fd) {
-        kprintf("Opened hello.txt\n");
-        char buf[18];
-        int res = fread(buf, 17, 1, fd);
-        kprintf("data: %s\n", buf);
+    struct process *process = 0;
+    int res = process_load("0:/blank.bin", &process);
+    if (res != ALL_OK) {
+        panic("Failed to load blank.bin", res);
     }
+
+    task_run_first_ever_task();
 
     //kprintf("%d", 0/0);
 

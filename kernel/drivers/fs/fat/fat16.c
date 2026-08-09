@@ -5,6 +5,7 @@
 
 #include "../../../memory/kheap.h"
 #include "../../../include/status.h"
+#include "../../../include/config.h"
 #include "../../../include/util.h"
 #include "../../../include/stdint.h"
 

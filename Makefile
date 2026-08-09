@@ -24,7 +24,9 @@ LDFLAGS = -m elf_i386 -T kernel/link.ld
 AS = nasm
 ASFLAGS = -f elf32
 
-all: kernel.elf
+all: kernel userland_bins
+
+kernel: kernel.elf
 
 kernel.elf: $(OBJECTS)
 	ld.lld $(LDFLAGS) $(OBJECTS) -o output/kernel.elf
@@ -35,21 +37,25 @@ os.iso: kernel.elf
 	mv neoos.iso output/neoos.iso
 
 run: os.iso
-	qemu-system-i386 -cdrom output/neoos.iso
+	qemu-system-i386 -kernel output/kernel.elf -hda output/disk.img
 
 %.o: %.c
 	$(CC) $(CFLAGS) $< -o $@
 %.o: %.s
 	$(AS) $(ASFLAGS) $< -o $@
 
-clean:
+userland_bins:
+	cd ./userland/bin/blank && $(MAKE) all
+
+userland_clean:
+	cd ./userland/bin/blank && $(MAKE) clean
+
+kernel_clean:
 	rm -f output/*.elf
 	rm -f output/*.iso
-	rm -f kernel/drivers/io/*.o
-	rm -f kernel/drivers/fs/*.o
-	rm -f kernel/drivers/io/*/*.o
-	rm -f kernel/gdt/*.o
-	rm -f kernel/idt/*.o
-	rm -f kernel/include/*.o
-	rm -f kernel/memory/*.o
+	rm -f kernel/*/*/*.o
+	rm -f kernel/*/*/*/*.o
+	rm -f kernel/*/*.o
 	rm -f kernel/*.o output/kernel.elf iso/boot/kernel.elf
+
+clean: kernel_clean userland_clean

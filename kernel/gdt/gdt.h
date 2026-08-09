@@ -57,5 +57,6 @@ void set_gdt_gate(uint32_t num, uint32_t base, uint32_t limit, uint8_t access, u
 void write_tss(uint32_t num, uint16_t ss0, uint32_t esp0);
 
 void switch_to_usermode(uint32_t eip, uint32_t esp);
+void set_tss_stack(uint32_t stack);
 
 #endif
