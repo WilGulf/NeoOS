@@ -1,6 +1,7 @@
 #Files to be output of compilation
 OBJECTS = kernel/loader.o kernel/kmain.o kernel/kernel_asm.o \
 	kernel/drivers/io/fb_io.o kernel/drivers/io/io_asm.o kernel/drivers/io/kprint.o \
+	kernel/drivers/keyboard/keyboard.o kernel/drivers/keyboard/ps2.o \
 	kernel/gdt/gdt_asm.o kernel/gdt/gdt.o \
 	kernel/idt/idt.o kernel/idt/idt_asm.o \
 	kernel/include/util.o \

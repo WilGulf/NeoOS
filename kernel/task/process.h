@@ -18,8 +18,16 @@ struct process {
     void *ptr;
     void *stack;
     uint32_t size;
+
+    struct keyboard_buffer {
+        char buffer[KEYBOARD_BUFFER_SIZE];
+        int tail;
+        int head;
+    } keyboard;
 };
 
 int process_load(const char *filename, struct process **process);
+struct process *process_current();
+struct process *process_get(int id);
 
 #endif
