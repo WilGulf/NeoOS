@@ -21,21 +21,27 @@ int disk_streamer_seek(struct disk_stream *stream, int pos) {
 int disk_streamer_read(struct disk_stream *stream, void *out, int total) {
     int sector = stream->pos / SECTOR_SIZE;
     int offset = stream->pos % SECTOR_SIZE;
+    int total_to_read = total > SECTOR_SIZE ? SECTOR_SIZE : total;
+    
+    kbool overflow = (offset + total_to_read) >= SECTOR_SIZE;
     char buf[SECTOR_SIZE];
+
+    if (overflow) {
+        total_to_read -= (offset + total_to_read) - SECTOR_SIZE;
+    }
 
     int res = disk_read_block(stream->disk, sector, 1, buf);
     if (res < 0) {
         goto out;
     }
 
-    int total_to_read = total > SECTOR_SIZE ? SECTOR_SIZE : total;
     for (int i = 0; i < total_to_read; i++) {
         *(char *)out++ = buf[offset + i];
     }
 
     stream->pos += total_to_read;
-    if (total > SECTOR_SIZE) {
-        res = disk_streamer_read(stream, out, total - SECTOR_SIZE);
+    if (overflow) {
+        res = disk_streamer_read(stream, out, total - total_to_read);
     }
 
 out:
