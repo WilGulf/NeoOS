@@ -15,16 +15,6 @@ void fb_move_cursor(unsigned short pos) {
     outb(0x3D5, pos & 0x00FF);
 }
 
-int fb_clear() {
-    for (int i = 0; i < 80 * 25 * 2; i += 2) {
-        fb_write_cell(i, ' ', 0x0F, 0x00);
-    }
-
-    fb_move_cursor(0);
-
-    return 0;
-}
-
 uint16_t fb_get_cursor_position(void) {
     uint16_t pos = 0;
     outb(0x3D4, 0x0F);
@@ -33,6 +23,25 @@ uint16_t fb_get_cursor_position(void) {
     pos |= ((uint16_t)inb(0x3D5)) << 8;
 
     return pos;
+}
+
+void fb_clear() {
+    for (int i = 0; i < 80 * 25 * 2; i += 2) {
+        fb_write_cell(i, ' ', 0x0F, 0x00);
+    }
+
+    fb_move_cursor(0);
+}
+
+void fb_backspace() {
+    uint16_t pos = fb_get_cursor_position();
+    
+    while (fb[(pos * 2)] == 0x00 || fb[(pos * 2)] == ' ') {
+        pos--;
+    }
+
+    fb_write_cell(pos * 2, ' ', 0x0F, 0x00);
+    fb_move_cursor(pos);
 }
 
 void fb_new_line() {
@@ -55,9 +64,15 @@ void fb_scroll() {
 }
 
 void fb_putc(char c) {
-    uint16_t pos = fb_get_cursor_position();
-    fb_write_cell((pos * 2), c, 0x0F, 0x00);
-    fb_move_cursor(pos + 1);
+    if (c == '\n') {
+        fb_new_line();
+    } else if (c == 0x08) {
+        fb_backspace();
+    } else {
+        uint16_t pos = fb_get_cursor_position();
+        fb_write_cell((pos * 2), c, 0x0F, 0x00);
+        fb_move_cursor(pos + 1);
+    }
 }
 
 int writer(char *buf) {
