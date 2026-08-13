@@ -115,6 +115,10 @@ void task_current_save_state(struct interrupt_frame *frame) {
 }
 
 int task_page() {
+    if (!current_task) {
+        return 0;
+    }
+    
     user_registers();
     task_switch(current_task);
     return 0;

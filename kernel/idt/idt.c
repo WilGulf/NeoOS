@@ -2,23 +2,34 @@
 
 #include "../kernel.h"
 #include "../include/util.h"
+#include "../include/status.h"
 #include "../panic.h"
 #include "../task/task.h"
 #include "../drivers/io/io.h"
 
+struct idt_desc idt_descriptors[TOTAL_INTERRUPTS];
+struct idtr_desc idtr_descriptor;
+
+extern void *interrupt_pointer_table[TOTAL_INTERRUPTS];
+
+static INTERRUPT_CALLBACK_FUNCTION interrupt_callbacks[TOTAL_INTERRUPTS];
 static ISR80H_COMMAND isr80h_commands[MAX_ISR80H_COMMANDS];
 
-extern void idt_load(void *ptr);
-extern void int21h();
+extern void idt_load(struct idtr_desc *ptr);
 extern void no_interrupt();
 extern void isr80h_wrapper();
 
-void int21h_handler() {
+void no_interrupt_handler() {
     outb(0x20, 0x20);
 }
 
-void no_interrupt_handler() {
-    outb(0x20, 0x20);
+int idt_register_interrupt_callback(int interrupt, INTERRUPT_CALLBACK_FUNCTION interrupt_callback) {
+    if (interrupt < 0 || interrupt >= TOTAL_INTERRUPTS) {
+        return -ERROR_INVALID_ARG;
+    }
+
+    interrupt_callbacks[interrupt] = interrupt_callback;
+    return 0;
 }
 
 void isr80h_register_command(int command_id, ISR80H_COMMAND command) {
@@ -58,12 +69,20 @@ void *isr80h_handler(int command, struct interrupt_frame *frame) {
     return res;
 }
 
-struct idt_desc idt_descriptors[TOTAL_INTERRUPTS];
-struct idtr_desc idtr_descriptor;
+void interrupt_handler(int interrupt, struct interrupt_frame *frame) {
+    kernel_page();
+    if (interrupt_callbacks[interrupt] != 0) {
+        task_current_save_state(frame);
+        interrupt_callbacks[interrupt]();
+    }
+
+    task_page();
+    outb(0x20, 0x20);
+}
 
 void idt_set(int interrupt_no, void *address) {
     struct idt_desc *desc = &idt_descriptors[interrupt_no];
-    desc->offest_lower = (uint32_t)address & 0x0000FFFF;
+    desc->offset_lower = (uint32_t)address & 0x0000FFFF;
     desc->selector = 0x08;
     desc->zero = 0x00;
     desc->type_attr = 0xEE;
@@ -91,7 +110,7 @@ void idt_init() {
     outb(0xA1, 0x0);
     
     for (int i = 0; i < TOTAL_INTERRUPTS; i++) {
-        idt_set(i, no_interrupt);
+        idt_set(i, interrupt_pointer_table[i]);
     }
 
     idt_set(0x80, isr80h_wrapper);

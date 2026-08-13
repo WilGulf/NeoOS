@@ -27,6 +27,11 @@ struct process *process_get(int id) {
     return processes[id];
 }
 
+int process_switch(struct process *process) {
+    current_process = process;
+    return 0;
+}
+
 static int process_load_binary(const char *filename, struct process *process) {
     int res = 0;
     int fd = fopen(filename, "r");
@@ -165,5 +170,14 @@ int process_load(const char *filename, struct process **process) {
     res = process_load_for_slot(filename, process, process_slot);
 
 out:
+    return res;
+}
+
+int process_load_switch(const char *filename, struct process **process) {
+    int res = process_load(filename, process);
+    if (res == ALL_OK) {
+        process_switch(*process);
+    }
+
     return res;
 }

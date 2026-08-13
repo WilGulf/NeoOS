@@ -14,6 +14,7 @@
 #include "syscalls/isr80h.h"
 #include "drivers/fs/disk.h"
 #include "drivers/fs/path_parser.h"
+#include "drivers/keyboard/keyboard.h"
 #include "include/util.h"
 #include "include/status.h"
 #include "include/va_list.h"
@@ -78,10 +79,12 @@ int kmain(uint32_t magic, struct multiboot_info* bootInfo) {
     fs_init();
     disk_search_and_init();
 
+    keyboard_init();
+
     struct process *process = 0;
-    int res = process_load("0:/print.bin", &process);
+    int res = process_load_switch("0:/keyboard.bin", &process);
     if (res != ALL_OK) {
-        panic("Failed to load print.bin", res);
+        panic("Failed to load keyboard.bin", res);
     }
 
     task_run_first_ever_task();

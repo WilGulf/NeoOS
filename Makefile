@@ -40,6 +40,7 @@ os.iso: kernel.elf
 
 run: os.iso userland_bins
 	mcopy -o -i output/disk.img -o userland/bin/print/output/print.bin ::print.bin
+	mcopy -o -i output/disk.img -o userland/bin/keyboard/output/keyboard.bin ::keyboard.bin
 	qemu-system-i386 -kernel output/kernel.elf -hda output/disk.img
 
 %.o: %.c
@@ -48,10 +49,12 @@ run: os.iso userland_bins
 	$(AS) $(ASFLAGS) $< -o $@
 
 userland_bins:
-	cd ./userland/bin/print && $(MAKE) all  	
+	cd ./userland/bin/print && $(MAKE) all
+	cd ./userland/bin/keyboard && $(MAKE) all	
 
 userland_clean:
 	cd ./userland/bin/print && $(MAKE) clean
+	cd ./userland/bin/keyboard && $(MAKE) clean
 
 kernel_clean:
 	rm -f output/*.elf
