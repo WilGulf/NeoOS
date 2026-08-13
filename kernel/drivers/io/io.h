@@ -8,6 +8,7 @@ unsigned char inb(unsigned short port);
 unsigned short inw(unsigned short port);
 
 int writer(char *buf);
+void fb_putc(char c);
 int fb_clear();
 void fb_scroll();
 

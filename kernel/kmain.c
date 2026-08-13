@@ -76,6 +76,8 @@ int kmain(uint32_t magic, struct multiboot_info* bootInfo) {
     enable_interrupts();
     kprintf("Interrupts enabled\n");
 
+    fb_putc('a');
+
     fs_init();
     disk_search_and_init();
 

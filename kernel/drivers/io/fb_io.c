@@ -54,6 +54,12 @@ void fb_scroll() {
     }
 }
 
+void fb_putc(char c) {
+    uint16_t pos = fb_get_cursor_position();
+    fb_write_cell((pos * 2), c, 0x0F, 0x00);
+    fb_move_cursor(pos + 1);
+}
+
 int writer(char *buf) {
 
     uint16_t pos = fb_get_cursor_position();
@@ -67,7 +73,7 @@ int writer(char *buf) {
 
     int i = 0;
     while (bytes[i] != 0) {
-        if (bytes[i] == 0x0A) {
+        if (bytes[i] == '\n') {
 
             fb_move_cursor(pos);
             fb_new_line();
