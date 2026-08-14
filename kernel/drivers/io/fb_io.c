@@ -35,6 +35,7 @@ void fb_clear() {
 
 void fb_backspace() {
     uint16_t pos = fb_get_cursor_position();
+    int initial_y = pos / 80;
     
     while (fb[(pos * 2)] == 0x00 || fb[(pos * 2)] == ' ') {
         pos--;
@@ -64,7 +65,7 @@ void fb_scroll() {
 }
 
 void fb_putc(char c) {
-    if (c == '\n') {
+    if (c == '\n' || c == 0x0d) {
         fb_new_line();
     } else if (c == 0x08) {
         fb_backspace();
