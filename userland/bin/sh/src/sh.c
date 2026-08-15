@@ -2,6 +2,7 @@
 
 #include "stdlib.h"
 #include "stdio.h"
+#include "memory.h"
 
 #define KEY_ENTER 0x0D
 #define KEY_BACKSPACE 0x08
@@ -23,9 +24,7 @@ int main(int argc, char **argv) {
                 putchar(c);
                 exec(cmd);
                 printf("%s", cmd);
-                for (int i = 0; i < sizeof(cmd); i++) {
-                    cmd[i] = 0;
-                }
+                memset(cmd, 0, sizeof(cmd));
                 p = cmd;
                 
                 printf("\n sh %% ");
