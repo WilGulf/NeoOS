@@ -9,9 +9,11 @@ OBJECTS = kernel/loader.o kernel/kmain.o kernel/kernel_asm.o \
 	kernel/drivers/fs/disk.o kernel/drivers/fs/path_parser.o kernel/drivers/fs/disk_streamer.o kernel/drivers/fs/file.o \
 	kernel/drivers/fs/fat/fat16.o \
 	kernel/panic.o \
-	kernel/syscalls/isr80h.o kernel/syscalls/misc.o \
 	kernel/task/task.o kernel/task/task_asm.o kernel/task/process.o kernel/task/formats/elf.o kernel/task/formats/elf_loader.o \
-	kernel/syscalls/io.o
+	kernel/syscalls/isr80h.o \
+	kernel/syscalls/misc.o \
+	kernel/syscalls/io.o \
+	kernel/syscalls/heap.o
 
 #C compiler
 CC = i686-elf-gcc
