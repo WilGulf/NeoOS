@@ -15,11 +15,17 @@
 
 typedef unsigned char PROCESS_TYPE;
 
+struct process_allocation {
+    void *ptr;
+    size_t size;
+};
+
 struct process {
     uint16_t id;
     char filename[MAX_PATH];
     struct task *task;
-    void *allocations[MAX_PROGRAM_ALLOCATIONS];
+
+    struct process_allocation allocations[MAX_PROGRAM_ALLOCATIONS];
 
     PROCESS_TYPE filetype;
     union {
