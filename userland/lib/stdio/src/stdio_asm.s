@@ -20,3 +20,13 @@ getkey:
     pop ebp
     ret
     
+global putchar
+putchar:
+    push ebp
+    mov ebp, esp
+    push dword [ebp+8]
+    mov eax, 3
+    int 0x80
+    add esp, 4
+    pop ebp
+    ret

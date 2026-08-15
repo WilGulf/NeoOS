@@ -1,6 +1,6 @@
 FILES=./output/start.o ./output/stdlib.o ./output/stdlib_asm.o
 INCLUDES= -I./src
-FLAGS= -g
+FLAGS= -g -nostdlib
 
 all: $(FILES)
 	i686-elf-ld -m elf_i386 -relocatable $(FILES) -o ./stdlib.elf

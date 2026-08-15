@@ -1,20 +1,11 @@
 #include "stdlib.h"
 #include "stdio.h"
 
-int main(int arc, char **argv) {
-    print("Hello from C in userland\n");
-
-    void *ptr = malloc(512);
-    if (ptr) {
-        free(ptr);
-    }
-
-    while (1) {
-        int c = getkey();
+int main(int argc, char **argv) {
+    while(1) {
+        char c = getkey();
         if (c != 0) {
-            print((char *)c);
+            printf("%c", c);
         }
     }
-
-    return 0;
 }
