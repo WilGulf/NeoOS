@@ -1,3 +1,5 @@
+section .asm
+
 global kmalloc:function
 kmalloc:
     push ebp
@@ -11,4 +13,11 @@ kmalloc:
 
 global kfree:function
 kfree:
+    push ebp
+    mov ebp, esp
+    mov eax, 5
+    push dword[ebp+8]
+    int 0x80
+    add esp, 4
+    pop ebp
     ret

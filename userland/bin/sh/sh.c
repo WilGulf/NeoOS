@@ -6,7 +6,7 @@ int main(int arc, char **argv) {
 
     void *ptr = malloc(512);
     if (ptr) {
-        
+        free(ptr);
     }
 
     while (1) {

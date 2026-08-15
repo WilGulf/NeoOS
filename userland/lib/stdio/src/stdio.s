@@ -1,3 +1,5 @@
+section .asm
+
 global print:function
 print:
     push ebp
