@@ -82,9 +82,9 @@ int kmain(uint32_t magic, struct multiboot_info* bootInfo) {
     keyboard_init();
 
     struct process *process = 0;
-    int res = process_load_switch("0:/keyboard.bin", &process);
+    int res = process_load_switch("0:/sh.elf", &process);
     if (res != ALL_OK) {
-        panic("Failed to load keyboard.bin", res);
+        panic("Failed to load sh.elf", res);
     }
 
     task_run_first_ever_task();

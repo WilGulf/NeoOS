@@ -16,6 +16,12 @@ void *paging_align_address(void *ptr) {
     return ptr;
 }
 
+void *paging_align_to_lower_page(void *addr) {
+    uint32_t _addr = (uint32_t)addr;
+    _addr -= (_addr % PAGE_SIZE);
+    return (void *)_addr;
+}
+
 struct paging_4gb_chunk *paging_new_4gb(uint8_t flags) {
     uint32_t *directory = kzalloc(sizeof(uint32_t) * PAGING_TOTAL_ENTRIES_PER_TABLE);
     int offset = 0;
@@ -88,6 +94,8 @@ int paging_set(uint32_t *directory, void *vaddr, uint32_t val) {
     uint32_t entry = directory[directory_index];
     uint32_t *table = (uint32_t *)(entry & 0xFFFFF000);
     table[table_index] = val;
+
+    return 0;
 } 
 
 int paging_map(struct paging_4gb_chunk *directory, void *virt, void *phys, int flags) {

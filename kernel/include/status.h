@@ -10,6 +10,7 @@
 #define ERROR_RO 6
 #define ERROR_UNIMPL 7
 #define ERROR_IS_TAKEN 8
+#define ERROR_INVALID_FORMAT 9
 
 #define ERROR(value) (void *)(value)
 #define ERROR_I(value) (int)(value)

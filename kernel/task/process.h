@@ -10,12 +10,23 @@
 #define MAX_PROGRAM_ALLOCATIONS 1024
 #define MAX_PROCESSES 12
 
+#define PROCESS_FILETYPE_ELF 0
+#define PROCESS_FILETYPE_BINARY 1
+
+typedef unsigned char PROCESS_TYPE;
+
 struct process {
     uint16_t id;
     char filename[MAX_PATH];
     struct task *task;
     void *allocations[MAX_PROGRAM_ALLOCATIONS];
-    void *ptr;
+
+    PROCESS_TYPE filetype;
+    union {
+        void *ptr;
+        struct elf_file *elf_file;
+    };
+
     void *stack;
     uint32_t size;
 
