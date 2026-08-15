@@ -21,6 +21,7 @@ int main(int argc, char **argv) {
             if (c == KEY_ENTER) {
                 *p = '\0';
                 putchar(c);
+                exec(cmd);
                 printf("%s", cmd);
                 for (int i = 0; i < sizeof(cmd); i++) {
                     cmd[i] = 0;

@@ -13,7 +13,8 @@ OBJECTS = kernel/loader.o kernel/kmain.o kernel/kernel_asm.o \
 	kernel/syscalls/isr80h.o \
 	kernel/syscalls/misc.o \
 	kernel/syscalls/io.o \
-	kernel/syscalls/heap.o
+	kernel/syscalls/heap.o \
+	kernel/syscalls/process.o
 
 #C compiler
 CC = i686-elf-gcc
