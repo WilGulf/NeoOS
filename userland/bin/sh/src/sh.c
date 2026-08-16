@@ -26,8 +26,12 @@ int main(int argc, char **argv) {
                 *p = '\0';
                 putchar(c);
                 //system_run(cmd);
-                strncpy(path1 + 3, cmd, sizeof(path1));
-                system_run(path1);
+                if (strcmp(cmd, "clear") == 0 || strcmp(cmd, "CLEAR") == 0) {
+                    clear();
+                } else {
+                    strncpy(path1 + 3, cmd, sizeof(path1));
+                    system_run(path1);
+                }
 
                 if (cmd[0] != 0)
                     putchar('\n');

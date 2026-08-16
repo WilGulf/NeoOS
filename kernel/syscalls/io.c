@@ -22,3 +22,8 @@ void *isr80h_command3_putchar(struct interrupt_frame *frame) {
     fb_putc(c);
     return 0;
 }
+
+void *isr80h_command9_fb_clear(struct interrupt_frame *frame) {
+    fb_clear();
+    return 0;
+}

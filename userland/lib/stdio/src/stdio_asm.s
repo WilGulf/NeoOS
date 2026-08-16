@@ -30,3 +30,12 @@ putchar:
     add esp, 4
     pop ebp
     ret
+
+global clear:function
+clear:
+    push ebp
+    mov ebp, esp
+    mov eax, 9
+    int 0x80
+    pop ebp
+    ret

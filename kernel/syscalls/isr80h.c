@@ -16,4 +16,5 @@ void isr80h_register_commands() {
     isr80h_register_command(SYSTEM_COMMAND6_PROCESS_LOAD_START, isr80h_command6_process_load_start);
     isr80h_register_command(SYSTEM_COMMAND7_SYSTEM, isr80h_command7_system);
     isr80h_register_command(SYSTEM_COMMAND8_GET_PROCESS_ARGUMENT, isr80h_command8_get_process_arguments);
+    isr80h_register_command(SYSTEM_COMMAND9_FB_CLEAR, isr80h_command9_fb_clear);
 }
