@@ -19,6 +19,81 @@ static void process_init(struct process *process) {
     memset(process, 0, sizeof(struct process));
 }
 
+static int process_terminate_allocations(struct process *process) {
+    for (int i = 0; i < MAX_PROGRAM_ALLOCATIONS; i++) {
+        process_free(process, process->allocations[i].ptr);
+    }
+
+    return 0;
+}
+
+int process_free_binary_data(struct process *process) {
+    kfree(process->ptr);
+    return 0;
+}
+
+int process_free_elf_dat(struct process *process) {
+    elf_close(process->elf_file);
+    return 0;
+}
+
+int process_free_program_data(struct process *process) {
+    int res = 0;
+    switch(process->filetype) {
+        case PROCESS_FILETYPE_BINARY:
+            res = process_free_binary_data(process);
+            break;
+        
+        case PROCESS_FILETYPE_ELF:
+            res = process_free_elf_data(process);
+            break;
+
+        default:
+            res = -ERROR_INVALID_FORMAT;
+            break;
+    }
+
+    return res;
+}
+
+void process_switch_to_any() {
+    for (int i = 0; i < MAX_PROCESSES; i++) {
+        if (processes[i]) {
+            process_switch(processes[i]);
+            return;
+        }
+    }
+
+    panic("No processes to switch too", 0);
+}
+
+static void process_unlink(struct process *process) {
+    processes[process->id] = 0x00;
+    if (current_process == process) {
+        process_switch_to_any();
+    }
+}
+
+int process_terminate(struct process *process) {
+    int res = 0;
+    res = process_terminate_allocations(process);
+    if (res < 0) {
+        goto out;
+    }
+
+    res = process_free_program_data(process);
+    if (res < 0) {
+        goto out;
+    }
+
+    kfree(process->stack);
+    task_free(process->task);
+    process_unlink(process);
+
+out:
+    return res;
+}
+
 struct process *process_current() {
     return current_process;
 }

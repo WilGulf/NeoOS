@@ -57,6 +57,7 @@ struct process {
 
 int process_load_switch(const char *filename, struct process **process);
 int process_load(const char *filename, struct process **process);
+int process_terminate(struct process *process);
 
 int process_switch(struct process *process);
 void *process_malloc(struct process *process, size_t size);
