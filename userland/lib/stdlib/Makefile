@@ -2,7 +2,7 @@ FILES=./output/start_asm.o ./output/start.o ./output/stdlib.o ./output/stdlib_as
 INCLUDES= -I./src
 FLAGS= -g -nostdlib
 
-all: $(FILES)
+all: mkdir $(FILES)
 	i686-elf-ld -m elf_i386 -relocatable $(FILES) -o ./stdlib.elf
 
 ./output/start_asm.o: ./src/start_asm.s
@@ -18,6 +18,9 @@ all: $(FILES)
 ./output/start.o: ./src/start.c
 	i686-elf-gcc ${INCLUDES} $(FLAGS) -c ./src/start.c -o ./output/start.o
 
+mkdir:
+	mkdir -p output
+	
 clean:
 	rm -rf ./output/*
 	rm -f stdlib.elf
