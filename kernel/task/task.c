@@ -151,6 +151,16 @@ int task_init(struct task *task, struct process *process) {
     return 0;
 }
 
+void task_next() {
+    struct task *next_task = task_get_next();
+    if (!next_task) {
+        panic("No more tasks\n", 0);
+    }
+    
+    task_switch(next_task);
+    task_return(&next_task->registers);
+}
+
 void task_run_first_ever_task() {
     if (!current_task) {
         panic(" task_run_first_ever_task(): No current task exists!\n", 0);

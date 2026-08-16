@@ -32,7 +32,7 @@ int process_free_binary_data(struct process *process) {
     return 0;
 }
 
-int process_free_elf_dat(struct process *process) {
+int process_free_elf_data(struct process *process) {
     elf_close(process->elf_file);
     return 0;
 }

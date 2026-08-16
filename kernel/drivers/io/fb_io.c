@@ -50,7 +50,7 @@ void fb_new_line() {
 
     int y = pos / 80;
 
-    if (y >= 24) {
+    if (y >= 23) {
         fb_scroll();
     }
     
@@ -71,8 +71,6 @@ void fb_scroll() {
 
 void fb_putc(char c) {
     if (c == '\n' || c == 0x0d) {
-        uint16_t pos = fb_get_cursor_position();
-
         fb_new_line();
     } else if (c == 0x08) {
         fb_backspace();

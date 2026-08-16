@@ -11,5 +11,5 @@ int main(int argc, char **argv) {
     printf("M  lLM     M  M  M  M  M     M      \n");
     printf("M.  VM  ?MMP  ?MMP  ?MMP  ?MMP      \n");
 
-    while (1) {}
+    exit();
 }

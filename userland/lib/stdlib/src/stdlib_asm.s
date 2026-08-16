@@ -54,3 +54,12 @@ process_get_arguments:
     add esp, 4
     pop ebp
     ret
+
+global exit:function
+exit:
+    push ebp
+    mov ebp, esp
+    mov eax, 0
+    int 0x80
+    pop ebp
+    ret

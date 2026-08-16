@@ -5,6 +5,7 @@
 #include "../include/status.h"
 #include "../panic.h"
 #include "../task/task.h"
+#include "../task/process.h"
 #include "../drivers/io/io.h"
 
 struct idt_desc idt_descriptors[TOTAL_INTERRUPTS];
@@ -89,6 +90,11 @@ void idt_set(int interrupt_no, void *address) {
     desc->offset_upper = (uint32_t)address >> 16;
 }
 
+void idt_handle_exception() {
+    process_terminate(task_current()->process);
+    task_next();
+}
+
 void idt_init() {
     memset(idt_descriptors, 0, sizeof(idt_descriptors));
     idtr_descriptor.limit = sizeof(idt_descriptors) - 1;
@@ -111,6 +117,10 @@ void idt_init() {
     
     for (int i = 0; i < TOTAL_INTERRUPTS; i++) {
         idt_set(i, interrupt_pointer_table[i]);
+    }
+
+    for (int i = 0; i < 0x20; i++) {
+        idt_register_interrupt_callback(i, idt_handle_exception);
     }
 
     idt_set(0x80, isr80h_wrapper);
