@@ -5,7 +5,10 @@
 #include "../../idt/idt.h"
 #include "../../task/task.h"
 #include "../../include/stdint.h"
+#include "../../include/util.h"
 #include "../io/io.h"
+
+#define PS2_KEYBOARD_CAPSLOCK 0x3A
 
 static uint8_t keyboard_scan_set_one[] = {
     0x00, 0x1B, '1', '2', '3', '4', '5',
@@ -15,7 +18,7 @@ static uint8_t keyboard_scan_set_one[] = {
     0x0d, 0x00, 'A', 'S', 'D', 'F', 'G',
     'H', 'J', 'K', 'L', ';', '\'', '`', 
     0x00, '\\', 'Z', 'X', 'C', 'V', 'B',
-    'N', 'M', ':', '.', '/', 0x00, '*',
+    'N', 'M', ',', '.', '/', 0x00, '*',
     0x00, 0x20, 0x00, 0x00, 0x00, 0x00,
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
     0x00, '7', '8', '9', '-', '4', '5',
@@ -32,6 +35,7 @@ struct keyboard ps2_keyboard = {
 
 int ps2_keyboard_init() {
     idt_register_interrupt_callback(ISR_KEYBOARD_INTERRUPT, ps2_keyboard_handle_interrupt);
+    keyboard_set_capslock(&ps2_keyboard, KEYBOARD_CAPS_LOCK_OFF);
     outb(PS2_PORT, PS2_COMMAND_ENABLE_FIRST_PORT);
     return 0;
 }
@@ -43,6 +47,12 @@ uint8_t ps2_keyboard_scancode_to_char(uint8_t scancode) {
     }
 
     char c = keyboard_scan_set_one[scancode];
+    if (keyboard_get_capslock(&ps2_keyboard) == KEYBOARD_CAPS_LOCK_OFF) {
+        if (c >= 'A' && c <= 'Z') {
+            c = char_upper_to_lower(c);
+        }
+    }
+
     return c;
 }
 
@@ -54,6 +64,11 @@ void ps2_keyboard_handle_interrupt() {
 
     if (scancode & PS2_KEYBOARD_KEY_RELEASED) {
         return;
+    }
+
+    if (scancode == PS2_KEYBOARD_CAPSLOCK) {
+        KEYBOARD_CAPS_LOCK_STATE old_state = keyboard_get_capslock(&ps2_keyboard);
+        keyboard_set_capslock(&ps2_keyboard, old_state == KEYBOARD_CAPS_LOCK_ON ? KEYBOARD_CAPS_LOCK_ON : KEYBOARD_CAPS_LOCK_OFF);
     }
 
     uint8_t c = ps2_keyboard_scancode_to_char(scancode);
