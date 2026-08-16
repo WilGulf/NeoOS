@@ -42,7 +42,7 @@ int ps2_keyboard_init() {
 
 uint8_t ps2_keyboard_scancode_to_char(uint8_t scancode) {
     size_t size_of_keyboard_set_one = sizeof(keyboard_scan_set_one) / sizeof(uint8_t);
-    if (scancode > size_of_keyboard_set_one) {
+    if (scancode >= size_of_keyboard_set_one) {
         return 0;
     }
 
@@ -68,7 +68,7 @@ void ps2_keyboard_handle_interrupt() {
 
     if (scancode == PS2_KEYBOARD_CAPSLOCK) {
         KEYBOARD_CAPS_LOCK_STATE old_state = keyboard_get_capslock(&ps2_keyboard);
-        keyboard_set_capslock(&ps2_keyboard, old_state == KEYBOARD_CAPS_LOCK_ON ? KEYBOARD_CAPS_LOCK_ON : KEYBOARD_CAPS_LOCK_OFF);
+        keyboard_set_capslock(&ps2_keyboard, old_state == KEYBOARD_CAPS_LOCK_ON ? KEYBOARD_CAPS_LOCK_OFF : KEYBOARD_CAPS_LOCK_ON);
     }
 
     uint8_t c = ps2_keyboard_scancode_to_char(scancode);

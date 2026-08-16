@@ -29,7 +29,7 @@ LDFLAGS = -m elf_i386 -T kernel/link.ld
 AS = nasm
 ASFLAGS = -f elf32
 
-all: mkdir kernel output/disk.img userland_bins
+all: mkdir kernel userland_execs disk_contents
 
 kernel: kernel.elf
 
@@ -39,10 +39,15 @@ mkdir:
 kernel.elf: $(OBJECTS)
 	ld.lld $(LDFLAGS) $(OBJECTS) -o output/kernel.elf
 
-run: userland_bins kernel.elf
-	mcopy -o -i output/disk.img -o userland/bin/sh/output/sh.elf ::sh.elf
-	mcopy -o -i output/disk.img -o userland/bin/fetch/output/fetch.elf ::fetch.elf
-	mcopy -o -i output/disk.img -o userland/bin/echo/output/echo.elf ::echo.elf
+disk_contents: output/disk.img
+	mdir -i output/disk.img ::/execs >/dev/null 2>&1 || mmd -i output/disk.img ::/execs
+	mdir -i output/disk.img ::/sysro >/dev/null 2>&1 || mmd -i output/disk.img ::/sysro
+	mcopy -o -i output/disk.img -o userland/launch/output/launch.elf ::/sysro/launch.elf
+	mcopy -o -i output/disk.img -o userland/execs/sh/output/sh.elf ::/execs/sh.elf
+	mcopy -o -i output/disk.img -o userland/execs/fetch/output/fetch.elf ::/execs/fetch.elf
+	mcopy -o -i output/disk.img -o userland/execs/echo/output/echo.elf ::/execs/echo.elf
+
+run: all
 	qemu-system-i386 -kernel output/kernel.elf -hda output/disk.img
 
 %.o: %.c
@@ -54,26 +59,30 @@ output/disk.img:
 	dd if=/dev/zero of=output/disk.img bs=1M count=64
 	mkfs.fat -F 16 output/disk.img
 
-userland_bins:
-	cd ./userland/lib/stdlib && $(MAKE) all
-	cd ./userland/lib/stdio && $(MAKE) all 
-	cd ./userland/bin/sh && $(MAKE) all
-	cd ./userland/bin/fetch && $(MAKE) all
-	cd ./userland/bin/echo && $(MAKE) all
+userland_execs:
+	cd ./userland/libs/stdlib && $(MAKE) all
+	cd ./userland/libs/stdio && $(MAKE) all 
+	cd ./userland/launch && $(MAKE) all
+	cd ./userland/execs/sh && $(MAKE) all
+	cd ./userland/execs/fetch && $(MAKE) all
+	cd ./userland/execs/echo && $(MAKE) all
+	cd ./userland/execs/sysinfo && $(MAKE) all
 
 userland_clean:
-	cd ./userland/lib/stdlib && $(MAKE) clean 
-	cd ./userland/lib/stdio && $(MAKE) clean 
-	cd ./userland/bin/sh && $(MAKE) clean
-	cd ./userland/bin/fetch && $(MAKE) clean
-	cd ./userland/bin/echo && $(MAKE) clean
+	cd ./userland/libs/stdlib && $(MAKE) clean 
+	cd ./userland/libs/stdio && $(MAKE) clean 
+	cd ./userland/launch && $(MAKE) clean
+	cd ./userland/execs/sh && $(MAKE) clean
+	cd ./userland/execs/fetch && $(MAKE) clean
+	cd ./userland/execs/echo && $(MAKE) clean
+	cd ./userland/execs/sysinfo && $(MAKE) clean
 
 kernel_clean:
 	rm -f output/*.elf
-	rm -f output/*.iso
+	rm -f output/*.img
 	rm -f kernel/*/*/*.o
 	rm -f kernel/*/*/*/*.o
 	rm -f kernel/*/*.o
-	rm -f kernel/*.o output/kernel.elf iso/boot/kernel.elf
+	rm -f kernel/*.o
 
 clean: kernel_clean userland_clean

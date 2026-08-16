@@ -66,6 +66,9 @@ void process_free(struct process *process, void *ptr);
 struct process *process_current();
 struct process *process_get(int id);
 
+int input_dest_process_switch(struct process *process);
+struct process *get_input_process();
+
 void process_get_arguments(struct process *process, int *argc, char ***argv);
 int process_inject_arguments(struct process *process, struct command_argument *root_argument);
 

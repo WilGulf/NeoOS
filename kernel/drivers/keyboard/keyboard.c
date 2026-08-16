@@ -53,7 +53,7 @@ KEYBOARD_CAPS_LOCK_STATE keyboard_get_capslock(struct keyboard *keyboard) {
 }
 
 void keyboard_push(char c) {
-    struct process *process = process_current();
+    struct process *process = get_input_process();
     if (!process) {
         return;
     }
@@ -72,7 +72,7 @@ char keyboard_pop() {
         return 0;
     }
 
-    struct process *process = task_current()->process;
+    struct process *process = get_input_process();
     int real_index = process->keyboard.head % sizeof(process->keyboard.buffer);
     char c = process->keyboard.buffer[real_index];
     if (c == 0x00) {

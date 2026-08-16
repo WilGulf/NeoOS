@@ -13,6 +13,9 @@ void *isr80h_command1_print(struct interrupt_frame *frame) {
 }
 
 void *isr80h_command2_getkey(struct interrupt_frame *frame) {
+    if (get_input_process() != task_current()->process) {
+        input_dest_process_switch(task_current()->process);
+    }
     char c = keyboard_pop();
     return (void *)(int)c;
 }

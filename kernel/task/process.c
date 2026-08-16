@@ -12,6 +12,7 @@
 #include "../panic.h"
 
 struct process *current_process = 0;
+struct process *input_dest_process = 0;
 
 static struct process *processes[MAX_PROCESSES] = {};
 
@@ -96,6 +97,15 @@ out:
 
 struct process *process_current() {
     return current_process;
+}
+
+struct process *get_input_process() {
+    return input_dest_process;
+}
+
+int input_dest_process_switch(struct process *process) {
+    input_dest_process = process;
+    return 0;
 }
 
 struct process *process_get(int id) {

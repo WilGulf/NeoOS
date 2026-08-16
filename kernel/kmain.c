@@ -69,32 +69,12 @@ int kmain(uint32_t magic, struct multiboot_info* bootInfo) {
     keyboard_init();
 
     struct process *process = 0;
-    int res = process_load_switch("0:/sh.elf", &process);
+    int res = process_load_switch("0:/execs/sh.elf", &process);
     if (res != ALL_OK) {
-        panic("Failed to load sh.elf", res);
+        panic("Failed to load sh", res);
     }
 
     task_run_first_ever_task();
-
-    //kprintf("%d", 0/0);
-
-    //uint32_t mod1 = *(uint32_t*)(bootInfo->mods_addr + 4);
-    //uint32_t physicalAllocStart = (mod1 + 0xFFF) & ~0xFFF;
-
-    //memory_init(bootInfo->mem_upper * 1024, 0x00400000);
-    //kmalloc_init(0x1000);
-
-    /*uint32_t user_code_phys = pmm_alloc_page_frame();
-    mem_map_page(0x08048000 , user_code_phys, PAGE_FLAG_WRITE | PAGE_FLAG_USER);
-
-    uint32_t user_stack_phys = pmm_alloc_page_frame();
-    mem_map_page(0x08050000, user_stack_phys, PAGE_FLAG_WRITE | PAGE_FLAG_USER);
-
-    uint8_t *user_code = (uint8_t*)0x08048000;
-    user_code[0] = 0xEB; // jmp $
-    user_code[1] = 0xFE;
-
-    switch_to_usermode(0x08048000, 0x08050000 + 0x1000);*/
 
     while (1) {
         

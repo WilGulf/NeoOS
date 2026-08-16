@@ -1,13 +1,13 @@
-FILES=./output/sh.o
-INCLUDES= -I../../lib/stdlib/src -I../../lib/stdio/src -I./src
-LIBS=../../lib/stdlib/stdlib.elf ../../lib/stdio/stdio.elf
+FILES=./output/init.o
+INCLUDES= -I../libs/stdlib/src -I../libs/stdio/src -I./src
+LIBS=../libs/stdlib/stdlib.elf ../libs/stdio/stdio.elf
 FLAGS= -g -ffreestanding -falign-jumps -falign-functions -falign-labels -falign-loops -fstrength-reduce -fomit-frame-pointer -finline-functions -Wno-unused-function -fno-builtin -Werror -Wno-unused-label -Wno-cpp -Wno-unused-parameter -nostdlib -nostartfiles -nodefaultlibs -Wall -O0 -Iinc
 
 all: mkdir ${FILES}
-	i686-elf-gcc -g -T ./link.ld -o ./output/sh.elf -ffreestanding -O0 -nostdlib -fpic -g $(FILES) $(LIBS)
+	i686-elf-gcc -g -T ./link.ld -o ./output/launch.elf -ffreestanding -O0 -nostdlib -fpic -g $(FILES) $(LIBS)
 
-./output/sh.o: ./src/sh.c
-	i686-elf-gcc ${INCLUDES} -I./$(FLAGS) -c ./src/sh.c -o ./output/sh.o
+./output/init.o: ./src/init.c
+	i686-elf-gcc ${INCLUDES} -I./$(FLAGS) -c ./src/init.c -o ./output/init.o
 
 mkdir:
 	mkdir -p output

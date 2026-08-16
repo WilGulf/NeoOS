@@ -1,5 +1,3 @@
-#include "sh.h"
-
 #include "stdlib.h"
 #include "stdio.h"
 #include "memory.h"
@@ -11,7 +9,7 @@
 int main(int argc, char **argv) {
     printf("\nNeoOS v0.1.0, %s\n", argv[0]);
 
-    char path1[256 + 3] = "0:/";
+    char path1[256 + 9] = "0:/execs/";
 
     char cmd[256] = "";
     char *p;
@@ -29,7 +27,7 @@ int main(int argc, char **argv) {
                 if (strcmp(cmd, "clear") == 0 || strcmp(cmd, "CLEAR") == 0) {
                     clear();
                 } else {
-                    strncpy(path1 + 3, cmd, sizeof(path1));
+                    strncpy(path1 + 9, cmd, sizeof(path1));
                     system_run(path1);
                 }
 
