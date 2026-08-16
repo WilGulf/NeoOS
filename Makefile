@@ -47,6 +47,7 @@ os.iso: kernel.elf
 run: os.iso userland_bins
 	mcopy -o -i output/disk.img -o userland/bin/sh/output/sh.elf ::sh.elf
 	mcopy -o -i output/disk.img -o userland/bin/fetch/output/fetch.elf ::fetch.elf
+	mcopy -o -i output/disk.img -o userland/bin/echo/output/echo.elf ::echo.elf
 	qemu-system-i386 -kernel output/kernel.elf -hda output/disk.img
 
 %.o: %.c
@@ -54,17 +55,20 @@ run: os.iso userland_bins
 %.o: %.s
 	$(AS) $(ASFLAGS) $< -o $@
 
+
 userland_bins:
 	cd ./userland/lib/stdlib && $(MAKE) all
 	cd ./userland/lib/stdio && $(MAKE) all 
 	cd ./userland/bin/sh && $(MAKE) all
 	cd ./userland/bin/fetch && $(MAKE) all
+	cd ./userland/bin/echo && $(MAKE) all
 
 userland_clean:
 	cd ./userland/lib/stdlib && $(MAKE) clean 
 	cd ./userland/lib/stdio && $(MAKE) clean 
 	cd ./userland/bin/sh && $(MAKE) clean
 	cd ./userland/bin/fetch && $(MAKE) clean
+	cd ./userland/bin/echo && $(MAKE) clean
 
 kernel_clean:
 	rm -f output/*.elf
