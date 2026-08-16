@@ -152,3 +152,9 @@ uint32_t paging_get(uint32_t *directory, void *virt) {
     uint32_t *table = (uint32_t *)(entry & 0xFFFFF000);
     return table[table_index];
 }
+
+void *paging_get_physical_address(uint32_t *directory, void *virt) {
+    void *vaddr_new = (void *)paging_align_to_lower_page(virt);
+    void *diff = (void *)((uint32_t)virt - (uint32_t)vaddr_new);
+    return (void *)((paging_get(directory, vaddr_new) & 0xFFFFF000) + diff);
+}

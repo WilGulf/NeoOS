@@ -112,6 +112,10 @@ char *strtok(char *str, const char *delimiters) {
     int i = 0;
     int len = strlen(delimiters);
     if (!str && !sp) {
+        return 0;
+    }
+    
+    if (str && sp) {
         sp = str;
     }
 

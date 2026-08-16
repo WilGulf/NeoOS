@@ -20,6 +20,16 @@ struct process_allocation {
     size_t size;
 };
 
+struct command_argument {
+    char argument[512];
+    struct command_argument *next;
+};
+
+struct process_arguments {
+    int argc;
+    char **argv;
+};
+
 struct process {
     uint16_t id;
     char filename[MAX_PATH];
@@ -41,6 +51,8 @@ struct process {
         int tail;
         int head;
     } keyboard;
+
+    struct process_arguments arguments;
 };
 
 int process_load_switch(const char *filename, struct process **process);
@@ -52,5 +64,8 @@ void process_free(struct process *process, void *ptr);
 
 struct process *process_current();
 struct process *process_get(int id);
+
+void process_get_arguments(struct process *process, int *argc, char ***argv);
+int process_inject_arguments(struct process *process, struct command_argument *root_argument);
 
 #endif

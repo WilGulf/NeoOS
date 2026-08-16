@@ -45,6 +45,7 @@ run: os.iso userland_bins
 	mcopy -o -i output/disk.img -o userland/bin/sh/output/sh.elf ::sh.elf
 	mcopy -o -i output/disk.img -o userland/bin/print/output/print.bin ::print.bin
 	mcopy -o -i output/disk.img -o userland/bin/keyboard/output/keyboard.elf ::keyboard.elf
+	mcopy -o -i output/disk.img -o userland/bin/fetch/output/fetch.elf ::fetch.elf
 	qemu-system-i386 -kernel output/kernel.elf -hda output/disk.img
 
 %.o: %.c
@@ -56,6 +57,7 @@ userland_bins:
 	cd ./userland/lib/stdlib && $(MAKE) all
 	cd ./userland/lib/stdio && $(MAKE) all 
 	cd ./userland/bin/sh && $(MAKE) all
+	cd ./userland/bin/fetch && $(MAKE) all
 	cd ./userland/bin/print && $(MAKE) all
 	cd ./userland/bin/keyboard && $(MAKE) all	
 
@@ -63,6 +65,7 @@ userland_clean:
 	cd ./userland/lib/stdlib && $(MAKE) clean 
 	cd ./userland/lib/stdio && $(MAKE) clean 
 	cd ./userland/bin/sh && $(MAKE) clean
+	cd ./userland/bin/fetch && $(MAKE) clean
 	cd ./userland/bin/print && $(MAKE) clean
 	cd ./userland/bin/keyboard && $(MAKE) clean
 

@@ -36,4 +36,6 @@ uint32_t *paging_4gb_chunk_get_directory(struct paging_4gb_chunk *chunk);
 
 uint32_t paging_get(uint32_t *directory, void *virt);
 
+void *paging_get_physical_address(uint32_t *directory, void *virt);
+
 #endif

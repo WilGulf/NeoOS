@@ -32,4 +32,25 @@ exec:
     add esp, 4
     pop ebp
     ret
+
+global system:function
+system:
+    push ebp
+    mov ebp, esp
+    mov eax, 7
+    push dword[ebp+8]
+    int 0x80
+    add esp, 4
+    pop ebp
+    ret
     
+global process_get_arguments:function
+process_get_arguments:
+    push ebp
+    mov ebp, esp
+    mov eax, 8
+    push dword[ebp+8]
+    int 0x80
+    add esp, 4
+    pop ebp
+    ret
