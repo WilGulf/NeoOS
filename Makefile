@@ -29,7 +29,7 @@ LDFLAGS = -m elf_i386 -T kernel/link.ld
 AS = nasm
 ASFLAGS = -f elf32
 
-all: mkdir kernel userland_bins
+all: mkdir kernel output/disk.img userland_bins
 
 kernel: kernel.elf
 
@@ -39,12 +39,7 @@ mkdir:
 kernel.elf: $(OBJECTS)
 	ld.lld $(LDFLAGS) $(OBJECTS) -o output/kernel.elf
 
-os.iso: kernel.elf
-	cp output/kernel.elf iso/boot/kernel.elf
-	i686-elf-grub-mkrescue -o neoos.iso iso
-	mv neoos.iso output/neoos.iso
-
-run: os.iso userland_bins
+run: userland_bins kernel.elf
 	mcopy -o -i output/disk.img -o userland/bin/sh/output/sh.elf ::sh.elf
 	mcopy -o -i output/disk.img -o userland/bin/fetch/output/fetch.elf ::fetch.elf
 	mcopy -o -i output/disk.img -o userland/bin/echo/output/echo.elf ::echo.elf
@@ -55,6 +50,9 @@ run: os.iso userland_bins
 %.o: %.s
 	$(AS) $(ASFLAGS) $< -o $@
 
+output/disk.img:
+	dd if=/dev/zero of=output/disk.img bs=1M count=64
+	mkfs.fat -F 16 output/disk.img
 
 userland_bins:
 	cd ./userland/lib/stdlib && $(MAKE) all

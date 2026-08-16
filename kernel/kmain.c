@@ -49,19 +49,6 @@ int kmain(uint32_t magic, struct multiboot_info* bootInfo) {
     void *kernel_stack = kzalloc(4096);          // 1 page is plenty for ISR handling
     set_tss_stack(&stack_top);
 
-    void *ptr = kmalloc(50);
-    kprintf("ptr: %d\n", ptr);
-    void *ptr2 = kmalloc(5000);
-    void *ptr3 = kmalloc(5600);
-    kfree(ptr);
-    void *ptr4 = kmalloc(50);
-
-    kprintf("ptr2: %d\n", ptr2);
-    kprintf("ptr3: %d\n", ptr3);
-    kprintf("ptr4: %d\n", ptr4);
-
-    kprintf("Kprintf %s%c %d %f\n", "Tes", 't', 1234, 124.121546);
-
     kernel_chunk = paging_new_4gb(PAGING_IS_WRITEABLE | PAGING_IS_PRESENT | PAGING_ACCESS_FROM_ALL);
     kprintf("Paging new\n");
     
