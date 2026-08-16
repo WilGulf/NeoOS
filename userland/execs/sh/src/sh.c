@@ -31,6 +31,8 @@ int main(int argc, char **argv) {
                     system_run(path1);
                 }
 
+                //system_run("");
+
                 if (cmd[0] != 0)
                     putchar('\n');
 

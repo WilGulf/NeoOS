@@ -60,7 +60,7 @@ int kmain(uint32_t magic, struct multiboot_info* bootInfo) {
 
     isr80h_register_commands();
 
-    enable_interrupts();
+    //enable_interrupts();
     kprintf("Interrupts enabled\n");
 
     fs_init();
@@ -69,12 +69,22 @@ int kmain(uint32_t magic, struct multiboot_info* bootInfo) {
     keyboard_init();
 
     struct process *process = 0;
-    int res = process_load_switch("0:/execs/sh.elf", &process);
+    int res = process_load_switch("0:/sysro/launch.elf", &process);
     if (res != ALL_OK) {
-        panic("Failed to load sh", res);
+        panic("Failed to load init", res);
     }
 
+    struct process *process2 = 0;
+    res = process_load_switch("0:/execs/sh.elf", &process2);
+    if (res != ALL_OK) {
+        panic("Failed to load sh.elf", res);
+    }
+
+    input_dest_process_switch(process2);
+
     task_run_first_ever_task();
+
+    enable_interrupts();
 
     while (1) {
         

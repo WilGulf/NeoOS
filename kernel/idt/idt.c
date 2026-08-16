@@ -129,7 +129,7 @@ void idt_init() {
         idt_register_interrupt_callback(i, idt_handle_exception);
     }
 
-    //idt_register_interrupt_callback(0x20, idt_clock);
+    idt_register_interrupt_callback(0x20, idt_clock);
 
     idt_set(0x80, isr80h_wrapper);
 
