@@ -49,6 +49,11 @@ void fb_new_line() {
     uint16_t pos = fb_get_cursor_position();
 
     int y = pos / 80;
+
+    if (y >= 24) {
+        fb_scroll();
+    }
+    
     pos = y * 80 + 80;
     
     fb_move_cursor(pos);
@@ -59,13 +64,15 @@ void fb_scroll() {
     int y = pos / 80;
 
     int i = 0 * 80;
-    for (; i < 24 * 80; i++) {
+    for (; i < 24 * 80 * 2; i++) {
         fb[i] = fb[i + 160];
     }
 }
 
 void fb_putc(char c) {
     if (c == '\n' || c == 0x0d) {
+        uint16_t pos = fb_get_cursor_position();
+
         fb_new_line();
     } else if (c == 0x08) {
         fb_backspace();
