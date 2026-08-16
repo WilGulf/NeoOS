@@ -50,11 +50,13 @@ void fb_new_line() {
 
     int y = pos / 80;
 
-    if (y >= 23) {
+    int i = y;
+    while (i < 24) {
         fb_scroll();
+        i++;
     }
     
-    pos = y * 80 + 80;
+    pos = 23 * 80;
     
     fb_move_cursor(pos);
 }
@@ -66,6 +68,11 @@ void fb_scroll() {
     int i = 0 * 80;
     for (; i < 24 * 80 * 2; i++) {
         fb[i] = fb[i + 160];
+    }
+
+    for (i = 24 * 80 * 2; i < 25 * 80; i += 2) {
+        fb[i] = ' ';
+        fb[i + 1] = 0x0F;
     }
 }
 
@@ -106,7 +113,8 @@ int writer(char *buf) {
 
             pos = x + y * 80;
             
-            break;
+            i++;
+            //break;
         } else if (bytes[i] == '\0') {
             break;
         } else {
