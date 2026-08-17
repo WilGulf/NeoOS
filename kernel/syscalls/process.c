@@ -27,6 +27,7 @@ out:
 }
 
 void *isr80h_command7_system(struct interrupt_frame *frame) {
+    struct task *calling_task = task_current();
     struct command_argument *arguments = task_virtual_address_to_physical(task_current(), task_get_stack_item(task_current(), 0));
     if (!arguments || !strlen(arguments[0].argument)) {
         return ERROR(-ERROR_INVALID_ARG);
@@ -49,8 +50,11 @@ void *isr80h_command7_system(struct interrupt_frame *frame) {
         return ERROR(res);
     }
 
+    task_list_remove(calling_task);
+    process->task->parent = calling_task;
     task_switch(process->task);
     task_return(&process->task->registers);
+
     return 0;
 }
 

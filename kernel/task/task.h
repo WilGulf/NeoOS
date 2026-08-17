@@ -40,9 +40,11 @@ struct task {
     struct process *process;
     struct task *next;
     struct task *prev;
+    struct task *parent;
 };
 
 struct task *task_new(struct process *process);
+void task_list_remove(struct task *task);
 struct task *task_current();
 struct task *task_get_next();
 void task_next();
@@ -63,5 +65,7 @@ int copy_string_from_task(struct task *task, void *virt, void *phys, int max);
 void *task_get_stack_item(struct task *task, int index);
 
 void *task_virtual_address_to_physical(struct task *task, void *vaddr);
+
+void task_add(struct task *task);
 
 #endif

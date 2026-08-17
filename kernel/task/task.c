@@ -25,9 +25,16 @@ struct task *task_get_next() {
     return current_task->next;
 }
 
-static void task_list_remove(struct task *task) {
+void task_list_remove(struct task *task) {
+    if (!task) {
+        return;
+    }
+    
     if (task->prev) {
         task->prev->next = task->next;
+    }
+    if (task->next) {
+        task->next->prev = task->prev;
     }
 
     if (task == task_head) {
@@ -38,12 +45,15 @@ static void task_list_remove(struct task *task) {
         task_tail = task->prev;
     }
 
-    if (task == current_task) {
-        current_task = task_get_next();
-    }
+    task->next = 0;
+    task->prev = 0;
 }
 
 int task_free(struct task *task) {
+    if (task->parent != 0) {
+        task_add(task->parent);
+    }
+
     paging_free_4gb(task->page_directory);
     task_list_remove(task);
     kfree(task);
@@ -147,6 +157,7 @@ int task_init(struct task *task, struct process *process) {
     task->registers.cs = USER_CODE_SEGMENT;
     task->registers.esp = PROGRAM_VIRTUAL_STACK_ADDRESS_START;
     task->process = process;
+    task->parent = 0;
 
     return 0;
 }
@@ -170,6 +181,19 @@ void task_run_first_ever_task() {
     task_return(&task_head->registers);
 }
 
+void task_add(struct task *task) {
+    if (task_head == 0) {
+        task_head = task;
+        task_tail = task;
+        current_task = task;
+        return;
+    }
+
+    task_tail->next = task;
+    task->prev = task_tail;
+    task_tail = task;
+}
+
 struct task *task_new(struct process *process) {
     int res = 0;
     struct task *task = kzalloc(sizeof(struct task));
@@ -183,16 +207,7 @@ struct task *task_new(struct process *process) {
         goto out;
     }
 
-    if (task_head == 0) {
-        task_head = task;
-        task_tail = task;
-        current_task = task;
-        goto out;
-    }
-
-    task_tail->next = task;
-    task->prev = task_tail;
-    task_tail = task;
+    task_add(task);
 out:
     if (ISERR(res)) {
         task_free(task);

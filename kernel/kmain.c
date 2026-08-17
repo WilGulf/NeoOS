@@ -33,7 +33,7 @@ void kernel_page() {
     paging_switch(kernel_chunk);
 }
 
-int kmain(uint32_t magic, struct multiboot_info* bootInfo) {
+int kmain(uint32_t magic, struct multiboot_info* bootInfo) {    
     fb_clear();
 
     kheap_init();

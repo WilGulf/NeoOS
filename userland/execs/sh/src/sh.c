@@ -22,7 +22,7 @@ int main(int argc, char **argv) {
         if (c != 0) {
             if (c == KEY_ENTER) {
                 *p = '\0';
-                putchar(c);
+                putchar('\n');
                 //system_run(cmd);
                 if (strcmp(cmd, "clear") == 0 || strcmp(cmd, "CLEAR") == 0) {
                     clear();
@@ -31,7 +31,7 @@ int main(int argc, char **argv) {
                     system_run(path1);
                 }
 
-                //system_run("");
+                system_run("");
 
                 if (cmd[0] != 0)
                     putchar('\n');

@@ -56,7 +56,7 @@ isr80h_wrapper:
     add esp, 8
     popad
     mov eax, [tmp_res]
-    iret
+    iretd
 
 section .data
 
