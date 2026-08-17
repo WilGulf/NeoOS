@@ -1,3 +1,11 @@
+#define KERNEL_NAME "Nexus"
+
+#define KERNEL_VERSION_MAJOR 1
+#define KERNEL_VERSION_MINOR 0
+#define KERNEL_VERSION_PATCH 0
+
+
+
 #include "kernel.h"
 
 #include "include/stdint.h"
@@ -33,6 +41,15 @@ void kernel_page() {
     paging_switch(kernel_chunk);
 }
 
+struct kernel_info *get_kernel() {
+    struct kernel_info *info = 0;
+    strncpy(info->name, KERNEL_NAME, sizeof(info->name));
+    info->version_major = KERNEL_VERSION_MAJOR;
+    info->version_minor = KERNEL_VERSION_MINOR;
+    info->version_patch = KERNEL_VERSION_PATCH;
+    return info;
+}
+
 int kmain(uint32_t magic, struct multiboot_info* bootInfo) {    
     fb_clear();
 
@@ -46,7 +63,7 @@ int kmain(uint32_t magic, struct multiboot_info* bootInfo) {
     idt_init();
     kprintf("IDT Initialized\n");
 
-    void *kernel_stack = kzalloc(4096);          // 1 page is plenty for ISR handling
+    void *kernel_stack = kzalloc(4096);
     set_tss_stack(&stack_top);
 
     kernel_chunk = paging_new_4gb(PAGING_IS_WRITEABLE | PAGING_IS_PRESENT | PAGING_ACCESS_FROM_ALL);
@@ -60,9 +77,6 @@ int kmain(uint32_t magic, struct multiboot_info* bootInfo) {
 
     isr80h_register_commands();
 
-    //enable_interrupts();
-    kprintf("Interrupts enabled\n");
-
     fs_init();
     disk_search_and_init();
 
@@ -74,21 +88,14 @@ int kmain(uint32_t magic, struct multiboot_info* bootInfo) {
         panic("Failed to load init", res);
     }
 
-    struct process *process2 = 0;
-    res = process_load_switch("0:/execs/sh.elf", &process2);
+    res = process_load_switch("0:/execs/sh.elf", &process);
     if (res != ALL_OK) {
         panic("Failed to load sh.elf", res);
     }
 
-    input_dest_process_switch(process2);
-
     task_run_first_ever_task();
 
-    enable_interrupts();
-
-    while (1) {
-        
-    }
+    while (1) {}
 
     return 0;
 }

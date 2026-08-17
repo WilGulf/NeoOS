@@ -118,6 +118,7 @@ void task_save_state(struct task *task, struct interrupt_frame *frame) {
 
 void task_current_save_state(struct interrupt_frame *frame) {
     if (task_current() == 0) {
+        return;
         panic("No current task to save", 0);
     }
 
@@ -179,6 +180,8 @@ void task_run_first_ever_task() {
 
     task_switch(task_head);
     task_return(&task_head->registers);
+
+    enable_interrupts();
 }
 
 void task_add(struct task *task) {
