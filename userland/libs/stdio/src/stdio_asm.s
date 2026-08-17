@@ -1,4 +1,4 @@
-section .asm
+section .text
 
 global print:function
 print:

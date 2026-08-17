@@ -92,7 +92,7 @@ void idt_set(int interrupt_no, void *address) {
 
 void idt_handle_exception() {
     process_terminate(task_current()->process);
-    kprintf("Process terminated\n");
+    kprintf("IDT\n");
     task_next();
 }
 

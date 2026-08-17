@@ -12,6 +12,7 @@ enum SystemCommands {
     SYSTEM_COMMAND7_SYSTEM,
     SYSTEM_COMMAND8_GET_PROCESS_ARGUMENT,
     SYSTEM_COMMAND9_FB_CLEAR,
+    SYSTEM_COMMAND10_PROMISE,
 };
 
 void isr80h_register_commands(); 

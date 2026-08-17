@@ -53,6 +53,9 @@ struct process {
     } keyboard;
 
     struct process_arguments arguments;
+
+    uint32_t promises;
+    kbool declared;
 };
 
 int process_load_switch(const char *filename, struct process **process);

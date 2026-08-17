@@ -1,4 +1,4 @@
-section .asm
+section .text
 
 global kmalloc:function
 kmalloc:
@@ -61,5 +61,16 @@ exit:
     mov ebp, esp
     mov eax, 0
     int 0x80
+    pop ebp
+    ret
+
+global promise:function
+promise:
+    push ebp
+    mov ebp, esp
+    mov eax, 10
+    push dword[ebp+8]
+    int 0x80
+    add esp, 4
     pop ebp
     ret

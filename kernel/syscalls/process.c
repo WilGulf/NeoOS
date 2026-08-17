@@ -1,4 +1,5 @@
 #include "process.h"
+#include "promise.h"
 
 #include "../include/config.h"
 #include "../include/status.h"
@@ -7,6 +8,12 @@
 #include "../task/process.h"
 
 void *isr80h_command6_process_load_start(struct interrupt_frame *frame) {
+    if (!check_process_promise(task_current()->process, PROMISE_EXEC)) {
+        process_terminate(task_current()->process);
+        task_next();
+        return 0;
+    };
+
     void *filename_user_ptr = task_get_stack_item(task_current(), 0);
     char filename[MAX_PATH];
     int res = copy_string_from_task(task_current(), filename_user_ptr, filename, sizeof(filename));
@@ -27,6 +34,12 @@ out:
 }
 
 void *isr80h_command7_system(struct interrupt_frame *frame) {
+    if (!check_process_promise(task_current()->process, PROMISE_EXEC)) {
+        process_terminate(task_current()->process);
+        task_next();
+        return 0;
+    };
+
     struct task *calling_task = task_current();
     struct command_argument *arguments = task_virtual_address_to_physical(task_current(), task_get_stack_item(task_current(), 0));
     if (!arguments || !strlen(arguments[0].argument)) {

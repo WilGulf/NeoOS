@@ -4,7 +4,11 @@
 
 #include <stdbool.h>
 
-int main(int argc, char **argv) {
+void declarations(void) {
+    promise(PROMISE_FB);
+}
+
+int main(int argc, char **argv) {    
     bool kernel = false;
     bool os = false;
     bool machine = false;
@@ -24,15 +28,16 @@ int main(int argc, char **argv) {
         } else if (!strcmp(argv[1], "-m")) {
             machine = true;
         }
+
+        if (kernel)
+            printf("");
+        if (os)
+            printf("NeoOS");
+        if (machine)
+            printf("i386");
+        
+        putchar('\n');
     }
 
-    if (kernel)
-        printf("");
-    if (os)
-        printf("NeoOS");
-    if (machine)
-        printf("i386");
-    
-    putchar('\n');
     exit();
 }

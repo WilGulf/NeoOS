@@ -6,6 +6,10 @@
 #define KEY_ENTER 0x0D
 #define KEY_BACKSPACE 0x08
 
+void declarations(void) {
+    promise(PROMISE_FB | PROMISE_INPUT | PROMISE_EXEC);
+}
+
 int main(int argc, char **argv) {
     printf("\nNeoOS v0.1.0, %s\n", argv[0]);
 

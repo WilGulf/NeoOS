@@ -11,10 +11,10 @@ OBJECTS = kernel/loader.o kernel/kmain.o kernel/kernel_asm.o \
 	kernel/panic.o \
 	kernel/task/task.o kernel/task/task_asm.o kernel/task/process.o kernel/task/formats/elf.o kernel/task/formats/elf_loader.o \
 	kernel/syscalls/isr80h.o \
-	kernel/syscalls/misc.o \
 	kernel/syscalls/io.o \
 	kernel/syscalls/heap.o \
-	kernel/syscalls/process.o
+	kernel/syscalls/process.o \
+	kernel/syscalls/promise.o
 
 #C compiler
 CC = i686-elf-gcc
@@ -46,6 +46,7 @@ disk_contents: output/disk.img
 	mcopy -o -i output/disk.img -o userland/execs/sh/output/sh.elf ::/execs/sh.elf
 	mcopy -o -i output/disk.img -o userland/execs/fetch/output/fetch.elf ::/execs/fetch.elf
 	mcopy -o -i output/disk.img -o userland/execs/echo/output/echo.elf ::/execs/echo.elf
+	mcopy -o -i output/disk.img -o userland/execs/sysinfo/output/sysinfo.elf ::/execs/sysinfo.elf
 
 run: all
 	qemu-system-i386 -kernel output/kernel.elf -hda output/disk.img

@@ -1,10 +1,10 @@
 #include "isr80h.h"
 #include "../idt/idt.h"
-#include "misc.h"
 
 #include "io.h"
 #include "heap.h"
 #include "process.h"
+#include "promise.h"
 
 void isr80h_register_commands() {
     isr80h_register_command(SYSTEM_COMMAND0_EXIT, isr80h_command0_exit);
@@ -17,4 +17,5 @@ void isr80h_register_commands() {
     isr80h_register_command(SYSTEM_COMMAND7_SYSTEM, isr80h_command7_system);
     isr80h_register_command(SYSTEM_COMMAND8_GET_PROCESS_ARGUMENT, isr80h_command8_get_process_arguments);
     isr80h_register_command(SYSTEM_COMMAND9_FB_CLEAR, isr80h_command9_fb_clear);
+    isr80h_register_command(SYSTEM_COMMAND10_PROMISE, isr80h_command10_promise);
 }

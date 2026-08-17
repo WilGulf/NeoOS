@@ -1,6 +1,10 @@
 #include "stdlib.h"
 #include "stdio.h"
 
+void declarations(void) {
+    promise(PROMISE_FB);
+}
+
 int main(int argc, char **argv) {
     printf("A    M              dMMb  dMMM      OS: NeoOS v0.1.0\n");
     printf("MA   M              M  M  M         ----------------\n");

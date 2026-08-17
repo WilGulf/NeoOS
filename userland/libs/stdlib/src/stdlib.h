@@ -1,6 +1,8 @@
 #ifndef STDLIB_H
 #define STDLIB_H
 
+#include "promise.h"
+
 #include <stddef.h>
 
 void exit();
@@ -10,6 +12,8 @@ void free(void *ptr);
 
 void *kmalloc(size_t size);
 void kfree(void *ptr);
+
+int promise(int promise);
 
 struct command_argument {
     char argument[512];

@@ -1,0 +1,9 @@
+#ifndef STDLIB_PROMISE_H
+#define STDLIB_PROMISE_H
+
+#define PROMISE_FB     0B0001
+#define PROMISE_INPUT  0B0010
+#define PROMISE_EXEC   0B0100
+#define PROMISE_MEMORY 0B1000
+
+#endif
