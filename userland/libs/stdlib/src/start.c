@@ -10,8 +10,6 @@ void c_start() {
     process_get_arguments(&arguments);
 
     declarations();
-
-    wait_for_promise();
-
+    
     main(arguments.argc, arguments.argv);
 }

@@ -27,6 +27,7 @@ void *isr80h_command6_process_load_start(struct interrupt_frame *frame) {
         goto out;
     }
 
+    process->checking = false;
     task_switch(process->task);
     task_return(&process->task->registers);
 out:
@@ -64,6 +65,7 @@ void *isr80h_command7_system(struct interrupt_frame *frame) {
     }
 
     task_list_remove(calling_task);
+    process->checking = false;
     process->task->parent = calling_task;
     task_switch(process->task);
     task_return(&process->task->registers);

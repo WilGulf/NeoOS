@@ -2,6 +2,8 @@
 
 #include "../task/process.h"
 #include "../include/stdint.h"
+#include "../include/status.h"
+#include "../include/util.h"
 
 #include "../drivers/io/io.h"
 
@@ -20,11 +22,6 @@ void *isr80h_command10_promise(struct interrupt_frame *frame) {
 
     task_current()->process->promises = promise;
     task_current()->process->declared = true;
-    return 0;
-}
-
-void *isr80h_command11_wait_for_promise(struct interrupt_frame *frame) {
-    while (!task_current()->process->declared) {}
 
     return 0;
 }

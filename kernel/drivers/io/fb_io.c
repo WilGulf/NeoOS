@@ -35,14 +35,9 @@ void fb_clear() {
 
 void fb_backspace() {
     uint16_t pos = fb_get_cursor_position();
-    int initial_y = pos / 80;
-    
-    while (fb[(pos * 2)] == 0x00 || fb[(pos * 2)] == ' ') {
-        pos--;
-    }
 
-    fb_write_cell(pos * 2, ' ', 0x0F, 0x00);
-    fb_move_cursor(pos);
+    fb_write_cell((pos - 1) * 2, ' ', 0x0F, 0x00);
+    fb_move_cursor(pos - 1);
 }
 
 void fb_new_line() {
