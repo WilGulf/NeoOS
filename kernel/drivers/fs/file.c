@@ -105,6 +105,11 @@ FILE_MODE file_get_mode_by_string(const char *str) {
 }
 int fopen(const char *filename, const char *mode_str) {
     int res = 0;
+    struct disk *disk = 0;
+    FILE_MODE mode = FILE_MODE_INVALID;
+    void *descriptor_private_data = 0;
+    struct file_descriptor *desc = 0;
+
     struct path_root *root_path = parse_path(filename, NULL);
     if (!root_path) {
         res = -ERROR_INVALID_ARG;
@@ -116,7 +121,7 @@ int fopen(const char *filename, const char *mode_str) {
         goto out;
     }
 
-    struct disk *disk = disk_get(root_path->drive_no);
+    disk = disk_get(root_path->drive_no);
     if (!disk) {
         res = -ERROR_IO;
         goto out;
@@ -127,19 +132,18 @@ int fopen(const char *filename, const char *mode_str) {
         goto out;
     }
 
-    FILE_MODE mode = file_get_mode_by_string(mode_str);
+    mode = file_get_mode_by_string(mode_str);
     if (mode == FILE_MODE_INVALID) {
         res = -ERROR_INVALID_ARG;
         goto out;
     }
 
-    void *descriptor_private_data = disk->filesystem->open(disk, root_path->first, mode);
+    descriptor_private_data = disk->filesystem->open(disk, root_path->first, mode);
     if (ISERR(descriptor_private_data)) {
         res = ERROR_I(descriptor_private_data);
         goto out;
     }
 
-    struct file_descriptor *desc = 0;
     res = file_new_descriptor(&desc);
     if (res < 0) {
         goto out;
@@ -152,6 +156,21 @@ int fopen(const char *filename, const char *mode_str) {
 
 out:
     if (res < 0) {
+        if (root_path) {
+            path_parser_free(root_path);
+            root_path = NULL;
+        }
+
+        if (descriptor_private_data && disk) {
+            disk->filesystem->close(descriptor_private_data);
+            descriptor_private_data = NULL;
+        }
+        
+        if (desc) {
+            file_free_descriptor(desc);
+            desc = NULL;
+        }
+        
         res = 0;
     }
 

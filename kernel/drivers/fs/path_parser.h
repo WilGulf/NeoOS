@@ -12,5 +12,6 @@ struct path_part {
 };
 
 struct path_root *parse_path(const char *path, const char *current_directory_path);
+void path_parser_free(struct path_root *root);
 
 #endif
