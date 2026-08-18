@@ -22,19 +22,26 @@ static void process_init(struct process *process) {
 
 static int process_terminate_allocations(struct process *process) {
     for (int i = 0; i < MAX_PROGRAM_ALLOCATIONS; i++) {
-        process_free(process, process->allocations[i].ptr);
+        if (process->allocations[i].ptr) {
+            process_free(process, process->allocations[i].ptr);
+        }
     }
 
     return 0;
 }
 
 int process_free_binary_data(struct process *process) {
-    kfree(process->ptr);
+    if (process->ptr) {
+        kfree(process->ptr);
+    }
+
     return 0;
 }
 
 int process_free_elf_data(struct process *process) {
-    elf_close(process->elf_file);
+    if (process->elf_file) {
+        elf_close(process->elf_file);
+    }
     return 0;
 }
 
@@ -75,24 +82,28 @@ static void process_unlink(struct process *process) {
     }
 }
 
+void process_memory_free(struct process *process) {
+    process_terminate_allocations(process);
+    process_free_program_data(process);
+
+    if (process->stack) {
+        kfree(process->stack);
+        process->stack = NULL;
+    }
+    
+    if (process->task) {
+        task_free(process->task);
+        process->task = NULL;
+    }
+
+    kfree(process);
+}
+
 int process_terminate(struct process *process) {
-    int res = 0;
-    res = process_terminate_allocations(process);
-    if (res < 0) {
-        goto out;
-    }
-
-    res = process_free_program_data(process);
-    if (res < 0) {
-        goto out;
-    }
-
-    kfree(process->stack);
-    task_free(process->task);
     process_unlink(process);
+    process_memory_free(process);
 
-out:
-    return res;
+    return 0;
 }
 
 struct process *process_current() {
@@ -282,7 +293,7 @@ out:
             kfree(program_data_ptr);
         }
     }
-    
+
     fclose(fd);
     return res;
 }
@@ -378,7 +389,6 @@ int process_get_free_slot() {
 
 int process_load_for_slot(const char *filename, struct process **process, int process_slot) {
     int res = 0;
-    struct task *task = 0;
     struct process *_process;
     void *program_stack_ptr = 0;
 
@@ -399,23 +409,21 @@ int process_load_for_slot(const char *filename, struct process **process, int pr
         goto out;
     }
 
-    program_stack_ptr = kzalloc(USER_PROGRAM_STACK_SIZE);
-    if (!program_stack_ptr) {
+    _process->stack = kzalloc(USER_PROGRAM_STACK_SIZE);
+    if (!_process->stack) {
         res = -ERROR_NO_MEM;
         goto out;
     }
 
     strncpy(_process->filename, filename, sizeof(_process->filename));
-    _process->stack = program_stack_ptr;
     _process->id = process_slot;
 
-    task = task_new(_process);
-    if (ISERR(task)) {
-        res = ERROR_I(task);
+    _process->task = task_new(_process);
+    if (ISERR(_process->task)) {
+        res = ERROR_I(_process->task);
+        _process->task = NULL;
         goto out;
     }
-
-    _process->task = task;
 
     res = process_map_memory(_process);
     if (res < 0) {
@@ -427,8 +435,10 @@ int process_load_for_slot(const char *filename, struct process **process, int pr
 
 out:
     if (ISERR(res)) {
-        if (_process && _process->task) {
-            task_free(_process->task);
+        if (_process) {
+            process_memory_free(_process);
+            _process = NULL;
+            *process = NULL;
         }
     }
 
