@@ -47,7 +47,6 @@ disk_contents: output/disk.img
 	mcopy -o -i output/disk.img -o userland/execs/fetch/output/fetch.elf ::/execs/fetch.elf
 	mcopy -o -i output/disk.img -o userland/execs/echo/output/echo.elf ::/execs/echo.elf
 	mcopy -o -i output/disk.img -o userland/execs/sysinfo/output/sysinfo.elf ::/execs/sysinfo.elf
-	mcopy -o -i output/disk.img -o userland/execs/promise-check/output/promise-check.elf ::/execs/check.elf
 
 run: all
 	qemu-system-i386 -kernel output/kernel.elf -hda output/disk.img
@@ -69,7 +68,6 @@ userland_execs:
 	cd ./userland/execs/fetch && $(MAKE) all
 	cd ./userland/execs/echo && $(MAKE) all
 	cd ./userland/execs/sysinfo && $(MAKE) all
-	cd ./userland/execs/promise-check && $(MAKE) all
 
 userland_clean:
 	cd ./userland/libs/stdlib && $(MAKE) clean 
@@ -79,7 +77,6 @@ userland_clean:
 	cd ./userland/execs/fetch && $(MAKE) clean
 	cd ./userland/execs/echo && $(MAKE) clean
 	cd ./userland/execs/sysinfo && $(MAKE) clean
-	cd ./userland/execs/promise-check && $(MAKE) clean
 
 kernel_clean:
 	rm -f output/*.elf
