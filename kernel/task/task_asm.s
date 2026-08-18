@@ -5,8 +5,7 @@ task_return:
     push dword [ebx+44]
     push dword [ebx+40]
 
-    pushf
-    pop eax
+    mov eax, [ebx+36]
     or eax, 0x200
     push eax
 
