@@ -1,5 +1,6 @@
 #include "process.h"
 #include "promise.h"
+#include "privilege.h"
 
 #include "../include/config.h"
 #include "../include/status.h"
@@ -8,15 +9,15 @@
 #include "../task/process.h"
 
 void *isr80h_command6_process_load_start(struct interrupt_frame *frame) {
-    if (!check_process_promise(task_current()->process, PROMISE_EXEC)) {
-        process_terminate(task_current()->process);
-        task_next();
+    int res = check_process_promise(task_current()->process, PROMISE_EXEC);
+    res = check_allowed_with_privilege(task_current()->process, PRIVILEGE_EXEC_EXECS);
+    if (res != true) {
         return 0;
-    };
+    }
 
     void *filename_user_ptr = task_get_stack_item(task_current(), 0);
     char filename[MAX_PATH];
-    int res = copy_string_from_task(task_current(), filename_user_ptr, filename, sizeof(filename));
+    res = copy_string_from_task(task_current(), filename_user_ptr, filename, sizeof(filename));
     if (res < 0) {
         goto out;
     }
@@ -27,7 +28,8 @@ void *isr80h_command6_process_load_start(struct interrupt_frame *frame) {
         goto out;
     }
 
-    process->checking = false;
+    process->privilege = task_current()->process->privilege;
+
     task_switch(process->task);
     task_return(&process->task->registers);
 out:
@@ -35,11 +37,11 @@ out:
 }
 
 void *isr80h_command7_system(struct interrupt_frame *frame) {
-    if (!check_process_promise(task_current()->process, PROMISE_EXEC)) {
-        process_terminate(task_current()->process);
-        task_next();
+    int res = check_process_promise(task_current()->process, PROMISE_EXEC);
+    res = check_allowed_with_privilege(task_current()->process, PRIVILEGE_EXEC_EXECS);
+    if (res != true) {
         return 0;
-    };
+    }
 
     struct task *calling_task = task_current();
     struct command_argument *arguments = task_virtual_address_to_physical(task_current(), task_get_stack_item(task_current(), 0));
@@ -54,7 +56,7 @@ void *isr80h_command7_system(struct interrupt_frame *frame) {
     strncpy(path, program_name, sizeof(path));
 
     struct process *process = 0;
-    int res = process_load_switch(path, &process);
+    res = process_load_switch(path, &process);
     if (res < 0) {
         return ERROR(res);
     }
@@ -64,8 +66,9 @@ void *isr80h_command7_system(struct interrupt_frame *frame) {
         return ERROR(res);
     }
 
+    process->privilege = calling_task->process->privilege;
+
     task_list_remove(calling_task);
-    process->checking = false;
     process->task->parent = calling_task;
     task_switch(process->task);
     task_return(&process->task->registers);

@@ -5,6 +5,7 @@
 #include "heap.h"
 #include "process.h"
 #include "promise.h"
+#include "privilege.h"
 
 void isr80h_register_commands() {
     isr80h_register_command(SYSTEM_COMMAND0_EXIT, isr80h_command0_exit);
@@ -18,4 +19,6 @@ void isr80h_register_commands() {
     isr80h_register_command(SYSTEM_COMMAND8_GET_PROCESS_ARGUMENT, isr80h_command8_get_process_arguments);
     isr80h_register_command(SYSTEM_COMMAND9_FB_CLEAR, isr80h_command9_fb_clear);
     isr80h_register_command(SYSTEM_COMMAND10_PROMISE, isr80h_command10_promise);
+    isr80h_register_command(SYSTEM_COMMAND11_SYSTEM_AS, isr80h_command11_system_run_as);
+    isr80h_register_command(SYSTEM_COMMAND14_DROP_PRIVILEGE, isr80h_command14_drop_privilege);
 }

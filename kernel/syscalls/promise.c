@@ -8,7 +8,14 @@
 #include "../drivers/io/io.h"
 
 kbool check_process_promise(struct process *process, uint32_t promise) {
-    return (process->promises & promise) != 0;
+    if (process->promises & promise == 0) {
+        kprintf("Promise broken\n");
+        process_terminate(process);
+        task_next();
+        return 0;
+    }
+
+    return 1;
 }
 
 void *isr80h_command10_promise(struct interrupt_frame *frame) {    

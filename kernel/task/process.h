@@ -56,6 +56,8 @@ struct process {
 
     uint32_t promises;
     kbool declared;
+
+    uint8_t privilege;
 };
 
 int process_load_switch(const char *filename, struct process **process);

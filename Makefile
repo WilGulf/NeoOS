@@ -14,7 +14,8 @@ OBJECTS = kernel/loader.o kernel/kmain.o kernel/kernel_asm.o \
 	kernel/syscalls/io.o \
 	kernel/syscalls/heap.o \
 	kernel/syscalls/process.o \
-	kernel/syscalls/promise.o
+	kernel/syscalls/promise.o \
+	kernel/syscalls/privilege.o
 
 #C compiler
 CC = i686-elf-gcc

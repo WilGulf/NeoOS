@@ -33,11 +33,23 @@ exec:
     pop ebp
     ret
 
-global system:function
-system:
+global system_run:function
+system_run:
     push ebp
     mov ebp, esp
     mov eax, 7
+    push dword[ebp+8]
+    int 0x80
+    add esp, 4
+    pop ebp
+    ret
+
+global system_run_as:function
+system_run_as:
+    push ebp
+    mov ebp, esp
+    mov eax, 11
+    push dword[ebp+12]
     push dword[ebp+8]
     int 0x80
     add esp, 4
@@ -69,6 +81,17 @@ promise:
     push ebp
     mov ebp, esp
     mov eax, 10
+    push dword[ebp+8]
+    int 0x80
+    add esp, 4
+    pop ebp
+    ret
+
+global drop_privilege:function
+drop_privilege:
+    push ebp
+    mov ebp, esp
+    mov eax, 14
     push dword[ebp+8]
     int 0x80
     add esp, 4

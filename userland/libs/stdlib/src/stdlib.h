@@ -2,6 +2,7 @@
 #define STDLIB_H
 
 #include "promise.h"
+#include "stdint.h"
 
 #include <stddef.h>
 
@@ -28,8 +29,14 @@ struct process_arguments {
 struct command_argument *parse_command(const char *command, int max);
 void process_get_arguments(struct process_arguments *arguments);
 
-void exec(const char *filename);
-int system(struct command_argument *arguments);
-int system_run(const char *command);
+//void exec(const char *filename);
+
+int system(const char *command);
+int system_as(const char *command, uint8_t privilege);
+
+int fork(const char *command);
+int fork_as(const char *command, uint8_t privilege);
+
+int drop_privilege(uint8_t privilege);
 
 #endif

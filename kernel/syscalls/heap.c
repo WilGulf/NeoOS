@@ -17,11 +17,7 @@ void *isr80h_command4_malloc(struct interrupt_frame *frame) {
 }
 
 void *isr80h_command5_free(struct interrupt_frame *frame) {
-    if (!check_process_promise(task_current()->process, PROMISE_MEMORY)) {
-        process_terminate(task_current()->process);
-        task_next();
-        return 0;
-    };
+    check_process_promise(task_current()->process, PROMISE_MEMORY);
     
     void *ptr = task_get_stack_item(task_current(), 0);
     process_free(task_current()->process, ptr);

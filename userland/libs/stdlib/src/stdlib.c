@@ -2,6 +2,10 @@
 
 #include "string.h"
 
+int fork_run(struct command_argument *arguments);
+int system_run(struct command_argument *arguments);
+int system_run_as(struct command_argument *arguments, uint8_t privilege);
+
 void *malloc(size_t size) {
     return kmalloc(size);
 }
@@ -49,13 +53,33 @@ out:
     return root_command;
 }
 
-int system_run(const char *command) {
+struct command_argument *command_to_arguments(const char *command) {
     char buffer[1024];
     strncpy(buffer, command, sizeof(buffer));
     struct command_argument *root_command_argument = parse_command(buffer, sizeof(buffer));
     if (!root_command_argument) {
-        return -1;
+        return (struct command_argument *)-1;
     }
     
-    return system(root_command_argument);
+    return root_command_argument;
+}
+
+int system(const char *command) {
+    struct command_argument *root_command_argument = command_to_arguments(command);
+    return system_run(root_command_argument);
+}
+
+int system_as(const char *command, uint8_t privilege) {
+    struct command_argument *root_command_argument = command_to_arguments(command);
+    return system_run_as(root_command_argument, privilege);
+}
+
+int fork(const char *command) {
+    struct command_argument *root_command_argument = command_to_arguments(command);
+    //return fork_run(root_command_argument);
+}
+
+int fork_as(const char *command, uint8_t privilege) {
+    struct command_argument *root_command_argument = command_to_arguments(command);
+    //return fork_run_as(root_command_argument);
 }

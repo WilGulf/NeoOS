@@ -100,6 +100,7 @@ void process_memory_free(struct process *process) {
 }
 
 int process_terminate(struct process *process) {
+    kprintf("Process terminated\n");
     process_unlink(process);
     process_memory_free(process);
 

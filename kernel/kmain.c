@@ -88,11 +88,6 @@ int kmain(uint32_t magic, struct multiboot_info* bootInfo) {
         panic("Failed to load init", res);
     }
 
-    res = process_load_switch("0:/execs/sh.elf", &process);
-    if (res != ALL_OK) {
-        panic("Failed to load sh.elf", res);
-    }
-
     task_run_first_ever_task();
 
     while (1) {}
