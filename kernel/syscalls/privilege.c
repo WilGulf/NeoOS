@@ -10,6 +10,7 @@
 kbool check_allowed_with_privilege(struct process *process, uint8_t privilege) {
     if (process->privilege > privilege) {
         kprintf("Process privilege not sufficient\n");
+        kprintf("Process Terminated\n");
         process_terminate(process);
         task_next();
         return 0;

@@ -91,7 +91,7 @@ void idt_set(int interrupt_no, void *address) {
 }
 
 void idt_handle_exception() {
-    kprintf("IDT\n");
+    kprintf("Process terminated due to a interrupt\n");
     process_terminate(task_current()->process);
     task_next();
 }

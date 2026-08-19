@@ -10,6 +10,7 @@
 kbool check_process_promise(struct process *process, uint32_t promise) {
     if (process->promises & promise == 0) {
         kprintf("Promise broken\n");
+        kprintf("Promise Terminated\n");
         process_terminate(process);
         task_next();
         return 0;

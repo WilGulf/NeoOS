@@ -72,7 +72,7 @@ void process_switch_to_any() {
         }
     }
 
-    panic("No processes to switch too", 0);
+    panic("No processes to switch to", 0);
 }
 
 static void process_unlink(struct process *process) {
@@ -99,9 +99,7 @@ void process_memory_free(struct process *process) {
     kfree(process);
 }
 
-int process_terminate(struct process *process) {
-    kprintf("Process terminated\n");
-    
+int process_terminate(struct process *process) {    
     if (process->first_child) {
         process_terminate(process->first_child);
     }
