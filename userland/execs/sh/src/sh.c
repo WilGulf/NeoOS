@@ -30,6 +30,8 @@ int main(int argc, char **argv) {
                 
                 if (strcmp(cmd, "clear") == 0 || strcmp(cmd, "CLEAR") == 0) {
                     clear();
+                } else if (strcmp(cmd, "exit") == 0 || strcmp(cmd, "EXIT") == 0) {
+                    exit();
                 } else {
                     strncpy(path1 + 9, cmd, sizeof(path1));
                     system(path1);
@@ -55,4 +57,6 @@ int main(int argc, char **argv) {
             }
         }
     }
+
+    exit();
 }
