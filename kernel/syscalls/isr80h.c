@@ -20,5 +20,7 @@ void isr80h_register_commands() {
     isr80h_register_command(SYSTEM_COMMAND9_FB_CLEAR, isr80h_command9_fb_clear);
     isr80h_register_command(SYSTEM_COMMAND10_PROMISE, isr80h_command10_promise);
     isr80h_register_command(SYSTEM_COMMAND11_SYSTEM_AS, isr80h_command11_system_run_as);
+    isr80h_register_command(SYSTEM_COMMAND12_FORK, isr80h_command12_fork);
+    isr80h_register_command(SYSTEM_COMMAND13_FORK_AS, isr80h_command13_fork_as);
     isr80h_register_command(SYSTEM_COMMAND14_DROP_PRIVILEGE, isr80h_command14_drop_privilege);
 }

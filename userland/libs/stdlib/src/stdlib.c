@@ -3,6 +3,7 @@
 #include "string.h"
 
 int fork_run(struct command_argument *arguments);
+int fork_run_as(struct command_argument *arguments, uint8_t privilege);
 int system_run(struct command_argument *arguments);
 int system_run_as(struct command_argument *arguments, uint8_t privilege);
 
@@ -76,10 +77,10 @@ int system_as(const char *command, uint8_t privilege) {
 
 int fork(const char *command) {
     struct command_argument *root_command_argument = command_to_arguments(command);
-    //return fork_run(root_command_argument);
+    return fork_run(root_command_argument);
 }
 
 int fork_as(const char *command, uint8_t privilege) {
     struct command_argument *root_command_argument = command_to_arguments(command);
-    //return fork_run_as(root_command_argument);
+    return fork_run_as(root_command_argument, privilege);
 }

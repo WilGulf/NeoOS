@@ -52,7 +52,30 @@ system_run_as:
     push dword[ebp+12]
     push dword[ebp+8]
     int 0x80
+    add esp, 8
+    pop ebp
+    ret
+
+global fork_run:function
+fork_run:
+    push ebp
+    mov ebp, esp
+    mov eax, 12
+    push dword[ebp+8]
+    int 0x80
     add esp, 4
+    pop ebp
+    ret
+
+global fork_run_as:function
+fork_run_as:
+    push ebp
+    mov ebp, esp
+    mov eax, 13
+    push dword[ebp+12]
+    push dword[ebp+8]
+    int 0x80
+    add esp, 8
     pop ebp
     ret
     

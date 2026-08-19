@@ -32,6 +32,10 @@ struct process_arguments {
 
 struct process {
     uint16_t id;
+    struct process *fork_parent;
+    struct process *first_child;
+    struct process *sibling_child;
+
     char filename[MAX_PATH];
     struct task *task;
 

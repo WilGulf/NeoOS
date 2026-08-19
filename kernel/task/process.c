@@ -101,6 +101,14 @@ void process_memory_free(struct process *process) {
 
 int process_terminate(struct process *process) {
     kprintf("Process terminated\n");
+    
+    if (process->first_child) {
+        process_terminate(process->first_child);
+    }
+    if (process->sibling_child) {
+        process_terminate(process->sibling_child);
+    }
+
     process_unlink(process);
     process_memory_free(process);
 

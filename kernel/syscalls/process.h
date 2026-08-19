@@ -7,5 +7,6 @@ void *isr80h_command6_process_load_start(struct interrupt_frame *frame);
 void *isr80h_command7_system(struct interrupt_frame *frame);
 void *isr80h_command8_get_process_arguments(struct interrupt_frame *frame);
 void *isr80h_command0_exit(struct interrupt_frame *frame);
+void *isr80h_command12_fork(struct interrupt_frame *frame);
 
 #endif
