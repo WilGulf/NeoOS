@@ -1,9 +1,6 @@
 #ifndef KERNEL_H
 #define KERNEL_H
 
-void kernel_page();
-void kernel_registers();
-
 struct kernel_version {
     char name[64];
     int version_major;
@@ -12,6 +9,8 @@ struct kernel_version {
     char extension[16];
 };
 
-struct kernel_version *get_kernel_version();
+struct kernel_info {
+    struct kernel_version version;
+};
 
 #endif

@@ -16,6 +16,8 @@ void kfree(void *ptr);
 
 int promise(int promise);
 
+struct kernel_info;
+
 struct command_argument {
     char argument[512];
     struct command_argument *next;
@@ -38,5 +40,7 @@ int fork(const char *command);
 int fork_as(const char *command, uint8_t privilege);
 
 int drop_privilege(uint8_t privilege);
+
+void get_kernel(void *out);
 
 #endif

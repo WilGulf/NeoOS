@@ -1,6 +1,7 @@
 #include "stdlib.h"
 #include "stdio.h"
 #include "string.h"
+#include "kernel.h"
 
 #include <stdbool.h>
 
@@ -29,14 +30,30 @@ int main(int argc, char **argv) {
             machine = true;
         }
 
-        if (kernel)
-            printf("");
-        if (os)
+        if (kernel) {
+            struct kernel_info info;
+            get_kernel(&info);
+            printf(
+                "%s-%d-%d-%d", 
+                info.version.name, 
+                info.version.version_major, 
+                info.version.version_minor, 
+                info.version.version_patch
+            );
+            if (info.version.extension[0] != 0) {
+                printf(".%s", info.version.extension);
+            }
+
+            putchar(' ');
+        }
+        if (os) {
             printf("NeoOS");
-        if (machine)
+            putchar(' ');
+        }
+        if (machine) {
             printf("i386");
-        
-        putchar('\n');
+            putchar(' ');
+        }
     }
 
     exit();

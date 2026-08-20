@@ -1,9 +1,8 @@
 #define KERNEL_NAME "Nexus"
-
 #define KERNEL_VERSION_MAJOR 1
 #define KERNEL_VERSION_MINOR 0
 #define KERNEL_VERSION_PATCH 0
-
+#define KERNEL_FLAVOUR ""
 
 
 #include "kernel.h"
@@ -41,13 +40,16 @@ void kernel_page() {
     paging_switch(kernel_chunk);
 }
 
-struct kernel_info *get_kernel() {
-    struct kernel_info *info = 0;
-    strncpy(info->name, KERNEL_NAME, sizeof(info->name));
-    info->version_major = KERNEL_VERSION_MAJOR;
-    info->version_minor = KERNEL_VERSION_MINOR;
-    info->version_patch = KERNEL_VERSION_PATCH;
-    return info;
+static struct kernel_version kernel_version = {
+    .name = KERNEL_NAME,
+    .version_major = KERNEL_VERSION_MAJOR,
+    .version_minor = KERNEL_VERSION_MINOR,
+    .version_patch = KERNEL_VERSION_PATCH,
+    .extension = KERNEL_FLAVOUR,
+};
+
+struct kernel_version *get_kernel_version() {
+    return &kernel_version;
 }
 
 int kmain(uint32_t magic, struct multiboot_info* bootInfo) {    

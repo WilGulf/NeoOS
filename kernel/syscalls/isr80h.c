@@ -6,6 +6,7 @@
 #include "process.h"
 #include "promise.h"
 #include "privilege.h"
+#include "kernel.h"
 
 void isr80h_register_commands() {
     isr80h_register_command(SYSTEM_COMMAND0_EXIT, isr80h_command0_exit);
@@ -23,4 +24,5 @@ void isr80h_register_commands() {
     isr80h_register_command(SYSTEM_COMMAND12_FORK, isr80h_command12_fork);
     isr80h_register_command(SYSTEM_COMMAND13_FORK_AS, isr80h_command13_fork_as);
     isr80h_register_command(SYSTEM_COMMAND14_DROP_PRIVILEGE, isr80h_command14_drop_privilege);
+    isr80h_register_command(SYSTEM_COMMAND15_GET_KERNEL_INFO, isr80h_command15_get_kernel_info);
 }

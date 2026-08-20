@@ -120,3 +120,14 @@ drop_privilege:
     add esp, 4
     pop ebp
     ret
+
+global get_kernel:function
+get_kernel:
+    push ebp
+    mov ebp, esp
+    mov eax, 15
+    push dword[ebp+8]
+    int 0x80
+    add esp, 4
+    pop ebp
+    ret

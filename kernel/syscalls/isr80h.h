@@ -17,6 +17,7 @@ enum SystemCommands {
     SYSTEM_COMMAND12_FORK,
     SYSTEM_COMMAND13_FORK_AS,
     SYSTEM_COMMAND14_DROP_PRIVILEGE,
+    SYSTEM_COMMAND15_GET_KERNEL_INFO,
 };
 
 void isr80h_register_commands(); 
