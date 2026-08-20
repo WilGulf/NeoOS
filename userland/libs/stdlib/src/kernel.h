@@ -13,4 +13,6 @@ struct kernel_info {
     struct kernel_version version;
 };
 
+void get_kernel(void *out);
+
 #endif

@@ -41,6 +41,4 @@ int fork_as(const char *command, uint8_t privilege);
 
 int drop_privilege(uint8_t privilege);
 
-void get_kernel(void *out);
-
 #endif
