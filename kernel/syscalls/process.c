@@ -22,6 +22,10 @@ void *isr80h_command6_process_load_start(struct interrupt_frame *frame) {
         goto out;
     }
 
+    if (strncmp(filename, "0:/sysro", 8) == 0) {
+        check_allowed_with_privilege(task_current()->process, PRIVILEGE_EXEC_SYSRO);
+    }
+
     struct process *process = 0;
     res = process_load_switch(filename, &process);
     if (res < 0) {
@@ -51,6 +55,10 @@ void *isr80h_command7_system(struct interrupt_frame *frame) {
 
     struct command_argument *root_command_argument = &arguments[0];
     const char *program_name = root_command_argument->argument;
+
+    if (strncmp(program_name, "0:/sysro", 8) == 0) {
+        check_allowed_with_privilege(task_current()->process, PRIVILEGE_EXEC_SYSRO);
+    }
 
     char path[MAX_PATH];
     strncpy(path, program_name, sizeof(path));
@@ -90,6 +98,10 @@ void *isr80h_command12_fork(struct interrupt_frame *frame) {
 
     struct command_argument *root_command_argument = &arguments[0];
     const char *program_name = root_command_argument->argument;
+
+    if (strncmp(program_name, "0:/sysro", 8) == 0) {
+        check_allowed_with_privilege(task_current()->process, PRIVILEGE_EXEC_SYSRO);
+    }
 
     char path[MAX_PATH];
     strncpy(path, program_name, sizeof(path));

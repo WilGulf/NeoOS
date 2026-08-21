@@ -1,10 +1,11 @@
 #ifndef ISR80H_PROMISE_H
 #define ISR80H_PROMISE_H
 
-#define PROMISE_FB     0B0001
-#define PROMISE_INPUT  0B0010
-#define PROMISE_EXEC   0B0100
-#define PROMISE_MEMORY 0B1000
+#define PROMISE_FB     0B00001
+#define PROMISE_INPUT  0B00010
+#define PROMISE_EXEC   0B00100
+#define PROMISE_MEMORY 0B01000
+#define PROMISE_FS     0B10000
 
 #include "../include/stdint.h"
 #include "../task/process.h"

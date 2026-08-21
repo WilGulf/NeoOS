@@ -2,7 +2,7 @@
 #include "stdlib.h"
 
 void declarations(void) {
-    promise(PROMISE_FB);
+    promise(PROMISE_FB | PROMISE_FS);
 }
 
 int main(int argc, char **argv) {
