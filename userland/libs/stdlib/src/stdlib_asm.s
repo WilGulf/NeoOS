@@ -131,3 +131,52 @@ get_kernel:
     add esp, 4
     pop ebp
     ret
+
+global fopen:function
+fopen:
+    push ebp
+    mov ebp, esp
+    mov eax, 16
+    push dword[ebp+12]
+    push dword[ebp+8]
+    int 0x80
+    add esp, 8
+    pop ebp
+    ret
+
+global fclose:function
+fclose:
+    push ebp
+    mov ebp, esp
+    mov eax, 17
+    push dword[ebp+8]
+    int 0x80
+    add esp, 4
+    pop ebp
+    ret
+
+global fread:function
+fread:
+    push ebp
+    mov ebp, esp
+    mov eax, 18
+    push dword[ebp+20]
+    push dword[ebp+16]
+    push dword[ebp+12]
+    push dword[ebp+8]
+    int 0x80
+    add esp, 16
+    pop ebp
+    ret
+
+global fstat:function
+fstat:
+    push ebp
+    mov ebp, esp
+    mov eax, 19
+    push dword[ebp+12]
+    push dword[ebp+8]
+    int 0x80
+    add esp, 8
+    pop ebp
+    ret

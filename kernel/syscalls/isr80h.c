@@ -7,6 +7,7 @@
 #include "promise.h"
 #include "privilege.h"
 #include "kernel.h"
+#include "fs.h"
 
 void isr80h_register_commands() {
     isr80h_register_command(SYSTEM_COMMAND0_EXIT, isr80h_command0_exit);
@@ -25,4 +26,8 @@ void isr80h_register_commands() {
     isr80h_register_command(SYSTEM_COMMAND13_FORK_AS, isr80h_command13_fork_as);
     isr80h_register_command(SYSTEM_COMMAND14_DROP_PRIVILEGE, isr80h_command14_drop_privilege);
     isr80h_register_command(SYSTEM_COMMAND15_GET_KERNEL_INFO, isr80h_command15_get_kernel_info);
+    isr80h_register_command(SYSTEM_COMMAND16_FOPEN, isr80h_command16_fopen);
+    isr80h_register_command(SYSTEM_COMMAND17_FCLOSE, isr80h_command17_fclose);
+    isr80h_register_command(SYSTEM_COMMAND18_FREAD, isr80h_command18_fread);
+    isr80h_register_command(SYSTEM_COMMAND19_FSTAT, isr80h_command19_fstat);
 }

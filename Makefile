@@ -16,7 +16,8 @@ OBJECTS = kernel/loader.o kernel/kmain.o kernel/kernel_asm.o \
 	kernel/syscalls/process.o \
 	kernel/syscalls/promise.o \
 	kernel/syscalls/privilege.o \
-	kernel/syscalls/kernel.o
+	kernel/syscalls/kernel.o \
+	kernel/syscalls/fs.o
 
 #C compiler
 CC = i686-elf-gcc
@@ -44,11 +45,15 @@ kernel.elf: $(OBJECTS)
 disk_contents: output/disk.img
 	mdir -i output/disk.img ::/execs >/dev/null 2>&1 || mmd -i output/disk.img ::/execs
 	mdir -i output/disk.img ::/sysro >/dev/null 2>&1 || mmd -i output/disk.img ::/sysro
+	mdir -i output/disk.img ::/data >/dev/null 2>&1 || mmd -i output/disk.img ::/data
 	mcopy -o -i output/disk.img -o userland/launch/output/launch.elf ::/sysro/launch.elf
 	mcopy -o -i output/disk.img -o userland/execs/sh/output/sh.elf ::/execs/sh.elf
 	mcopy -o -i output/disk.img -o userland/execs/fetch/output/fetch.elf ::/execs/fetch.elf
 	mcopy -o -i output/disk.img -o userland/execs/echo/output/echo.elf ::/execs/echo.elf
 	mcopy -o -i output/disk.img -o userland/execs/sysinfo/output/sysinfo.elf ::/execs/sysinfo.elf
+	mcopy -o -i output/disk.img -o userland/execs/read/output/read.elf ::/execs/read.elf
+
+	mcopy -o -i output/disk.img -o ./test.txt ::/data/test.txt
 
 run: all
 	qemu-system-i386 -kernel output/kernel.elf -hda output/disk.img
@@ -70,6 +75,7 @@ userland_execs:
 	cd ./userland/execs/fetch && $(MAKE) all
 	cd ./userland/execs/echo && $(MAKE) all
 	cd ./userland/execs/sysinfo && $(MAKE) all
+	cd ./userland/execs/read && $(MAKE) all
 
 userland_clean:
 	cd ./userland/libs/stdlib && $(MAKE) clean 
@@ -79,6 +85,7 @@ userland_clean:
 	cd ./userland/execs/fetch && $(MAKE) clean
 	cd ./userland/execs/echo && $(MAKE) clean
 	cd ./userland/execs/sysinfo && $(MAKE) clean
+	cd ./userland/execs/read && $(MAKE) clean
 
 kernel_clean:
 	rm -f output/*.elf
