@@ -2,6 +2,7 @@
 #include "stdio.h"
 #include "memory.h"
 #include "string.h"
+#include "stdbool.h"
 
 #define KEY_ENTER 0x0D
 #define KEY_BACKSPACE 0x08
@@ -34,8 +35,23 @@ int main(int argc, char **argv) {
                     exit();
                 } else {
                     strncpy(path1 + 9, cmd, sizeof(path1));
-                    system(path1);
-                    system("");
+
+                    bool executed = false;
+                    p--;
+                    while(*p && !executed) {
+                        if (*p == '&') {
+                            fork(path1);
+                            fork("");
+                            executed = true;
+                        }
+
+                        p--;
+                    }
+
+                    if (!executed) {
+                        system(path1);
+                        system("");
+                    }
                 }
 
                 if (cmd[0] != 0)
