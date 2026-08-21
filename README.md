@@ -1,12 +1,13 @@
 # NeoOS
-A 32-bit Operating System for the x86 architecture.
+A 32-bit hobby Operating System for the x86 architecture.
 
 ## Features
 Currently implemented:
 - 32-bit x86 kernel
 - Filesystem support
-- A basic shell
+- A basic shell with a set of command
 - Multiple programs runnable from the shell
+- Security features inspired from open-bsd
 
 ### The shell
 
@@ -18,22 +19,22 @@ The libraries and header files available in C are mostly commands close to what 
 
 ## Testing NeoOS
 
-First of you need to ensure you have qemu installed as the virtual machine. This can be done easiliy with many package-managers but ensure you install the x86 one.
+> **NOTE** NeoOS is not a OS intended to be used on real hardware and recommands being run in a vm. NeoOS may run on some x86 cpu but it has not been tested yet.
 
-- Brew: ```brew install qemu```
-- Apt: ```apt install qemu-system-x86```
-- Dnf: ```dnf install qemu-system-x86```
-- Pacman: ```pacman -S qemu-system-x86```
+First, make sure QEMU is installed. The package name may differ depending on your operating system:
+
+- Brew: `brew install qemu`
+- Apt: `apt install qemu-system-x86`
+- Dnf: `dnf install qemu-system-x86`
+- Pacman: `pacman -S qemu-system-x86`
 
 ### Running
 
-In the directory where the kernel.elf and disk.img you can simply run the one of these commands that is available, it might differ with which one on different systems: 
+If you already have `kernel.elf` and `disk.img`, place them in the same directory and run:
 
-```qemu-system-i386 -kernel kernel.elf -hda disk.img```
-
-```qemu-system-x86 -kernel kernel.elf -hda disk.img```
-
-```qemu-system-x86_64 -kernel kernel.elf -hda disk.img```
+```bash
+qemu-system-i386 -kernel kernel.elf -hda disk.img
+```
 
 ## The Nexus kernel
 
