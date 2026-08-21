@@ -53,8 +53,6 @@ disk_contents: output/disk.img
 	mcopy -o -i output/disk.img -o userland/execs/sysinfo/output/sysinfo.elf ::/execs/sysinfo.elf
 	mcopy -o -i output/disk.img -o userland/execs/read/output/read.elf ::/execs/read.elf
 
-	mcopy -o -i output/disk.img -o ./test.txt ::/data/test.txt
-
 run: all
 	qemu-system-i386 -kernel output/kernel.elf -hda output/disk.img
 

@@ -10,3 +10,4 @@
 - **sysinfo**: Privdes info close to what uname would provide on a UNIX-compatible system
 - **fetch**: Fetches and displays system info with the os logo
 - **echo**: Echos the priveded arguments back
+- **read**: Prints the contents of a file

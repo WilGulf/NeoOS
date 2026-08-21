@@ -38,8 +38,6 @@ struct file_stat {
 struct command_argument *parse_command(const char *command, int max);
 void process_get_arguments(struct process_arguments *arguments);
 
-//void exec(const char *filename);
-
 int system(const char *command);
 int system_as(const char *command, uint8_t privilege);
 
