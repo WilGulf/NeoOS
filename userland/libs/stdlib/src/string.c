@@ -88,7 +88,6 @@ int strncmp(char *str1, char *str2, int max) {
     return 0;
 }
 
-
 int istrncmp(const char* str1, const char* str2, int max) {
     unsigned char u1, u2;
     while(max-- > 0) {
@@ -101,6 +100,15 @@ int istrncmp(const char* str1, const char* str2, int max) {
     }
 
     return 0;
+}
+
+char *strchr(const char *str, int c) {
+    while (*str != (char) c) {
+        if (!*str++) {
+            return 0;
+        }
+    }
+    return (char *)str;
 }
 
 int char_to_int(char c) {

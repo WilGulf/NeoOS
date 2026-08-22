@@ -4,6 +4,9 @@
 #include "string.h"
 #include "stdbool.h"
 
+#define VERSION 1
+#define VERSION_PATCH 0
+
 #define KEY_ENTER 0x0D
 #define KEY_BACKSPACE 0x08
 
@@ -12,16 +15,17 @@ void declarations(void) {
 }
 
 int main(int argc, char **argv) {
-    printf("\nNeoOS v0.1.0, %s\n", argv[0]);
-
+    // VARIABLES
     char path1[256 + 9] = "0:/execs/";
 
     char cmd[256] = "";
     char *p;
     p = cmd;
 
+    printf("\nNSH v%d.%d\n", VERSION, VERSION_PATCH);
     printf(" sh %% ");
 
+    // MAIN LOOP
     while(1) {
         char c = getkey();
         if (c != 0) {
@@ -36,19 +40,10 @@ int main(int argc, char **argv) {
                 } else {
                     strncpy(path1 + 9, cmd, sizeof(path1));
 
-                    bool executed = false;
-                    p--;
-                    while(*p && !executed) {
-                        if (*p == '&') {
-                            fork(path1);
-                            fork("");
-                            executed = true;
-                        }
-
-                        p--;
-                    }
-
-                    if (!executed) {
+                    if (strchr(cmd, '&')) {
+                        fork(cmd);
+                        fork("");
+                    } else {
                         system(path1);
                         system("");
                     }

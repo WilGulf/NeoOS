@@ -109,7 +109,7 @@ int process_terminate(struct process *process) {
 
     for (int i = 0; i < MAX_PROCESSES; i++) {
         struct process *process2 = process_get(i);
-        if (process != NULL) {
+        if (process2 != NULL) {
             if (process2->task->parent == process->task) {
                 process2->task->parent = NULL;
             }

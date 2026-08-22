@@ -1,4 +1,4 @@
-FILES=./output/start_asm.o ./output/start.o ./output/stdlib.o ./output/stdlib_asm.o ./output/string.o ./output/memory.o
+FILES=./output/start_asm.o ./output/start.o ./output/stdlib.o ./output/stdlib_asm.o ./output/string.o ./output/memory.o ./output/stdio.o
 INCLUDES= -I./src
 FLAGS= -g -nostdlib
 
@@ -17,7 +17,9 @@ all: mkdir $(FILES)
 	i686-elf-gcc ${INCLUDES} $(FLAGS) -c ./src/memory.c -o ./output/memory.o
 ./output/start.o: ./src/start.c
 	i686-elf-gcc ${INCLUDES} $(FLAGS) -c ./src/start.c -o ./output/start.o
-
+./output/stdio.o: ./src/stdio.c
+	i686-elf-gcc ${INCLUDES} $(FLAGS) -c ./src/stdio.c -o ./output/stdio.o
+	
 mkdir:
 	mkdir -p output
 	

@@ -69,7 +69,6 @@ output/disk.img:
 
 userland_execs:
 	cd ./userland/libs/stdlib && $(MAKE) all
-	cd ./userland/libs/stdio && $(MAKE) all 
 	cd ./userland/launch && $(MAKE) all
 	cd ./userland/execs/sh && $(MAKE) all
 	cd ./userland/execs/fetch && $(MAKE) all
@@ -81,7 +80,6 @@ userland_execs:
 
 userland_clean:
 	cd ./userland/libs/stdlib && $(MAKE) clean 
-	cd ./userland/libs/stdio && $(MAKE) clean 
 	cd ./userland/launch && $(MAKE) clean
 	cd ./userland/execs/sh && $(MAKE) clean
 	cd ./userland/execs/fetch && $(MAKE) clean
