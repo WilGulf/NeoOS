@@ -7,5 +7,6 @@ int getkey();
 void clear();
 
 char *itoa(int i);
+int atoi(const char *str);
 
 #endif

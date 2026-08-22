@@ -107,6 +107,15 @@ int process_terminate(struct process *process) {
         process_terminate(process->sibling_child);
     }
 
+    for (int i = 0; i < MAX_PROCESSES; i++) {
+        struct process *process2 = process_get(i);
+        if (process != NULL) {
+            if (process2->task->parent == process->task) {
+                process2->task->parent = NULL;
+            }
+        }
+    }
+
     process_unlink(process);
     process_memory_free(process);
 

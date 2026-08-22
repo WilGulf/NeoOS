@@ -52,6 +52,8 @@ disk_contents: output/disk.img
 	mcopy -o -i output/disk.img -o userland/execs/echo/output/echo.elf ::/execs/echo.elf
 	mcopy -o -i output/disk.img -o userland/execs/sysinfo/output/sysinfo.elf ::/execs/sysinfo.elf
 	mcopy -o -i output/disk.img -o userland/execs/read/output/read.elf ::/execs/read.elf
+	mcopy -o -i output/disk.img -o userland/execs/running/output/running.elf ::/execs/running.elf
+	mcopy -o -i output/disk.img -o userland/execs/kill/output/kill.elf ::/execs/kill.elf
 
 run: all
 	qemu-system-i386 -kernel output/kernel.elf -hda output/disk.img
@@ -74,6 +76,8 @@ userland_execs:
 	cd ./userland/execs/echo && $(MAKE) all
 	cd ./userland/execs/sysinfo && $(MAKE) all
 	cd ./userland/execs/read && $(MAKE) all
+	cd ./userland/execs/running && $(MAKE) all
+	cd ./userland/execs/kill && $(MAKE) all
 
 userland_clean:
 	cd ./userland/libs/stdlib && $(MAKE) clean 
@@ -84,6 +88,8 @@ userland_clean:
 	cd ./userland/execs/echo && $(MAKE) clean
 	cd ./userland/execs/sysinfo && $(MAKE) clean
 	cd ./userland/execs/read && $(MAKE) clean
+	cd ./userland/execs/running && $(MAKE) clean
+	cd ./userland/execs/kill && $(MAKE) clean
 
 kernel_clean:
 	rm -f output/*.elf

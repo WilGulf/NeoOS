@@ -30,6 +30,12 @@ struct process_arguments {
     char **argv;
 };
 
+struct process {
+    uint16_t id;
+    uint8_t privilege;
+    char filename[108];
+};
+
 typedef unsigned int FILE_STAT_FLAGS;
 
 struct file_stat {
@@ -52,5 +58,8 @@ int fopen(const char *filename, const char *mode);
 void fclose(int fd);
 int fread(void *buffer, size_t size, size_t count, int fd);
 int fstat(int fd, struct file_stat *stat);
+
+void get_processes(void *out_ptr, uint16_t max);
+void kill(uint16_t id);
 
 #endif

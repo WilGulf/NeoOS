@@ -30,4 +30,6 @@ void isr80h_register_commands() {
     isr80h_register_command(SYSTEM_COMMAND17_FCLOSE, isr80h_command17_fclose);
     isr80h_register_command(SYSTEM_COMMAND18_FREAD, isr80h_command18_fread);
     isr80h_register_command(SYSTEM_COMMAND19_FSTAT, isr80h_command19_fstat);
+    isr80h_register_command(SYSTEM_COMMAND21_GET_PROCESSES, isr80h_command21_get_processes);
+    isr80h_register_command(SYSTEM_COMMAND22_TERMINATE_PROCESS, isr80h_command22_terminate_process);
 }

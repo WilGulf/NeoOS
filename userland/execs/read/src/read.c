@@ -1,5 +1,5 @@
-#include "stdio.h"
 #include "stdlib.h"
+#include "stdio.h"
 
 void declarations(void) {
     promise(PROMISE_FB | PROMISE_FS);

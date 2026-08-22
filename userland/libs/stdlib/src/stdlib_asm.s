@@ -180,3 +180,26 @@ fstat:
     add esp, 8
     pop ebp
     ret
+
+global get_processes:function
+get_processes:
+    push ebp
+    mov ebp, esp
+    mov eax, 21
+    push dword[ebp+12]
+    push dword[ebp+8]
+    int 0x80
+    add esp, 8
+    pop ebp
+    ret
+
+global kill:function
+kill:
+    push ebp
+    mov ebp, esp
+    mov eax, 22
+    push dword[ebp+8]
+    int 0x80
+    add esp, 4
+    pop ebp
+    ret

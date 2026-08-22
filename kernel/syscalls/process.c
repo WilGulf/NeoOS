@@ -7,6 +7,9 @@
 #include "../include/util.h"
 #include "../task/task.h"
 #include "../task/process.h"
+#include "../kernel.h"
+
+#include "../drivers/io/io.h"
 
 void *isr80h_command6_process_load_start(struct interrupt_frame *frame) {
     int res = check_process_promise(task_current()->process, PROMISE_EXEC);
@@ -148,4 +151,52 @@ void *isr80h_command0_exit(struct interrupt_frame *frame) {
     struct process *process = task_current()->process;
     process_terminate(process);
     task_next();
+}
+
+void *isr80h_command21_get_processes(struct interrupt_frame *frame) {
+    void *out = task_get_stack_item(task_current(), 0);
+    uint16_t max = task_get_stack_item(task_current(), 1);
+
+    struct process_public processes[max];
+    memset(&processes, 0, sizeof(processes));
+    int processes_found = 0;
+    for (int i = 0; i < MAX_PROCESSES && processes_found < max; i++) {
+        struct process *process = process_get(i);
+        if (process != NULL) {
+            strcpy(processes[processes_found].filename, process->filename);
+            processes[processes_found].id = process->id;
+            processes[processes_found].privilege = process->privilege;
+
+            processes_found++;
+        }
+    }
+
+    task_page();
+    memcpy(out, processes, sizeof(processes));
+    kernel_page();
+
+    return 0;
+}
+
+void *isr80h_command22_terminate_process(struct interrupt_frame *frame) {
+    check_process_promise(task_current()->process, PROMISE_KILL);
+    check_allowed_with_privilege(task_current()->process, PRIVILEGE_KILL);
+
+    uint16_t id = task_get_stack_item(task_current(), 0);
+    struct process *process = process_get(id);
+    if (process != NULL) {
+        if (process->privilege < task_current()->process->privilege) {
+            kprintf("Process trying to killing higher privileged process\n");
+            kprintf("Process terminated\n");
+            process_terminate(task_current()->process);
+            task_next();
+            return 0;
+        }
+
+        process_terminate(process);
+        task_next();
+        return 0;
+    }
+
+    return 0;
 }

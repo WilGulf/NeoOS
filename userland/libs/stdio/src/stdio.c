@@ -75,3 +75,15 @@ char *itoa(int i) {
 
     return &text[loc];
 }
+
+int atoi(const char *str) {
+    int res = 0;
+    int i = 0;
+
+    while (str[i] != '\0') {
+        res = res * 10 + (str[i] - '0');
+        i++;
+    }
+
+    return res;
+}
