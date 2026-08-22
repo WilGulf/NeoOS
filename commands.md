@@ -2,12 +2,18 @@
 
 # NSH Commands
 
-## Basic terminal commands
+### Shell
 - **Clear**: Clears the terminal 
 - **Exit**: Exits the shell
 
-## NSH standard commands
-- **sysinfo**: Privdes info close to what uname would provide on a UNIX-compatible system
+### System information
+- **sysinfo**: Privdes info close to what uname would provide on a UNIX-like system
 - **fetch**: Fetches and displays system info with the os logo
+
+### Text & file utilities
 - **echo**: Echos the priveded arguments back
 - **read**: Prints the contents of a file
+
+### Process management
+- **running**: Lists running processes and their associated information
+- **kill**: Kills the provided process
