@@ -17,9 +17,11 @@ After the declarations the program executes main like any other C program.
 
 **PROMISE_FB**: Provides access to framebuffer with commands like: printf, putchar and clear.
 
-**PROMISE_INPUT**: Provides access to getkey.
+**PROMISE_INPUT**: Provides keyboard access.
 
 **PROMISE_EXEC**: Provides access to system and fork commands.
+
+**PROMISE_KILL**: Allows process to kill other processes.
 
 </details>
 <br>
@@ -31,7 +33,7 @@ void declarations(void) {
 }
 
 int main(int argc, char **argv) {
-
+    exit(0);
 }
 ```
 
@@ -44,6 +46,7 @@ Syscalls are ways to interract with the system like printing or executing a prog
 - **printf(char *fmt, ...)**: prints the formatted string to the screen
 - **putchar()**: Prints a single *char* to the screen
 - **getkey()**: Returns a *char* representing a keypress, may return 0
+- **getkey_event(&event)**: Fills the provided key_event struct with key char and eventual modifiers (ctrl, alt, shift)
 - **exit()**: Exits the program and returns to the shell or parent process
 
 ### Memory
