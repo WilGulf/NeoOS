@@ -1,5 +1,9 @@
 #include "memory.h"
 
+typedef unsigned int size_t;
+
+#define NULL ((void *)0)
+
 void *memset(void *ptr, int c, size_t size) {
     char *c_ptr = (char*) ptr;
     for (int i = 0; i < size; i++){

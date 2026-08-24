@@ -6,12 +6,6 @@
 #include "../include/stdint.h"
 
 void *isr80h_command4_malloc(struct interrupt_frame *frame) {
-    if (!check_process_promise(task_current()->process, PROMISE_MEMORY)) {
-        //process_terminate(task_current()->process);
-        //task_next();
-        //return 0;
-    };
-
     size_t size = (size_t)task_get_stack_item(task_current(), 0);
     return process_malloc(task_current()->process, size);
 }
