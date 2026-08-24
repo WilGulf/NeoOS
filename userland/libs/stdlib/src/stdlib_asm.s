@@ -243,3 +243,14 @@ kill:
     add esp, 4
     pop ebp
     ret
+
+global getkey_event:function
+getkey_event:
+    push ebp
+    mov ebp, esp
+    mov eax, 23
+    push dword[ebp+8]
+    int 0x80
+    add esp, 4
+    pop ebp
+    ret

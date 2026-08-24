@@ -9,8 +9,15 @@
 #include "../io/io.h"
 
 #define PS2_KEYBOARD_CAPSLOCK 0x3A
+
 #define PS2_KEYBOARD_LSHIFT_DOWN 0x2A
 #define PS2_KEYBOARD_LSHIFT_UP 0xAA
+
+#define PS2_KEYBOARD_LCTRL_DOWN 0x1D
+#define PS2_KEYBOARD_LCTRL_UP 0x9D
+
+#define PS2_KEYBOARD_LALT_DOWN 0x38
+#define PS2_KEYBOARD_LALT_UP 0xB8
 
 static uint8_t keyboard_scan_set_one[] = {
     0x00, 0x1B, '!', '"', '#', '$', '%',
@@ -19,7 +26,7 @@ static uint8_t keyboard_scan_set_one[] = {
     'Y', 'U', 'I', 'O', 'P', '[', ']',
     0x0d, 0x00, 'A', 'S', 'D', 'F', 'G',
     'H', 'J', 'K', 'L', ';', '\'', '`', 
-    0x2A, '\\', 'Z', 'X', 'C', 'V', 'B',
+    0x00, '\\', 'Z', 'X', 'C', 'V', 'B',
     'N', 'M', ';', ':', '/', 0x00, '*',
     0x00, 0x20, 0x00, 0x00, 0x00, 0x00,
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -101,9 +108,20 @@ void ps2_keyboard_handle_interrupt() {
     inb(KEYBOARD_INPUT_PORT);
 
     if (scancode & PS2_KEYBOARD_KEY_RELEASED) {
-        if (scancode == PS2_KEYBOARD_LSHIFT_UP) {
-            keyboard_set_lshift(&ps2_keyboard, KEYBOARD_KEY_FALSE);
+        switch (scancode) {
+            case PS2_KEYBOARD_LSHIFT_UP:
+                keyboard_set_lshift(&ps2_keyboard, KEYBOARD_KEY_FALSE);
+                break;
+
+            case PS2_KEYBOARD_LCTRL_UP:
+                keyboard_set_lctrl(&ps2_keyboard, KEYBOARD_KEY_FALSE);
+                break;
+
+            case PS2_KEYBOARD_LALT_UP:
+               keyboard_set_lalt(&ps2_keyboard, KEYBOARD_KEY_FALSE); 
+               break;
         }
+
         return;
     }
 
@@ -115,13 +133,36 @@ void ps2_keyboard_handle_interrupt() {
         c = 0x00;
     }
 
-    if (scancode == PS2_KEYBOARD_LSHIFT_DOWN) {
-        keyboard_set_lshift(&ps2_keyboard, KEYBOARD_KEY_TRUE);
-        c = 0x00;
+    switch (scancode) {
+        case PS2_KEYBOARD_LSHIFT_DOWN:
+            keyboard_set_lshift(&ps2_keyboard, KEYBOARD_KEY_TRUE);
+            c = 0x00;
+            break;
+
+        case PS2_KEYBOARD_LCTRL_DOWN:
+            keyboard_set_lctrl(&ps2_keyboard, KEYBOARD_KEY_TRUE);
+            c = 0x00;
+            break;
+
+        case PS2_KEYBOARD_LALT_DOWN:
+            keyboard_set_lalt(&ps2_keyboard, KEYBOARD_KEY_TRUE);
+            c = 0x00;
+            break;
+    }
+
+    uint8_t modifiers = 0;
+    if (keyboard_get_shift(&ps2_keyboard)) {
+        modifiers |= MODIFIER_SHIFT;
+    }
+    if (keyboard_get_ctrl(&ps2_keyboard)) {
+        modifiers |= MODIFIER_CTRL;
+    }
+    if (keyboard_get_alt(&ps2_keyboard)) {
+        modifiers |= MODIFIER_ALT;
     }
 
     if (c != 0) {
-        keyboard_push(c);
+        keyboard_push(c, modifiers);
     }
 
     task_page();

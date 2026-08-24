@@ -2,6 +2,7 @@
 #define PROCESS_H
 
 #include "task.h"
+#include "../drivers/keyboard/keyboard.h"
 
 #include "../include/stdint.h"
 #include "../include/config.h"
@@ -51,7 +52,7 @@ struct process {
     uint32_t size;
 
     struct keyboard_buffer {
-        char buffer[KEYBOARD_BUFFER_SIZE];
+        struct key_event buffer[KEYBOARD_BUFFER_SIZE];
         int tail;
         int head;
     } keyboard;

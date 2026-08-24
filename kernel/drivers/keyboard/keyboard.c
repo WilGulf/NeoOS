@@ -41,7 +41,8 @@ static int keyboard_get_tail_index(struct process *process) {
 void keyboard_backspace(struct process *process) {
     process->keyboard.tail -= 1;
     int real_index = keyboard_get_tail_index(process);
-    process->keyboard.buffer[real_index] = 0x00;
+    process->keyboard.buffer[real_index].key = 0x00;
+    process->keyboard.buffer[real_index].modifiers = 0x00;
 }
 
 void keyboard_set_capslock(struct keyboard *keyboard, KEYBOARD_KEY_STATE state) {
@@ -56,6 +57,14 @@ void keyboard_set_rshift(struct keyboard *keyboard, KEYBOARD_KEY_STATE state) {
     keyboard->rshift_state = state;
 }
 
+void keyboard_set_lctrl(struct keyboard *keyboard, KEYBOARD_KEY_STATE state) {
+    keyboard->lctrl_state = state;
+}
+
+void keyboard_set_lalt(struct keyboard *keyboard, KEYBOARD_KEY_STATE state) {
+    keyboard->lalt_state = state;
+}
+
 KEYBOARD_KEY_STATE keyboard_get_capslock(struct keyboard *keyboard) {
     return keyboard->capslock_state;
 }
@@ -64,7 +73,15 @@ KEYBOARD_KEY_STATE keyboard_get_shift(struct keyboard *keyboard) {
     return (keyboard->rshift_state || keyboard->lshift_state);
 }
 
-void keyboard_push(char c) {
+KEYBOARD_KEY_STATE keyboard_get_ctrl(struct keyboard *keyboard) {
+    return (keyboard->lctrl_state);
+}
+
+KEYBOARD_KEY_STATE keyboard_get_alt(struct keyboard *keyboard) {
+    return (keyboard->lalt_state);
+}
+
+void keyboard_push(char c, uint8_t modifiers) {
     struct process *process = get_input_process();
     if (!process) {
         return;
@@ -75,8 +92,32 @@ void keyboard_push(char c) {
     }
 
     int real_index = keyboard_get_tail_index(process);
-    process->keyboard.buffer[real_index] = c;
+    process->keyboard.buffer[real_index].key = c;
+    process->keyboard.buffer[real_index].modifiers = modifiers;
     process->keyboard.tail++;
+}
+
+struct key_event keyboard_pop_event() {
+    struct key_event event = {0, 0};
+
+    if (!task_current) {
+        return event;
+    }
+
+    struct process *process = get_input_process();
+    int real_index = process->keyboard.head % sizeof(process->keyboard.buffer);
+    char c = process->keyboard.buffer[real_index].key;
+    if (c == 0x00) {
+        return event;
+    }
+
+    event = process->keyboard.buffer[real_index];
+
+    process->keyboard.buffer[real_index].key = 0;
+    process->keyboard.buffer[real_index].modifiers = 0;
+    process->keyboard.head++;
+
+    return event;
 }
 
 char keyboard_pop() {
@@ -86,12 +127,14 @@ char keyboard_pop() {
 
     struct process *process = get_input_process();
     int real_index = process->keyboard.head % sizeof(process->keyboard.buffer);
-    char c = process->keyboard.buffer[real_index];
+    char c = process->keyboard.buffer[real_index].key;
     if (c == 0x00) {
         return 0;
     }
 
-    process->keyboard.buffer[real_index] = 0;
+    process->keyboard.buffer[real_index].key = 0;
+    process->keyboard.buffer[real_index].modifiers = 0;
     process->keyboard.head++;
+
     return c;
 }

@@ -27,9 +27,25 @@ int main(int argc, char **argv) {
 
     // MAIN LOOP
     while(1) {
-        char c = getkey();
-        if (c != 0) {
-            if (c == KEY_ENTER) {
+        struct key_event event = {0, 0};
+        getkey_event(&event);
+
+        if (event.c != 0) {
+            if (event.c == 'l') {
+                if (event.modifiers == MODIFIER_CTRL) {
+                    clear();
+                    memset(cmd, 0, sizeof(cmd));
+                    p = cmd;
+
+                    putchar('\n');
+
+                    printf(" sh %% ");
+
+                    continue;
+                }
+            }
+
+            if (event.c == KEY_ENTER) {
                 *p = '\0';
                 putchar('\n');
                 
@@ -56,15 +72,15 @@ int main(int argc, char **argv) {
                 p = cmd;
                 
                 printf(" sh %% ");
-            } else if (c == KEY_BACKSPACE) {
+            } else if (event.c == KEY_BACKSPACE) {
                 if (cmd[0] != 0) {
                     *--p = 0;
-                    putchar(c);
+                    putchar(event.c);
                 }
             } else {
-                *p = c;
+                *p = event.c;
                 p++;
-                putchar(c);
+                putchar(event.c);
             }
         }
     }
