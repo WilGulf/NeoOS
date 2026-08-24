@@ -7,7 +7,7 @@
 #include "../drivers/io/io.h"
 #include "../kernel.h"
 
-void *isr80h_command1_print(struct interrupt_frame *frame) {
+void *isr80h_command4_print(struct interrupt_frame *frame) {
     int res = check_process_promise(task_current()->process, PROMISE_FB);
     res = check_allowed_with_privilege(task_current()->process, PRIVILEGE_PRINT);
     if (res != true) {
@@ -21,7 +21,30 @@ void *isr80h_command1_print(struct interrupt_frame *frame) {
     return 0;
 }
 
-void *isr80h_command2_getkey(struct interrupt_frame *frame) {
+void *isr80h_command5_putchar(struct interrupt_frame *frame) {
+    int res = check_process_promise(task_current()->process, PROMISE_FB);
+    res = check_allowed_with_privilege(task_current()->process, PRIVILEGE_PRINT);
+    if (res != true) {
+        return 0;
+    }
+    
+    char c = (char)(int)task_get_stack_item(task_current(), 0);
+    fb_putc(c);
+    return 0;
+}
+
+void *isr80h_command6_fb_clear(struct interrupt_frame *frame) {
+    int res = check_process_promise(task_current()->process, PROMISE_FB);
+    res = check_allowed_with_privilege(task_current()->process, PRIVILEGE_CLEAR);
+    if (res != true) {
+        return 0;
+    }
+
+    fb_clear();
+    return 0;
+}
+
+void *isr80h_command7_getkey(struct interrupt_frame *frame) {
     int res = check_process_promise(task_current()->process, PROMISE_INPUT);
     res = check_allowed_with_privilege(task_current()->process, PRIVILEGE_KEYBOARD);
     if (res != true) {
@@ -35,30 +58,7 @@ void *isr80h_command2_getkey(struct interrupt_frame *frame) {
     return (void *)(int)c;
 }
 
-void *isr80h_command3_putchar(struct interrupt_frame *frame) {
-    int res = check_process_promise(task_current()->process, PROMISE_FB);
-    res = check_allowed_with_privilege(task_current()->process, PRIVILEGE_PRINT);
-    if (res != true) {
-        return 0;
-    }
-    
-    char c = (char)(int)task_get_stack_item(task_current(), 0);
-    fb_putc(c);
-    return 0;
-}
-
-void *isr80h_command9_fb_clear(struct interrupt_frame *frame) {
-    int res = check_process_promise(task_current()->process, PROMISE_FB);
-    res = check_allowed_with_privilege(task_current()->process, PRIVILEGE_CLEAR);
-    if (res != true) {
-        return 0;
-    }
-
-    fb_clear();
-    return 0;
-}
-
-void *isr80h_command23_get_key_event(struct interrupt_frame *frame) {
+void *isr80h_command8_get_key_event(struct interrupt_frame *frame) {
     int res = check_process_promise(task_current()->process, PROMISE_INPUT);
     res = check_allowed_with_privilege(task_current()->process, PRIVILEGE_KEYBOARD);
     if (res != true) {

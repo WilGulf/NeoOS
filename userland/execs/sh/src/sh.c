@@ -57,10 +57,10 @@ int main(int argc, char **argv) {
                     strncpy(path1 + 9, cmd, sizeof(path1));
 
                     if (strchr(cmd, '&')) {
-                        fork(cmd);
+                        fork_as(cmd, 4);
                         fork("");
                     } else {
-                        system(path1);
+                        system_as(path1, 4);
                         system("");
                     }
                 }

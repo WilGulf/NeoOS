@@ -7,6 +7,6 @@ void declarations(void) {
 
 int main(int argc, char **argv) {
     drop_privilege(2);
-    fork_as("0:/execs/sh.elf", 4);
+    fork_as("0:/execs/sh.elf", 3);
     while (1) {}
 }

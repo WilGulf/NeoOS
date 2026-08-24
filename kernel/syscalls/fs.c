@@ -9,7 +9,7 @@
 #include "../drivers/fs/file.h"
 #include "../kernel.h"
 
-void *isr80h_command16_fopen(struct interrupt_frame *frame) {
+void *isr80h_command18_fopen(struct interrupt_frame *frame) {
     check_process_promise(task_current()->process, PROMISE_FS);
     check_allowed_with_privilege(task_current()->process, PRIVILEGE_FS_DATA);
 
@@ -30,13 +30,13 @@ void *isr80h_command16_fopen(struct interrupt_frame *frame) {
     return (void *)fd;
 }
 
-void *isr80h_command17_fclose(struct interrupt_frame *frame) {
+void *isr80h_command19_fclose(struct interrupt_frame *frame) {
     int fd = task_get_stack_item(task_current(), 0);
     fclose(fd);
     return 0;
 }
 
-void *isr80h_command18_fread(struct interrupt_frame *frame) {
+void *isr80h_command20_fread(struct interrupt_frame *frame) {
     check_process_promise(task_current()->process, PROMISE_FS);
     check_allowed_with_privilege(task_current()->process, PRIVILEGE_FS_DATA);
 
@@ -51,7 +51,7 @@ void *isr80h_command18_fread(struct interrupt_frame *frame) {
     return 0;
 }
 
-void *isr80h_command19_fstat(struct interrupt_frame *frame) {
+void *isr80h_command21_fstat(struct interrupt_frame *frame) {
     check_process_promise(task_current()->process, PROMISE_FS);
     check_allowed_with_privilege(task_current()->process, PRIVILEGE_FS_DATA);
 

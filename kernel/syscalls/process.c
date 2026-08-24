@@ -11,39 +11,21 @@
 
 #include "../drivers/io/io.h"
 
-void *isr80h_command6_process_load_start(struct interrupt_frame *frame) {
-    int res = check_process_promise(task_current()->process, PROMISE_EXEC);
-    res = check_allowed_with_privilege(task_current()->process, PRIVILEGE_EXEC_EXECS);
-    if (res != true) {
-        return 0;
-    }
+void *isr80h_command0_exit(struct interrupt_frame *frame) {
+    struct process *process = task_current()->process;
+    process_terminate(process);
+    task_next();
+}
 
-    void *filename_user_ptr = task_get_stack_item(task_current(), 0);
-    char filename[MAX_PATH];
-    res = copy_string_from_task(task_current(), filename_user_ptr, filename, sizeof(filename));
-    if (res < 0) {
-        goto out;
-    }
+void *isr80h_command11_get_process_arguments(struct interrupt_frame *frame) {
+    struct process *process = task_current()->process;
+    struct process_arguments *arguments = task_virtual_address_to_physical(task_current(), task_get_stack_item(task_current(), 0));
 
-    if (strncmp(filename, "0:/sysro", 8) == 0) {
-        check_allowed_with_privilege(task_current()->process, PRIVILEGE_EXEC_SYSRO);
-    }
-
-    struct process *process = 0;
-    res = process_load_switch(filename, &process);
-    if (res < 0) {
-        goto out;
-    }
-
-    process->privilege = task_current()->process->privilege;
-
-    task_switch(process->task);
-    task_return(&process->task->registers);
-out:
+    process_get_arguments(process, &arguments->argc, &arguments->argv);
     return 0;
 }
 
-void *isr80h_command7_system(struct interrupt_frame *frame) {
+void *isr80h_command12_system(struct interrupt_frame *frame) {
     int res = check_process_promise(task_current()->process, PROMISE_EXEC);
     res = check_allowed_with_privilege(task_current()->process, PRIVILEGE_EXEC_EXECS);
     if (res != true) {
@@ -87,7 +69,7 @@ void *isr80h_command7_system(struct interrupt_frame *frame) {
     return 0;
 }
 
-void *isr80h_command12_fork(struct interrupt_frame *frame) {
+void *isr80h_command14_fork(struct interrupt_frame *frame) {
     int res = check_process_promise(task_current()->process, PROMISE_EXEC);
     res = check_allowed_with_privilege(task_current()->process, PRIVILEGE_EXEC_EXECS);
     if (res != true) {
@@ -139,21 +121,7 @@ void *isr80h_command12_fork(struct interrupt_frame *frame) {
     return 0;
 }
 
-void *isr80h_command8_get_process_arguments(struct interrupt_frame *frame) {
-    struct process *process = task_current()->process;
-    struct process_arguments *arguments = task_virtual_address_to_physical(task_current(), task_get_stack_item(task_current(), 0));
-
-    process_get_arguments(process, &arguments->argc, &arguments->argv);
-    return 0;
-}
-
-void *isr80h_command0_exit(struct interrupt_frame *frame) {
-    struct process *process = task_current()->process;
-    process_terminate(process);
-    task_next();
-}
-
-void *isr80h_command21_get_processes(struct interrupt_frame *frame) {
+void *isr80h_command16_get_processes(struct interrupt_frame *frame) {
     void *out = task_get_stack_item(task_current(), 0);
     uint16_t max = task_get_stack_item(task_current(), 1);
 
@@ -178,7 +146,7 @@ void *isr80h_command21_get_processes(struct interrupt_frame *frame) {
     return 0;
 }
 
-void *isr80h_command22_terminate_process(struct interrupt_frame *frame) {
+void *isr80h_command17_terminate_process(struct interrupt_frame *frame) {
     check_process_promise(task_current()->process, PROMISE_KILL);
     check_allowed_with_privilege(task_current()->process, PRIVILEGE_KILL);
 

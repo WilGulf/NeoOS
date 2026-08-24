@@ -19,7 +19,7 @@ kbool check_allowed_with_privilege(struct process *process, uint8_t privilege) {
     return 1;
 }
 
-void *isr80h_command14_drop_privilege(struct interrupt_frame *frame) {
+void *isr80h_command2_drop_privilege(struct interrupt_frame *frame) {
     uint8_t privilege = (uint8_t)task_get_stack_item(task_current(), 0);
     if (privilege < task_current()->process->privilege) {
         process_terminate(task_current()->process);
@@ -30,7 +30,7 @@ void *isr80h_command14_drop_privilege(struct interrupt_frame *frame) {
     task_current()->process->privilege = privilege;
 }
 
-void *isr80h_command11_system_run_as(struct interrupt_frame *frame) {
+void *isr80h_command13_system_run_as(struct interrupt_frame *frame) {
     check_process_promise(task_current()->process, PROMISE_EXEC);
     check_allowed_with_privilege(task_current()->process, PRIVILEGE_EXEC_EXECS);
 
@@ -75,7 +75,7 @@ void *isr80h_command11_system_run_as(struct interrupt_frame *frame) {
     return 0;
 }
 
-void *isr80h_command13_fork_as(struct interrupt_frame *frame) {
+void *isr80h_command15_fork_as(struct interrupt_frame *frame) {
     int res = check_process_promise(task_current()->process, PROMISE_EXEC);
     res = check_allowed_with_privilege(task_current()->process, PRIVILEGE_EXEC_EXECS);
     if (res != true) {

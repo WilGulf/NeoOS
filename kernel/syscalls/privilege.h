@@ -17,8 +17,8 @@ kbool check_allowed_with_privilege(struct process *process, uint8_t privilege);
 
 struct interrupt_frame;
 
-void *isr80h_command11_system_run_as(struct interrupt_frame *frame);
-void *isr80h_command13_fork_as(struct interrupt_frame *frame);
-void *isr80h_command14_drop_privilege(struct interrupt_frame *frame);
+void *isr80h_command2_drop_privilege(struct interrupt_frame *frame);
+void *isr80h_command13_system_run_as(struct interrupt_frame *frame);
+void *isr80h_command15_fork_as(struct interrupt_frame *frame);
 
 #endif

@@ -12,12 +12,11 @@ struct process_public {
 
 struct interrupt_frame;
 
-void *isr80h_command6_process_load_start(struct interrupt_frame *frame);
-void *isr80h_command7_system(struct interrupt_frame *frame);
-void *isr80h_command8_get_process_arguments(struct interrupt_frame *frame);
 void *isr80h_command0_exit(struct interrupt_frame *frame);
-void *isr80h_command12_fork(struct interrupt_frame *frame);
-void *isr80h_command21_get_processes(struct interrupt_frame *frame);
-void *isr80h_command22_terminate_process(struct interrupt_frame *frame);
+void *isr80h_command11_get_process_arguments(struct interrupt_frame *frame);
+void *isr80h_command12_system(struct interrupt_frame *frame);
+void *isr80h_command14_fork(struct interrupt_frame *frame);
+void *isr80h_command16_get_processes(struct interrupt_frame *frame);
+void *isr80h_command17_terminate_process(struct interrupt_frame *frame);
 
 #endif

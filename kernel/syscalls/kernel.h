@@ -9,6 +9,6 @@ struct kernel_info {
     struct kernel_version version;
 };
 
-void *isr80h_command15_get_kernel_info(struct interrupt_frame *frame);
+void *isr80h_command3_get_kernel_info(struct interrupt_frame *frame);
 
 #endif

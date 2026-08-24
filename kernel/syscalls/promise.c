@@ -19,7 +19,7 @@ kbool check_process_promise(struct process *process, uint32_t promise) {
     return 1;
 }
 
-void *isr80h_command10_promise(struct interrupt_frame *frame) {    
+void *isr80h_command1_promise(struct interrupt_frame *frame) {    
     uint32_t promise = (uint32_t)task_get_stack_item(task_current(), 0);
     
     if (task_current()->process->declared) {
