@@ -54,11 +54,6 @@ int fork_as(const char *command, uint8_t privilege);
 
 int drop_privilege(uint8_t privilege);
 
-int fopen(const char *filename, const char *mode);
-void fclose(int fd);
-int fread(void *buffer, size_t size, size_t count, int fd);
-int fstat(int fd, struct file_stat *stat);
-
 void get_processes(void *out_ptr, uint16_t max);
 void kill(uint16_t id);
 

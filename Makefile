@@ -46,6 +46,9 @@ disk_contents: output/disk.img
 	mdir -i output/disk.img ::/execs >/dev/null 2>&1 || mmd -i output/disk.img ::/execs
 	mdir -i output/disk.img ::/sysro >/dev/null 2>&1 || mmd -i output/disk.img ::/sysro
 	mdir -i output/disk.img ::/data >/dev/null 2>&1 || mmd -i output/disk.img ::/data
+
+	mcopy -o -i output/disk.img -o userland/configs/boot.cfg ::/sysro/boot.cfg
+
 	mcopy -o -i output/disk.img -o userland/launch/output/launch.elf ::/sysro/launch.elf
 	mcopy -o -i output/disk.img -o userland/execs/sh/output/sh.elf ::/execs/sh.elf
 	mcopy -o -i output/disk.img -o userland/execs/fetch/output/fetch.elf ::/execs/fetch.elf

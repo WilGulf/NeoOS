@@ -86,10 +86,20 @@ int kmain(uint32_t magic, struct multiboot_info* bootInfo) {
 
     keyboard_init();
 
+    int fd = fopen("0:/sysro/boot.cfg", "r");
+
+    char line[256];
+    char launch[MAX_PATH];
+    while (fgets(line, sizeof(line), fd)) {
+        if (!strncmp(line, "LAUNCH=", 7)) {
+            strncpy(launch, line + 7, sizeof(launch));
+        }
+    }
+
     struct process *process = 0;
-    int res = process_load_switch("0:/sysro/launch.elf", &process);
+    int res = process_load_switch(launch, &process);
     if (res != ALL_OK) {
-        panic("Failed to load init", res);
+        panic("Failed to load launcher", res);
     }
 
     task_run_first_ever_task();

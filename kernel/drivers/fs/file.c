@@ -236,3 +236,31 @@ int fclose(int fd) {
 out:
     return res;
 }
+
+char *fgets(char *str, int size, int fd) {
+    if (!str || size <= 1) {
+        return 0;
+    }
+
+    int i = 0;
+    while (i < size - 1) {
+        char c;
+        
+        if (fread(&c, 1, 1, fd) != 1) {
+            if (i == 0) {
+                return 0;
+            }
+
+            break;
+        }
+
+        str[i++] = c;
+
+        if (c == '\n') {
+            break;
+        }
+    }
+
+    str[i] = '\0';
+    return str;
+}

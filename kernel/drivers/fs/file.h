@@ -69,6 +69,7 @@ int fseek(int fd, int offset, FILE_SEEK_MODE whence);
 int fread(void *ptr, uint32_t size, uint32_t nmemb, int fd);
 int fstat(int fd, struct file_stat *stat);
 int fclose(int fd);
+char *fgets(char *str, int size, int fd);
 
 void fs_insert_filesystem(struct filesystem *filesystem);
 struct filesystem *fs_resolve(struct disk *disk);
