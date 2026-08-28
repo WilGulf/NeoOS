@@ -1,7 +1,9 @@
 #include "io.h"
 #include "../../include/stdint.h"
+#include "../../include/util.h"
 
 char *fb = (char *) 0x000B8000;
+unsigned char current_fg, current_bg;
 
 void fb_write_cell(unsigned int i, char c, unsigned char fg, unsigned char bg) {
     fb[i] = c;
@@ -71,6 +73,108 @@ void fb_scroll() {
     }
 }
 
+void process_formatting(char *formatting) {
+    int number = atoi(formatting);
+    switch (number) {
+        case 0:
+            current_fg = 0x0F;
+            current_bg = 0x00;
+            break;
+
+        case 30:
+            // Black
+            current_fg = 0x00;
+            break;
+        
+        case 31:
+            // Red
+            current_fg = 0x04;
+            break;
+
+        case 32:
+            // Green
+            current_fg = 0x02;
+            break;
+
+        case 33:
+            // Yellow
+            current_fg = 0x0E;
+            break;
+
+        case 34:
+            // Blue
+            current_fg = 0x01;
+            break;
+
+        case 35:
+            // Purple
+            current_fg = 0x05;
+            break;
+
+        case 36:
+            // Cyan
+            current_fg = 0x03;
+            break;
+
+        case 37:
+            // White
+            current_fg = 0x0F;
+            break;
+
+        case 39:
+            current_fg = 0x0F;
+            break;
+
+
+        case 40:
+            // Black
+            current_bg = 0x00;
+            break;
+
+        case 41:
+            // Red
+            current_bg = 0x04;
+            break;
+
+        case 42:
+            // Green
+            current_bg = 0x02;
+            break;
+
+        case 43:
+            // Yellow
+            current_bg = 0x0E;
+            break;
+
+        case 44:
+            // Blue
+            current_bg = 0x01;
+            break;
+
+        case 45:
+            // Purple
+            current_bg = 0x05;
+            break;
+
+        case 46:
+            // Cyan
+            current_bg = 0x03;
+            break;
+
+        case 47:
+            // White
+            current_bg = 0x0F;
+            break;
+
+        case 49:
+            current_bg = 0x00;
+            break;
+
+        default:
+            break;
+    }
+}
+
 void fb_putc(char c) {
     if (c == '\n' || c == 0x0d) {
         fb_new_line();
@@ -109,16 +213,39 @@ int writer(char *buf) {
             pos = x + y * 80;
             
             i++;
-            //break;
         } else if (bytes[i] == '\0') {
             break;
+        } else if (bytes[i] == '\033') {
+            if (bytes[i + 1] == '[') {                
+                char formatting[8];
+                i += 2;
+                int last = i;
+                while (bytes[i]) {
+                    if (bytes[i] == ';' || bytes[i] == 'm') {
+                        int len = i - last + 1;
+                        strncpy(formatting, bytes + last, len < 7 ? len : 7);
+                        formatting[len < 7 ? len : 7] = 0x00;
+                        process_formatting(formatting);
+                        last = i + 1;
+
+                        if (bytes[i] == 'm') {
+                            i++;
+                            break;
+                        }
+                    }
+
+                    i++;
+                }
+            }
         } else {
-            fb_write_cell(pos * 2, bytes[i], 0x0F, 0x00);
+            fb_write_cell(pos * 2, bytes[i], current_fg, current_bg);
             pos++;
             i++;
         }
     }
 
+    current_fg = 0x0F;
+    current_bg = 0x00;
     fb_move_cursor(pos);
 
     return 0;

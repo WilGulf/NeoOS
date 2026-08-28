@@ -1,36 +1,53 @@
 #include "stdio.h"
 
 #include <stdarg.h>
+#include "string.h"
 
 void print(const char *msg);
 
 int printf(const char *fmt, ...) {
     va_list args;
     const char *p;
-    char *sval, *cval;
-    int ival;
+    char *sval;
+    int cval, ival;
+
+    char buffer[1024];
+    int buffer_i = 0;
 
     va_start(args, fmt);
     for (p = fmt; *p; p++) {
+        if (buffer_i >= 1022) {
+            break;
+        }
+
         if (*p != '%') {
-            putchar(*p);
+            buffer[buffer_i++] = *p;
             continue;
         }
+
+        char *integer;
 
         switch(*++p) {
             case 'd':
                 ival = va_arg(args, int);
-                print(itoa(ival));
+                integer = itoa(ival);
+                while (*integer && buffer_i < 1022) {
+                    buffer[buffer_i++] = *integer++;
+                }
+                
                 break;
 
             case 's':
                 sval = va_arg(args, char *);
-                print(sval);
+                while (*sval && buffer_i < 1022) {
+                    buffer[buffer_i++] = *sval++;
+                }
+
                 break;
 
             case 'c':
-                cval = va_arg(args, char *);
-                print(cval);
+                cval = va_arg(args, int);
+                buffer[buffer_i++] = (char)cval;
                 break;
 
             case 'f':
@@ -40,10 +57,14 @@ int printf(const char *fmt, ...) {
                 break;
 
             default:
-                putchar(*p);
+                buffer[buffer_i++] = *p;
                 break;
         }
     }
+
+    buffer[buffer_i] = '\0';
+
+    print(buffer);
 
     va_end(args);
 
