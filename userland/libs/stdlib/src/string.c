@@ -1,4 +1,6 @@
 #include "string.h"
+#include "stddef.h"
+#include "memory.h"
 
 char char_upper_to_lower(char c) {
     if (c >= 65 && c <= 90) {
@@ -109,6 +111,17 @@ char *strchr(const char *str, int c) {
         }
     }
     return (char *)str;
+}
+
+char *strstr(const char *str1, const char *str2) {
+    size_t n = strlen(str2);
+    while (*str1) {
+        if (!memcmp(str1++, str2, n)) {
+            return (char *)(str1 - 1);
+        }
+    }
+
+    return 0;
 }
 
 int char_to_int(char c) {

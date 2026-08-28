@@ -12,6 +12,7 @@ int strncmp(char *str1, char *str2, int max);
 int istrncmp(const char* str1, const char* str2, int max);
 
 char *strchr(const char *str, int c);
+char *strstr(const char *str1, const char *str2);
 
 int char_to_int(char c);
 char char_upper_to_lower(char c);

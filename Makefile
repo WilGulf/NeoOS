@@ -57,6 +57,7 @@ disk_contents: output/disk.img
 	mcopy -o -i output/disk.img -o userland/execs/read/output/read.elf ::/execs/read.elf
 	mcopy -o -i output/disk.img -o userland/execs/running/output/running.elf ::/execs/running.elf
 	mcopy -o -i output/disk.img -o userland/execs/kill/output/kill.elf ::/execs/kill.elf
+	mcopy -o -i output/disk.img -o userland/execs/kill/output/killall.elf ::/execs/killall.elf
 
 run: all
 	qemu-system-i386 -kernel output/kernel.elf -hda output/disk.img

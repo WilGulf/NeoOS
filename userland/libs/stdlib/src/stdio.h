@@ -13,6 +13,13 @@ struct key_event {
     uint8_t modifiers;
 };
 
+typedef unsigned int FILE_STAT_FLAGS;
+
+struct file_stat {
+    FILE_STAT_FLAGS flags;
+    uint32_t filesize;
+};
+
 char *itoa(int i);
 int atoi(const char *str);
 
