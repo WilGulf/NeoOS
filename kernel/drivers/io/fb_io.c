@@ -29,6 +29,17 @@ uint16_t fb_get_cursor_position(void) {
     return pos;
 }
 
+void fb_enable_cursor() {
+	outb(0x3D4, 0x0A);
+	outb(0x3D4, 0x0B);
+}
+
+
+void fb_disable_cursor() {
+	outb(0x3D4, 0x0A);
+	outb(0x3D5, 0x20);
+}
+
 void fb_clear() {
     for (int i = 0; i < 80 * 25 * 2; i += 2) {
         fb_write_cell(i, ' ', 0x0F, 0x00);

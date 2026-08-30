@@ -62,6 +62,7 @@ int main(int argc, char **argv) {
                     } else {
                         system_as(path1, 4);
                         system("");
+                        set_fb_cursor(true);
                     }
                 }
 

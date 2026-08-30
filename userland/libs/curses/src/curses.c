@@ -4,6 +4,7 @@
 #include "stdlib.h"
 #include "stdio.h"
 #include "memory.h"
+#include "stdbool.h"
 
 #include <stdarg.h>
 
@@ -40,6 +41,8 @@ void vbclear(int vbuffer) {
 }
 
 void inits(void) {
+    set_fb_cursor(false);
+
     for (int i = 0; i < MAX_BUFFERS; i++) {
         vbuffers[i] = NULL;
         vbuffer_positions[i] = 0;
@@ -102,6 +105,8 @@ int exits(void) {
             vbuffer_free(i);
         }
     }
+
+    set_fb_cursor(true);
 
     return 0;
 }

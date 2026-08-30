@@ -1,6 +1,10 @@
 #include "stdlib.h"
 
 #include "string.h"
+#include "stdbool.h"
+
+extern void fb_disable_cursor();
+extern void fb_enable_cursor();
 
 int fork_run(struct command_argument *arguments);
 int fork_run_as(struct command_argument *arguments, uint8_t privilege);
@@ -83,4 +87,12 @@ int fork(const char *command) {
 int fork_as(const char *command, uint8_t privilege) {
     struct command_argument *root_command_argument = command_to_arguments(command);
     return fork_run_as(root_command_argument, privilege);
+}
+
+void set_fb_cursor(bool enabled) {
+    if (enabled) {
+        fb_enable_cursor();
+    } else {
+        fb_disable_cursor();
+    }
 }

@@ -36,4 +36,6 @@ int fstat(int fd, struct file_stat *stat);
 
 char *fgets(char *str, int size, int fd);
 
+void set_fb_cursor(bool enabled);
+
 #endif

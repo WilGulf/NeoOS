@@ -12,6 +12,9 @@ void fb_putc(char c);
 void fb_clear();
 void fb_scroll();
 
+void fb_enable_cursor();
+void fb_disable_cursor();
+
 int kprintf(char *buf, ...);
 
 #endif
