@@ -3,7 +3,9 @@
 #include "../../include/util.h"
 
 char *fb = (char *) 0x000B8000;
-unsigned char current_fg, current_bg;
+
+unsigned char current_fg = 0x0F;
+unsigned char current_bg = 0x00;
 
 void fb_write_cell(unsigned int i, char c, unsigned char fg, unsigned char bg) {
     fb[i] = c;
@@ -182,7 +184,7 @@ void fb_putc(char c) {
         fb_backspace();
     } else {
         uint16_t pos = fb_get_cursor_position();
-        fb_write_cell((pos * 2), c, 0x0F, 0x00);
+        fb_write_cell((pos * 2), c, current_fg, current_bg);
         fb_move_cursor(pos + 1);
     }
 }
@@ -244,8 +246,6 @@ int writer(char *buf) {
         }
     }
 
-    current_fg = 0x0F;
-    current_bg = 0x00;
     fb_move_cursor(pos);
 
     return 0;
