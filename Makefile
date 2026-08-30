@@ -3,7 +3,7 @@ OBJECTS = kernel/loader.o kernel/kmain.o kernel/kernel_asm.o \
 	kernel/drivers/io/fb_io.o kernel/drivers/io/io_asm.o kernel/drivers/io/kprint.o \
 	kernel/drivers/keyboard/keyboard.o kernel/drivers/keyboard/ps2.o \
 	kernel/gdt/gdt_asm.o kernel/gdt/gdt.o \
-	kernel/idt/idt.o kernel/idt/idt_asm.o \
+	kernel/idt/idt.o kernel/idt/idt_asm.o kernel/timer/timer.o \
 	kernel/include/util.o \
 	kernel/memory/paging.o kernel/memory/paging_asm.o kernel/memory/heap.o kernel/memory/kheap.o\
 	kernel/drivers/fs/disk.o kernel/drivers/fs/path_parser.o kernel/drivers/fs/disk_streamer.o kernel/drivers/fs/file.o \
@@ -17,7 +17,8 @@ OBJECTS = kernel/loader.o kernel/kmain.o kernel/kernel_asm.o \
 	kernel/syscalls/promise.o \
 	kernel/syscalls/privilege.o \
 	kernel/syscalls/kernel.o \
-	kernel/syscalls/fs.o
+	kernel/syscalls/fs.o \
+	kernel/syscalls/timer.o
 
 #C compiler
 CC = i686-elf-gcc
@@ -58,6 +59,7 @@ disk_contents: output/disk.img
 	mcopy -o -i output/disk.img -o userland/execs/running/output/running.elf ::/execs/running.elf
 	mcopy -o -i output/disk.img -o userland/execs/kill/output/kill.elf ::/execs/kill.elf
 	mcopy -o -i output/disk.img -o userland/execs/kill/output/killall.elf ::/execs/killall.elf
+	mcopy -o -i output/disk.img -o userland/execs/test/output/test.elf ::/execs/test.elf
 
 run: all
 	qemu-system-i386 -kernel output/kernel.elf -hda output/disk.img
@@ -73,6 +75,7 @@ output/disk.img:
 
 userland_execs:
 	cd ./userland/libs/stdlib && $(MAKE) all
+	cd ./userland/libs/curses && $(MAKE) all
 	cd ./userland/launch && $(MAKE) all
 	cd ./userland/execs/sh && $(MAKE) all
 	cd ./userland/execs/fetch && $(MAKE) all
@@ -81,9 +84,11 @@ userland_execs:
 	cd ./userland/execs/read && $(MAKE) all
 	cd ./userland/execs/running && $(MAKE) all
 	cd ./userland/execs/kill && $(MAKE) all
+	cd ./userland/execs/test && $(MAKE) all
 
 userland_clean:
 	cd ./userland/libs/stdlib && $(MAKE) clean 
+	cd ./userland/libs/curses && $(MAKE) clean
 	cd ./userland/launch && $(MAKE) clean
 	cd ./userland/execs/sh && $(MAKE) clean
 	cd ./userland/execs/fetch && $(MAKE) clean
@@ -92,6 +97,7 @@ userland_clean:
 	cd ./userland/execs/read && $(MAKE) clean
 	cd ./userland/execs/running && $(MAKE) clean
 	cd ./userland/execs/kill && $(MAKE) clean
+	cd ./userland/execs/test && $(MAKE) clean
 
 kernel_clean:
 	rm -f output/*.elf
