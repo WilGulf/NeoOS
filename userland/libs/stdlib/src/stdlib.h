@@ -50,4 +50,6 @@ int drop_privilege(uint8_t privilege);
 void get_processes(void *out_ptr, uint16_t max);
 void kill(uint16_t id);
 
+uint32_t get_ticks_ms(void);
+
 #endif

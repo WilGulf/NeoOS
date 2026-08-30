@@ -248,3 +248,12 @@ fstat:
     ret
 
 ;22 fseek
+
+global get_ticks_ms:function
+get_ticks_ms:
+    push ebp
+    mov ebp, esp
+    mov eax, 23
+    int 0x80
+    pop ebp
+    ret
