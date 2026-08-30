@@ -7,6 +7,7 @@
 #include "../task/task.h"
 #include "../task/process.h"
 #include "../drivers/io/io.h"
+#include "../timer/timer.h"
 
 struct idt_desc idt_descriptors[TOTAL_INTERRUPTS];
 struct idtr_desc idtr_descriptor;
@@ -98,6 +99,7 @@ void idt_handle_exception() {
 
 void idt_clock() {
     outb(0x20, 0x20);
+    timer_tick();
     task_next();
 }
 

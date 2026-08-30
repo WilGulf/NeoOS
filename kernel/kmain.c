@@ -28,6 +28,7 @@
 #include "include/status.h"
 #include "include/va_list.h"
 #include "panic.h"
+#include "timer/timer.h"
 
 extern uint32_t kernel_virtual_start;
 extern uint32_t kernel_virtual_end;
@@ -66,6 +67,8 @@ int kmain(uint32_t magic, struct multiboot_info* bootInfo) {
     kprintf("GDT Initialized\n");
     idt_init();
     kprintf("IDT Initialized\n");
+
+    timer_init();
 
     void *kernel_stack = kzalloc(4096);
     set_tss_stack(&stack_top);

@@ -25,6 +25,7 @@ enum SystemCommands {
     SYSTEM_COMMAND20_FREAD,
     SYSTEM_COMMAND21_FSTAT,
     SYSTEM_COMMAND22_FSEEK,
+    SYSTEM_COMMAND23_GET_TICKS_MS,
 };
 
 void isr80h_register_commands(); 

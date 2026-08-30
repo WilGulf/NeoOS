@@ -8,6 +8,7 @@
 #include "privilege.h"
 #include "kernel.h"
 #include "fs.h"
+#include "timer.h"
 
 void isr80h_register_commands() {
     isr80h_register_command(SYSTEM_COMMAND0_EXIT, isr80h_command0_exit);
@@ -33,4 +34,5 @@ void isr80h_register_commands() {
     isr80h_register_command(SYSTEM_COMMAND20_FREAD, isr80h_command20_fread);
     isr80h_register_command(SYSTEM_COMMAND21_FSTAT, isr80h_command21_fstat);
     //isr80h_register_command(SYSTEM_COMMAND22_FSEEK, isr80h_command18_fopen);
+    isr80h_register_command(SYSTEM_COMMAND23_GET_TICKS_MS, isr80h_command23_get_ticks_ms);
 }
