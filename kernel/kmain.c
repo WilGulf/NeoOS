@@ -68,8 +68,6 @@ int kmain(uint32_t magic, struct multiboot_info* bootInfo) {
     idt_init();
     kprintf("IDT Initialized\n");
 
-    timer_init();
-
     void *kernel_stack = kzalloc(4096);
     set_tss_stack(&stack_top);
 
