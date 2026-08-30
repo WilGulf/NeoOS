@@ -15,6 +15,9 @@ struct elf_file {
     void *virtual_end_address;
     void *physical_base_address;
     void *physical_end_address;
+
+    void *elf_image_memory;
+    void *image_virtual_base_address;
 };
 
 int elf_load(const char *filename, struct elf_file **file_out);

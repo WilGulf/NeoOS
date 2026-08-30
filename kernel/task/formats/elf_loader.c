@@ -35,6 +35,10 @@ void *elf_memory(struct elf_file *file) {
     return file->elf_memory;
 }
 
+void *elf_image_memory(struct elf_file *file) {
+    return file->elf_image_memory;
+}
+
 struct elf_header *elf_header(struct elf_file *file) {
     return file->elf_memory;
 }
@@ -60,7 +64,7 @@ struct elf32_shdr *elf_section(struct elf_header *header, int index) {
 }
 
 void *elf_phdr_physical_address(struct elf_file *file, struct elf32_phdr *phdr) {
-    return elf_memory(file) + phdr->p_offset;
+    return elf_image_memory(file) + (phdr->p_vaddr - (int)file->image_virtual_base_address);
 }
 
 char *elf_str_table(struct elf_header *header) {
@@ -93,11 +97,12 @@ int elf_process_phdr_pt_load(struct elf_file *elf_file, struct elf32_phdr *phdr)
         elf_file->physical_base_address = elf_memory(elf_file) + phdr->p_offset;
     }
 
-    uint32_t end_virtual_address = phdr->p_vaddr + phdr->p_filesz;
+    uint32_t end_virtual_address = phdr->p_vaddr + phdr->p_memsz;
     if (elf_file->virtual_end_address <= (void *)(end_virtual_address) || elf_file->virtual_end_address == 0x00) {
         elf_file->virtual_end_address = (void *)end_virtual_address;
         elf_file->physical_end_address = elf_memory(elf_file) + phdr->p_offset + phdr->p_filesz;
     }
+
     return 0;
 }
 
@@ -130,6 +135,9 @@ void elf_file_free(struct elf_file *file) {
     if (file->elf_memory) {
         kfree(file->elf_memory);
     }
+    if (file->elf_image_memory) {
+        kfree(file->elf_image_memory);
+    }
 
     kfree(file);
 }
@@ -153,6 +161,47 @@ int elf_process_loaded(struct elf_file *file) {
 
 out:
     return res;
+}
+
+int elf_build_image(struct elf_file *file) {
+    uint32_t virtual_base_address = 0;
+    uint32_t virtual_end_address = 0;
+
+    struct elf_header *header = elf_header(file);
+    for (int i = 0; i < header->e_phnum; i++) {
+        struct elf32_phdr *phdr = elf_program_header(header, i);
+
+        if (phdr->p_type != PT_LOAD) {
+            continue;
+        }
+
+        if (i == 0) {
+            virtual_base_address = phdr->p_vaddr;
+        }
+
+        if (phdr->p_vaddr < virtual_base_address) {
+            virtual_base_address = phdr->p_vaddr;
+        }
+        if ((phdr->p_vaddr + phdr->p_memsz) > virtual_end_address) {
+            virtual_end_address = phdr->p_vaddr + phdr->p_memsz;
+        }
+    }
+
+    file->elf_image_memory = kzalloc(virtual_end_address - virtual_base_address);
+
+    for (int i = 0; i < header->e_phnum; i++) {
+        struct elf32_phdr *phdr = elf_program_header(header, i);
+
+        if (phdr->p_type != PT_LOAD) {
+            continue;
+        }
+
+        if (phdr->p_filesz > 0) {
+            memcpy(file->elf_image_memory + (phdr->p_vaddr - virtual_base_address), file->elf_memory + phdr->p_offset, phdr->p_filesz);
+        }
+    }
+
+    file->image_virtual_base_address = virtual_base_address;
 }
 
 int elf_load(const char *filename, struct elf_file **file_out) {
@@ -182,6 +231,11 @@ int elf_load(const char *filename, struct elf_file **file_out) {
         goto out;
     }
 
+    res = elf_build_image(elf_file);
+    if (res < 0) {
+        goto out;
+    }
+
     *file_out = elf_file;
 out:
     if (res < 0) {
@@ -198,5 +252,6 @@ void elf_close(struct elf_file *file) {
     }
 
     kfree(file->elf_memory);
+    kfree(file->elf_image_memory);
     kfree(file);
 }
