@@ -35,4 +35,6 @@ void isr80h_register_commands() {
     isr80h_register_command(SYSTEM_COMMAND21_FSTAT, isr80h_command21_fstat);
     //isr80h_register_command(SYSTEM_COMMAND22_FSEEK, isr80h_command18_fopen);
     isr80h_register_command(SYSTEM_COMMAND23_GET_TICKS_MS, isr80h_command23_get_ticks_ms);
+    isr80h_register_command(SYSTEM_COMMAND24_DISABLE_CURSOR, isr80h_command24_disable_cursor);
+    isr80h_register_command(SYSTEM_COMMAND25_ENABLE_CURSOR, isr80h_command25_enable_cursor);
 }
