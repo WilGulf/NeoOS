@@ -8,6 +8,7 @@
 #define COLOR_BLUE 34
 #define COLOR_MAGENTA 35
 #define COLOR_CYAN 36
+#define COLOR_WHITE 37
 #define COLOR_RESET 0
 
 int vbinit(void);
@@ -24,7 +25,10 @@ int printvb(int vbuffer, char *fmt, ...);
 void vbclear(int vbuffer);
 
 int vbsetcolor(int vbuffer, int color);
+int vbsetbg(int vbuffer, int color) ;
 int vbgetcolor(int vbuffer);
+
+int vbmove(int vbuffer, int x, int y);
 
 int waitms(int ms);
 

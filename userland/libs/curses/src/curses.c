@@ -16,12 +16,14 @@
 struct cell {
     char c;
     int color;
+    int color_bg;
 };
 
 int front = 0;
 struct cell *vbuffers[MAX_BUFFERS];
 int vbuffer_positions[MAX_BUFFERS];
 int vbuffer_current_colors[MAX_BUFFERS];
+int vbuffer_current_backgrounds[MAX_BUFFERS];
 
 void vbuffer_free(int vbuffer) {
     free(vbuffers[vbuffer]);
@@ -34,6 +36,7 @@ void vbclear(int vbuffer) {
         for (int x = 0; x < COLUMNS; x++) {
             vbuffers[vbuffer][(y * COLUMNS) + x].c = ' ';
             vbuffers[vbuffer][(y * COLUMNS) + x].color = 0;
+            vbuffers[vbuffer][(y * COLUMNS) + x].color_bg = 0;
         }
     }
     
@@ -46,6 +49,8 @@ void inits(void) {
     for (int i = 0; i < MAX_BUFFERS; i++) {
         vbuffers[i] = NULL;
         vbuffer_positions[i] = 0;
+        vbuffer_current_colors[i] = 0;
+        vbuffer_current_backgrounds[i] = 0;
     }
     
     clear();    
@@ -111,6 +116,15 @@ int exits(void) {
     return 0;
 }
 
+int vbmove(int vbuffer, int x, int y) {
+    if (!vbuffers[vbuffer]) {
+        return 0;
+    }
+
+    vbuffer_positions[vbuffer] = (y * COLUMNS) + x;
+    return 0;
+}
+
 int refresh() {
     if (front < 0) {
         return 0;
@@ -119,15 +133,18 @@ int refresh() {
     clear();
 
     int last_color = -1;
+    int last_colorbg = -1;
 
     for (int y = 0; y < ROWS; y++) {
         for (int x = 0; x < COLUMNS; x++) {
             int pos = (y * COLUMNS) + x;
             int color = vbuffers[front][pos].color;
+            int color_bg = vbuffers[front][pos].color_bg;
 
-            if (color != last_color) {
-                printf("\033[%dm", color);
+            if (color != last_color || color_bg != last_colorbg) {
+                printf("\033[%d;%dm", color, color_bg);
                 last_color = color;
+                last_colorbg = color_bg;
             }
             
             printf("%c", vbuffers[front][pos].c);
@@ -152,13 +169,33 @@ int waitms(int ms) {
 }
 
 int vbsetcolor(int vbuffer, int color) {
-    if (color >= 30 && color <= 37) {
+    if (!vbuffers[vbuffer]) {
+        return 0;
+    }
+
+    if ((color >= 30 && color <= 37) || color == COLOR_RESET) {
         vbuffer_current_colors[vbuffer] = color;
     }
     return 0;
 }
 
+int vbsetbg(int vbuffer, int color) {
+    if (!vbuffers[vbuffer]) {
+        return 0;
+    }
+
+    if ((color >= 30 && color <= 37) || color == COLOR_RESET) {
+        vbuffer_current_backgrounds[vbuffer] = color + 10;
+    }
+
+    return 0;
+}
+
 int vbgetcolor(int vbuffer) {
+    if (!vbuffers[vbuffer]) {
+        return 0;
+    }
+
     return vbuffer_current_colors[vbuffer];
 }
 
@@ -201,6 +238,7 @@ int printvb(int vbuffer, char *fmt, ...) {
         } else {
             vbuffers[vbuffer][vbuffer_positions[vbuffer]].c = *p;
             vbuffers[vbuffer][vbuffer_positions[vbuffer]].color = vbuffer_current_colors[vbuffer];
+            vbuffers[vbuffer][vbuffer_positions[vbuffer]].color_bg = vbuffer_current_backgrounds[vbuffer];
             vbuffer_positions[vbuffer]++;
         }
 
