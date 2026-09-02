@@ -7,18 +7,18 @@
 
 static int path_is_valid_format(const char *path) {
     int len = strnlen(path, MAX_PATH);
-    return len >= 3 && char_is_digit(path[0]) && memcmp((void *)&path[1], ":/", 2) == 0;
+    return len >= 3 && (char_is_digit(path[0]) || path[0] == 'D') && memcmp((void *)&path[1], ":/", 2) == 0;
 }
 
-static int get_drive_by_path(const char **path) {
+static char get_drive_by_path(const char **path) {
     if (!path_is_valid_format(*path)) {
         return -ERROR_BAD_PATH;
     }
 
-    int drive_no = char_to_int(*path[0]);
+    char drive_id = *path[0];
 
     *path += 3;
-    return drive_no;
+    return drive_id;
 }
 
 static struct path_root *create_root(int drive_no) {
@@ -27,7 +27,7 @@ static struct path_root *create_root(int drive_no) {
         return NULL;
     }
 
-    path_root->drive_no = drive_no;
+    path_root->drive_id = drive_no;
     path_root->first = 0;
     return path_root;
 }

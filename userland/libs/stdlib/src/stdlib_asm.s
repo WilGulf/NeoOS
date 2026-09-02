@@ -275,3 +275,28 @@ fb_enable_cursor:
     int 0x80
     pop ebp
     ret
+
+global remove:function
+remove:
+    push ebp
+    mov ebp, esp
+    mov eax, 26
+    push dword[ebp+8]
+    int 0x80
+    add esp, 4
+    pop ebp
+    ret
+
+global fwrite:function
+fwrite:
+    push ebp
+    mov ebp, esp
+    mov eax, 27
+    push dword[ebp+20]
+    push dword[ebp+16]
+    push dword[ebp+12]
+    push dword[ebp+8]
+    int 0x80
+    add esp, 16
+    pop ebp
+    ret

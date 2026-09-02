@@ -41,6 +41,8 @@ typedef int (*FS_READ_FUNCTION)(struct disk *disk, void *private, uint32_t size,
 typedef int (*FS_RESOLVE_FUNCTION)(struct disk *disk);
 typedef int (*FS_SEEK_FUNCTION)(void *private, uint32_t offset, FILE_SEEK_MODE seek_mode);
 typedef int (*FS_STAT_FUNCTION)(struct disk *disk, void *private, struct file_stat *stat);
+typedef int (*FS_WRITE_FUNCTION)(struct disk *disk, void *private, uint32_t size, uint32_t nmemb, const char *in);
+typedef int (*FS_REMOVE_FUNCTION)(struct disk *disk, struct path_part *path);
 typedef int (*FS_CLOSE_FUNCTION)(void *private);
 
 struct filesystem {
@@ -49,6 +51,8 @@ struct filesystem {
     FS_SEEK_FUNCTION seek;
     FS_READ_FUNCTION read;
     FS_STAT_FUNCTION stat;
+    FS_WRITE_FUNCTION write;
+    FS_REMOVE_FUNCTION remove;
     FS_CLOSE_FUNCTION close;
 
     char name[20];
@@ -64,12 +68,17 @@ struct file_descriptor {
 };
 
 void fs_init();
+void dev_init();
+
 int fopen(const char *filename, const char *mode_str);
 int fseek(int fd, int offset, FILE_SEEK_MODE whence);
 int fread(void *ptr, uint32_t size, uint32_t nmemb, int fd);
 int fstat(int fd, struct file_stat *stat);
+uint32_t fwrite(const void *ptr, uint32_t size, uint32_t nmemb, int fd);
 int fclose(int fd);
 char *fgets(char *str, int size, int fd);
+
+int remove(const char *filename);
 
 void fs_insert_filesystem(struct filesystem *filesystem);
 struct filesystem *fs_resolve(struct disk *disk);

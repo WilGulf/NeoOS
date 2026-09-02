@@ -7,7 +7,7 @@ OBJECTS = kernel/loader.o kernel/kmain.o kernel/kernel_asm.o \
 	kernel/include/util.o \
 	kernel/memory/paging.o kernel/memory/paging_asm.o kernel/memory/heap.o kernel/memory/kheap.o\
 	kernel/drivers/fs/disk.o kernel/drivers/fs/path_parser.o kernel/drivers/fs/disk_streamer.o kernel/drivers/fs/file.o \
-	kernel/drivers/fs/fat/fat16.o \
+	kernel/drivers/fs/fat/fat16.o kernel/drivers/fs/ramfs/ramfs.o \
 	kernel/panic.o \
 	kernel/task/task.o kernel/task/task_asm.o kernel/task/process.o kernel/task/formats/elf.o kernel/task/formats/elf_loader.o \
 	kernel/syscalls/isr80h.o \

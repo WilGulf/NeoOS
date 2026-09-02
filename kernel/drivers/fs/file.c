@@ -1,5 +1,6 @@
 #include "file.h"
 #include "fat/fat16.h"
+#include "ramfs/ramfs.h"
 #include "disk.h"
 
 #include "../io/io.h"
@@ -35,6 +36,7 @@ void fs_insert_filesystem(struct filesystem *filesystem) {
 
 static void fs_static_load() {
     fs_insert_filesystem(fat16_init());
+    fs_insert_filesystem(ramfs_init());
 }
 
 void fs_load() {
@@ -121,7 +123,7 @@ int fopen(const char *filename, const char *mode_str) {
         goto out;
     }
 
-    disk = disk_get(root_path->drive_no);
+    disk = disk_get(root_path->drive_id);
     if (!disk) {
         res = -ERROR_IO;
         goto out;
@@ -217,6 +219,59 @@ int fstat(int fd, struct file_stat *stat) {
     }
 
     res = desc->filesystem->stat(desc->disk, desc->private, stat);
+out:
+    return res;
+}
+
+uint32_t fwrite(const void *ptr, uint32_t size, uint32_t nmemb, int fd) {
+    int res = 0;
+    if (size == 0 || nmemb == 0 || fd < 1) {
+        res = -ERROR_INVALID_ARG;
+        goto out;
+    }
+
+    struct file_descriptor *desc = file_get_descriptor(fd);
+    if (!desc) {
+        res = -ERROR_INVALID_ARG;
+        goto out;
+    }
+
+    res = desc->filesystem->write(desc->disk, desc->private, size, nmemb, ptr);
+
+out:
+    return res;
+}
+
+int remove(const char *filename) {
+    int res = 0;
+    struct disk *disk = 0;
+    FILE_MODE mode = FILE_MODE_INVALID;
+    void *descriptor_private_data = 0;
+    struct file_descriptor *desc = 0;
+
+    struct path_root *root_path = parse_path(filename, NULL);
+    if (!root_path) {
+        res = -ERROR_INVALID_ARG;
+        goto out;
+    }
+
+    if (!root_path->first) {
+        res = -ERROR_INVALID_ARG;
+        goto out;
+    }
+
+    disk = disk_get(root_path->drive_id);
+    if (!disk) {
+        res = -ERROR_IO;
+        goto out;
+    }
+
+    if (!disk->filesystem) {
+        res = -ERROR_IO;
+        goto out;
+    }
+    
+    disk->filesystem->remove(disk, root_path->first);
 out:
     return res;
 }

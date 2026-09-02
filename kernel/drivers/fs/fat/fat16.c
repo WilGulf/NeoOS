@@ -112,6 +112,8 @@ int fat16_seek(void *private, uint32_t offset, FILE_SEEK_MODE seek_mode);
 void *fat16_open(struct disk *disk, struct path_part *path, FILE_MODE mode);
 int fat16_read(struct disk *disk, void *descriptor, uint32_t size, uint32_t nmemb, char *out_ptr);
 int fat16_stat(struct disk *disk, void *private, struct file_stat *stat);
+int fat16_write(struct disk *disk, void *private, uint32_t size, uint32_t nmemb, const char *in);
+int fat16_remove(struct disk *disk, struct path_part *path);
 int fat16_close(void *private);
 
 struct filesystem fat16_fs = {
@@ -120,6 +122,8 @@ struct filesystem fat16_fs = {
     .seek = fat16_seek,
     .read = fat16_read,
     .stat = fat16_stat,
+    .write = fat16_write,
+    .remove = fat16_remove,
     .close = fat16_close
 };
 
@@ -657,6 +661,14 @@ int fat16_stat(struct disk *disk, void *private, struct file_stat *stat) {
     }
 out:
     return res;
+}
+
+int fat16_remove(struct disk *disk, struct path_part *path) {
+    return -ERROR_IO;
+}
+
+int fat16_write(struct disk *disk, void *private, uint32_t size, uint32_t nmemb, const char *in) {
+    return -ERROR_IO;
 }
 
 int fat16_close(void *private) {

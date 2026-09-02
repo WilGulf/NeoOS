@@ -68,6 +68,8 @@ int kmain(uint32_t magic, struct multiboot_info* bootInfo) {
     idt_init();
     kprintf("IDT Initialized\n");
 
+    timer_init();
+
     void *kernel_stack = kzalloc(4096);
     set_tss_stack(&stack_top);
 
@@ -83,7 +85,9 @@ int kmain(uint32_t magic, struct multiboot_info* bootInfo) {
     isr80h_register_commands();
 
     fs_init();
+
     disk_search_and_init();
+    disk_dev_init();
 
     keyboard_init();
 

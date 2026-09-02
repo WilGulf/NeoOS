@@ -3,6 +3,8 @@
 
 #include "../include/stdint.h"
 
+void timer_init(void);
+
 void timer_tick(void);
 uint32_t timer_get_ms(void);
 
