@@ -55,3 +55,5 @@ Changing the color is done with the color commands:
 **vbswitch()**: Switches which buffer is in the front and then displayed when refresh is called.
 
 **refresh()**: Refreshes the screen.
+
+**waitms(int ms)**: Waits the specified amount of milliseconds.

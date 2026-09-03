@@ -27,7 +27,7 @@ void vbclear(int vbuffer);
 
 int vbsetcolor(int vbuffer, int color);
 int vbsetbg(int vbuffer, int color) ;
-int vbgetcolor(int vbuffer);
+int vbgetcolor(int vbuffer, bool bg);
 
 int vbmove(int vbuffer, int x, int y);
 
