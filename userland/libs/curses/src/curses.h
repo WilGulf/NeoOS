@@ -22,6 +22,7 @@ int vbswitch(int vbuffer);
 
 void vbscroll(int vbuffer);
 int printvb(int vbuffer, char *fmt, ...);
+int putvb(int vbuffer, char c);
 void vbclear(int vbuffer);
 
 int vbsetcolor(int vbuffer, int color);

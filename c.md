@@ -1,4 +1,4 @@
-[BACK](README.md)
+[< BACK](README.md)
 
 # C in NeoOS
 
@@ -22,6 +22,8 @@ After the declarations the program executes main like any other C program.
 **PROMISE_EXEC**: Provides access to system and fork commands.
 
 **PROMISE_KILL**: Allows process to kill other processes.
+
+**PROMISE_FS**: Allows the process to read/write to the filesystem if privilege level is met.
 
 </details>
 <br>
@@ -69,7 +71,7 @@ No process are ever allowed to increase it privilege or it gets terminated. Howe
 
 ### Privilege commands in C
 
-- **drop_privilege(uint8_t new_privilege)**: Drops the privilege to the new level
+- **drop_privilege(uint8_t new_privilege)**: Drops the privilege to the new level.
 
 - **system_as(const char *command, uint8_t privilege)**: Executes the command with the specified privilege and doesn't return until the program has exited.
 

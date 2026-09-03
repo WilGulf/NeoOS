@@ -5,6 +5,7 @@ A 32-bit hobby Operating System for the x86 architecture.
 Currently implemented:
 - 32-bit x86 kernel
 - Filesystem support
+- Ram only filesystem supporting writing to it during runtime
 - A basic shell with a set of command
 - Multiple programs runnable from the shell
 - Security features inspired from open-bsd
@@ -16,6 +17,8 @@ The neo shell (nsh) is a basic implementation of a shell. The standard programs 
 ### NeoOS standard C library
 
 The libraries and header files available in C are mostly commands close to what is found in normal C programs, but NeoOS includes some kernel interractions and security features which are explained [here](c.md)
+
+For more advanced programs needing more control over the terminal the NeoOS implementation of ncurses: curses can be used. It is simple to use and for a brief explanation it can be found [here](curses.md)
 
 ## Testing NeoOS
 

@@ -191,12 +191,16 @@ int vbsetbg(int vbuffer, int color) {
     return 0;
 }
 
-int vbgetcolor(int vbuffer) {
+int vbgetcolor(int vbuffer, bool bg) {
     if (!vbuffers[vbuffer]) {
         return 0;
     }
 
-    return vbuffer_current_colors[vbuffer];
+    if (bg) {
+        return vbuffer_current_backgrounds[vbuffer] - 10;
+    } else {
+        return vbuffer_current_colors[vbuffer];
+    }
 }
 
 int vbswitch(int vbuffer) {
@@ -218,6 +222,26 @@ void vbscroll(int vbuffer) {
     }
 
     vbuffer_positions[vbuffer] = (ROWS - 1) * COLUMNS;
+}
+
+int putvb(int vbuffer, char c) {
+   if (!vbuffers[vbuffer]) {
+        return 0;
+    }
+    
+    if (c == '\n') {
+        int y = vbuffer_positions[vbuffer] / COLUMNS;
+        vbuffer_positions[vbuffer] = (y * COLUMNS) + COLUMNS;
+    } else {
+        vbuffers[vbuffer][vbuffer_positions[vbuffer]].c = c;
+        vbuffers[vbuffer][vbuffer_positions[vbuffer]].color = vbuffer_current_colors[vbuffer];
+        vbuffers[vbuffer][vbuffer_positions[vbuffer]].color_bg = vbuffer_current_backgrounds[vbuffer];
+        vbuffer_positions[vbuffer]++;
+    }
+
+    if (vbuffer_positions[vbuffer] >= MAX) {
+        vbscroll(vbuffer);
+    }
 }
 
 int printvb(int vbuffer, char *fmt, ...) {
