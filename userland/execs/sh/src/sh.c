@@ -14,6 +14,18 @@ void declarations(void) {
     promise(PROMISE_FB | PROMISE_INPUT | PROMISE_EXEC);
 }
 
+int run(const char *cmd) {
+    if (strchr(cmd, '&')) {
+        fork_as(cmd, 4);
+        fork("");
+    } else {
+        system_as(cmd, 4);
+        system("");
+    }
+
+    return 0;
+}
+
 int main(int argc, char **argv) {
     // VARIABLES
     char path1[256 + 9] = "0:/execs/";
@@ -34,12 +46,10 @@ int main(int argc, char **argv) {
             if (event.c == 'l') {
                 if (event.modifiers == MODIFIER_CTRL) {
                     clear();
-                    memset(cmd, 0, sizeof(cmd));
-                    p = cmd;
-
                     putchar('\n');
 
                     printf(" sh %% ");
+                    printf("%s", cmd);
 
                     continue;
                 }
@@ -55,15 +65,10 @@ int main(int argc, char **argv) {
                     exit();
                 } else {
                     strncpy(path1 + 9, cmd, sizeof(path1));
-
-                    if (strchr(cmd, '&')) {
-                        fork_as(cmd, 4);
-                        fork("");
-                    } else {
-                        system_as(path1, 4);
-                        system("");
-                    }
+                    run(path1);
                 }
+
+                printf("\033[1c");
 
                 if (cmd[0] != 0)
                     putchar('\n');
