@@ -50,16 +50,15 @@ disk_contents: output/disk.img
 
 	mcopy -o -i output/disk.img -o userland/configs/boot.cfg ::/sysro/boot.cfg
 
-	mcopy -o -i output/disk.img -o userland/launch/output/launch.elf ::/sysro/launch.elf
-	mcopy -o -i output/disk.img -o userland/execs/sh/output/sh.elf ::/execs/sh.elf
-	mcopy -o -i output/disk.img -o userland/execs/fetch/output/fetch.elf ::/execs/fetch.elf
-	mcopy -o -i output/disk.img -o userland/execs/echo/output/echo.elf ::/execs/echo.elf
-	mcopy -o -i output/disk.img -o userland/execs/sysinfo/output/sysinfo.elf ::/execs/sysinfo.elf
-	mcopy -o -i output/disk.img -o userland/execs/read/output/read.elf ::/execs/read.elf
-	mcopy -o -i output/disk.img -o userland/execs/running/output/running.elf ::/execs/running.elf
-	mcopy -o -i output/disk.img -o userland/execs/kill/output/kill.elf ::/execs/kill.elf
-	mcopy -o -i output/disk.img -o userland/execs/kill/output/killall.elf ::/execs/killall.elf
-	mcopy -o -i output/disk.img -o userland/execs/test/output/test.elf ::/execs/test.elf
+	mcopy -o -i output/disk.img -o userland/launch/output/launch.elf ::/sysro/launch
+	mcopy -o -i output/disk.img -o userland/execs/sh/output/sh.elf ::/execs/sh
+	mcopy -o -i output/disk.img -o userland/execs/fetch/output/fetch.elf ::/execs/fetch
+	mcopy -o -i output/disk.img -o userland/execs/echo/output/echo.elf ::/execs/echo
+	mcopy -o -i output/disk.img -o userland/execs/sysinfo/output/sysinfo.elf ::/execs/sysinfo
+	mcopy -o -i output/disk.img -o userland/execs/read/output/read.elf ::/execs/read
+	mcopy -o -i output/disk.img -o userland/execs/running/output/running.elf ::/execs/running
+	mcopy -o -i output/disk.img -o userland/execs/kill/output/kill.elf ::/execs/kill
+	mcopy -o -i output/disk.img -o userland/execs/test/output/test.elf ::/execs/test
 
 run: all
 	qemu-system-i386 -kernel output/kernel.elf -hda output/disk.img
