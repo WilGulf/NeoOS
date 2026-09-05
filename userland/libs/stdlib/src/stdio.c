@@ -3,7 +3,7 @@
 #include <stdarg.h>
 #include "string.h"
 
-void print(const char *msg);
+extern void print(const char *msg);
 
 int printf(const char *fmt, ...) {
     va_list args;

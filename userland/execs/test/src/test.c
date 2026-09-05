@@ -65,6 +65,11 @@ int main(int argc, char **argv) {
     int line_to_update = 0;
     while (1) {
         vbclear(id);
+        char c = getkey();
+        if (c == 'q' || c == 'Q') {
+            exits();
+            exit();
+        }
 
         for (int i = 0; i < lines;) {      
             for (int times = 0; times < 3; times++) {

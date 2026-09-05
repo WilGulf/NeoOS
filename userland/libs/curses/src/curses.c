@@ -44,7 +44,7 @@ void vbclear(int vbuffer) {
 }
 
 void inits(void) {
-    set_fb_cursor(false);
+    printf("\033[0c");
 
     for (int i = 0; i < MAX_BUFFERS; i++) {
         vbuffers[i] = NULL;
@@ -111,7 +111,7 @@ int exits(void) {
         }
     }
 
-    set_fb_cursor(true);
+    printf("\033[1c");
 
     return 0;
 }

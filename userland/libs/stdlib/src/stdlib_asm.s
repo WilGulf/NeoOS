@@ -258,24 +258,6 @@ get_ticks_ms:
     pop ebp
     ret
 
-global fb_disable_cursor:function
-fb_disable_cursor:
-    push ebp
-    mov ebp, esp
-    mov eax, 24
-    int 0x80
-    pop ebp
-    ret
-
-global fb_enable_cursor:function
-fb_enable_cursor:
-    push ebp
-    mov ebp, esp
-    mov eax, 25
-    int 0x80
-    pop ebp
-    ret
-
 global remove:function
 remove:
     push ebp

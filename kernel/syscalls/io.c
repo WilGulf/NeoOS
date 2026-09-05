@@ -78,11 +78,3 @@ void *isr80h_command8_get_key_event(struct interrupt_frame *frame) {
 
     return 0;
 }
-
-void *isr80h_command24_disable_cursor(struct interrupt_frame *frame) {
-    fb_disable_cursor();
-}
-
-void *isr80h_command25_enable_cursor(struct interrupt_frame *frame) {
-    fb_enable_cursor();
-}

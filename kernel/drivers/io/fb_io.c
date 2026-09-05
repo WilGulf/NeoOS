@@ -31,7 +31,10 @@ uint16_t fb_get_cursor_position(void) {
 
 void fb_enable_cursor() {
 	outb(0x3D4, 0x0A);
-	outb(0x3D4, 0x0B);
+	outb(0x3D5, 0x0F);
+
+    outb(0x3D4, 0x0B);
+    outb(0x3D5, 0x0F);
 }
 
 
@@ -86,105 +89,157 @@ void fb_scroll() {
     }
 }
 
-void process_formatting(char *formatting) {
-    int number = atoi(formatting);
+void process_coloring(int number) {
     switch (number) {
         case 0:
             current_fg = 0x0F;
             current_bg = 0x00;
             break;
-
         case 30:
             // Black
             current_fg = 0x00;
             break;
-        
         case 31:
             // Red
             current_fg = 0x04;
             break;
-
         case 32:
             // Green
             current_fg = 0x02;
             break;
-
         case 33:
             // Yellow
             current_fg = 0x0E;
             break;
-
         case 34:
             // Blue
             current_fg = 0x01;
             break;
-
         case 35:
             // Purple
             current_fg = 0x05;
             break;
-
         case 36:
             // Cyan
             current_fg = 0x03;
             break;
-
         case 37:
             // White
             current_fg = 0x0F;
             break;
-
         case 39:
             current_fg = 0x0F;
             break;
-
 
         case 40:
             // Black
             current_bg = 0x00;
             break;
-
         case 41:
             // Red
             current_bg = 0x04;
             break;
-
         case 42:
             // Green
             current_bg = 0x02;
             break;
-
         case 43:
             // Yellow
             current_bg = 0x0E;
             break;
-
         case 44:
             // Blue
             current_bg = 0x01;
             break;
-
         case 45:
             // Purple
             current_bg = 0x05;
             break;
-
         case 46:
             // Cyan
             current_bg = 0x03;
             break;
-
         case 47:
             // White
             current_bg = 0x0F;
             break;
-
         case 49:
             current_bg = 0x00;
             break;
-
         default:
             break;
+    }
+}
+
+int process_esc(uint8_t *params, int n, char type) {
+    switch (type) {
+        case 'm': {
+            for (int i = 0; i < n; i++) {
+                process_coloring(params[i]);
+            }
+            
+            break;
+        }
+
+        case 'H': {
+            if (!n) {
+                fb_move_cursor(0);
+            } else if (n >= 2) {
+                uint16_t y = params[0] * 80;
+                uint16_t x = params[1];
+                fb_move_cursor(y + x);
+            }
+
+            break;
+        }
+
+        case 'A': {
+            uint16_t pos = fb_get_cursor_position();
+            fb_move_cursor(pos - (80 * params[0]));
+            break;
+        }
+
+        case 'B': {
+            uint16_t pos = fb_get_cursor_position();
+            fb_move_cursor(pos + (80 * params[0]));
+            break;
+        }
+
+        case 'C': {
+            uint16_t pos = fb_get_cursor_position();
+            fb_move_cursor(pos + params[0]);
+            break;
+        }
+
+        case 'D': {
+            uint16_t pos = fb_get_cursor_position();
+            fb_move_cursor(pos - params[0]);
+            break;
+        }
+
+        case 'E': {
+            fb_move_cursor((uint16_t)params[0] * 80);
+            break;
+        }
+
+        case 'J': {
+            if (params[0] == 2) {
+                fb_clear();
+            }
+
+            break;
+        }
+
+        case 'c': {
+            switch (params[0]) {
+                case 0:
+                    fb_disable_cursor();
+                    break;
+                case 1:
+                    fb_enable_cursor();
+                    break;
+            }
+        }
     }
 }
 
@@ -229,19 +284,31 @@ int writer(char *buf) {
         } else if (bytes[i] == '\0') {
             break;
         } else if (bytes[i] == '\033') {
-            if (bytes[i + 1] == '[') {                
-                char formatting[8];
+            if (bytes[i + 1] == '[') {
+                uint8_t params[8];
+                int total_params = 0;
+                char param_type = 0x00;
+
                 i += 2;
                 int last = i;
                 while (bytes[i]) {
-                    if (bytes[i] == ';' || bytes[i] == 'm') {
+                    if (bytes[i] == ';' || !char_is_digit(bytes[i])) {
                         int len = i - last + 1;
+                        char formatting[8];
                         strncpy(formatting, bytes + last, len < 7 ? len : 7);
                         formatting[len < 7 ? len : 7] = 0x00;
-                        process_formatting(formatting);
+
+                        params[total_params] = atoi(formatting);
+                        total_params++;
+
                         last = i + 1;
 
-                        if (bytes[i] == 'm') {
+                        if (bytes[i] != ';' || total_params >= 7) {
+                            if (total_params) {
+                                param_type = bytes[i];
+                                process_esc(params, total_params, param_type);
+                            }
+
                             i++;
                             break;
                         }
