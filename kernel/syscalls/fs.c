@@ -46,9 +46,9 @@ void *isr80h_command20_fread(struct interrupt_frame *frame) {
     int fd = task_get_stack_item(task_current(), 3);
     
     task_page();
-    fread(out, size, count, fd);
+    int res = fread(out, size, count, fd);
     kernel_page();
-    return 0;
+    return res;
 }
 
 void *isr80h_command21_fstat(struct interrupt_frame *frame) {
@@ -91,7 +91,7 @@ void *isr80h_command27_fwrite(struct interrupt_frame *frame) {
     size_t count = task_get_stack_item(task_current(), 2);
     int fd = task_get_stack_item(task_current(), 3);
     
-    fwrite(buffer, size, count, fd);
+    int res = fwrite(buffer, size, count, fd);
     
-    return 0;
+    return res;
 }
