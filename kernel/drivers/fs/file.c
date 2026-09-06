@@ -1,6 +1,7 @@
 #include "file.h"
 #include "fat/fat16.h"
 #include "ramfs/ramfs.h"
+#include "neofs/neofs.h"
 #include "disk.h"
 
 #include "../io/io.h"
@@ -35,7 +36,7 @@ void fs_insert_filesystem(struct filesystem *filesystem) {
 }
 
 static void fs_static_load() {
-    fs_insert_filesystem(fat16_init());
+    fs_insert_filesystem(neofs_init());
     fs_insert_filesystem(ramfs_init());
 }
 
@@ -105,7 +106,7 @@ FILE_MODE file_get_mode_by_string(const char *str) {
 
     return mode;
 }
-int fopen(const char *filename, const char *mode_str) {
+int fopen(const char *filename, const char *mode_str) {    
     int res = 0;
     struct disk *disk = 0;
     FILE_MODE mode = FILE_MODE_INVALID;
@@ -223,7 +224,7 @@ out:
     return res;
 }
 
-uint32_t fwrite(const void *ptr, uint32_t size, uint32_t nmemb, int fd) {
+int fwrite(const void *ptr, uint32_t size, uint32_t nmemb, int fd) {
     int res = 0;
     if (size == 0 || nmemb == 0 || fd < 1) {
         res = -ERROR_INVALID_ARG;

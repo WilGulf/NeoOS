@@ -74,7 +74,7 @@ int fopen(const char *filename, const char *mode_str);
 int fseek(int fd, int offset, FILE_SEEK_MODE whence);
 int fread(void *ptr, uint32_t size, uint32_t nmemb, int fd);
 int fstat(int fd, struct file_stat *stat);
-uint32_t fwrite(const void *ptr, uint32_t size, uint32_t nmemb, int fd);
+int fwrite(const void *ptr, uint32_t size, uint32_t nmemb, int fd);
 int fclose(int fd);
 char *fgets(char *str, int size, int fd);
 
