@@ -23,6 +23,19 @@ enum {
     FILE_MODE_INVALID
 };
 
+typedef unsigned int FILE_TYPE;
+enum {
+    FILE_TYPE_FILE,
+    FILE_TYPE_DIR,
+};
+
+typedef unsigned int DIRENT_TYPE;
+enum {
+    DIRENT_TYPE_FILE,
+    DIRENT_TYPE_DIR,
+    DIRENT_TYPE_EXEC,
+};
+
 enum {
     FILE_STAT_RO = 0B00000001
 };
@@ -32,6 +45,11 @@ typedef unsigned int FILE_STAT_FLAGS;
 struct file_stat {
     FILE_STAT_FLAGS flags;
     uint32_t filesize;
+};
+
+struct dirent {
+    DIRENT_TYPE type;
+    char name[8];
 };
 
 struct disk;
@@ -44,6 +62,7 @@ typedef int (*FS_STAT_FUNCTION)(struct disk *disk, void *private, struct file_st
 typedef int (*FS_WRITE_FUNCTION)(struct disk *disk, void *private, uint32_t size, uint32_t nmemb, const char *in);
 typedef int (*FS_REMOVE_FUNCTION)(struct disk *disk, struct path_part *path);
 typedef int (*FS_CLOSE_FUNCTION)(void *private);
+typedef struct dirent (*FS_READDIR_FUNCTION)(struct disk *disk, void *private);
 
 struct filesystem {
     FS_RESOLVE_FUNCTION resolve;
@@ -54,6 +73,7 @@ struct filesystem {
     FS_WRITE_FUNCTION write;
     FS_REMOVE_FUNCTION remove;
     FS_CLOSE_FUNCTION close;
+    FS_READDIR_FUNCTION readdir;
 
     char name[20];
 };
@@ -79,6 +99,8 @@ int fclose(int fd);
 char *fgets(char *str, int size, int fd);
 
 int remove(const char *filename);
+
+struct dirent readdir(int fd);
 
 void fs_insert_filesystem(struct filesystem *filesystem);
 struct filesystem *fs_resolve(struct disk *disk);

@@ -22,6 +22,7 @@ struct meta_block {
     char ext[3];
 
     uint8_t is_dir;
+    uint8_t flags;
     uint32_t size;
 
     uint32_t start;
@@ -45,6 +46,16 @@ struct block {
 #define BLOCK_STATUS_FREE 0x00
 #define BLOCK_STATUS_USED 0x01
 
+#define FLAG_R 0b00000001
+#define FLAG_W 0b00000010
+#define FLAG_X 0b00000100
+#define FLAG_4 0b00001000
+#define FLAG_5 0b00010000
+#define FLAG_6 0b00100000
+#define FLAG_7 0b01000000
+#define FLAG_8 0b10000000
+
+
 struct neofs_private {
     struct master_block master_block;
     struct disk_stream *stream;
@@ -53,6 +64,7 @@ struct neofs_private {
 struct neofs_file_descriptor {
     int meta_block;
     FILE_MODE mode;
+    FILE_TYPE type;
     uint32_t pos;
 };
 
@@ -64,6 +76,7 @@ int neofs_stat(struct disk *disk, void *private, struct file_stat *stat);
 int neofs_write(struct disk *disk, void *private, uint32_t size, uint32_t nmemb, const char *in);
 int neofs_remove(struct disk *disk, struct path_part *path);
 int neofs_close(void *private);
+struct dirent neofs_readdir(struct disk *disk, void *private);
 
 struct filesystem neofs = {
     .resolve = neofs_resolve,
@@ -73,7 +86,8 @@ struct filesystem neofs = {
     .stat = neofs_stat,
     .write = neofs_write,
     .remove = neofs_remove,
-    .close = neofs_close
+    .close = neofs_close,
+    .readdir = neofs_readdir,
 };
 
 struct filesystem *neofs_init() {
@@ -244,6 +258,7 @@ static int create_meta_block(int parent, kbool is_dir, const char *name, struct 
     new_block.parent = parent;
     new_block.size = 0;
     new_block.start = 0;
+    new_block.flags = FLAG_R | FLAG_W;
     new_block.status = BLOCK_STATUS_USED;
 
     neofs_write_block(disk, new_block_n, sizeof(new_block), &new_block);
@@ -441,6 +456,13 @@ void *neofs_open(struct disk *disk, struct path_part *path, FILE_MODE mode) {
     descriptor->meta_block = meta_block_n;
     descriptor->mode = mode;
     descriptor->pos = 0;
+    descriptor->type = FILE_TYPE_FILE;
+
+    struct meta_block meta_block;
+    get_meta_block(meta_block_n, &meta_block, disk);
+    if (meta_block.is_dir) {
+        descriptor->type = FILE_TYPE_DIR;
+    }
 
     return descriptor;
 
@@ -461,6 +483,10 @@ int neofs_read(struct disk *disk, void *descriptor, uint32_t size, uint32_t nmem
 
     struct meta_block meta_block;
     get_meta_block(desc->meta_block, &meta_block, disk);
+
+    if (!meta_block.flags & FLAG_R) {
+        return -ERROR_IO;
+    }
 
     if (desc->pos >= meta_block.size) {
         return -ERROR_INVALID_ARG;
@@ -545,6 +571,12 @@ int neofs_write(struct disk *disk, void *private, uint32_t size, uint32_t nmemb,
     
     struct meta_block file_meta_block;
     get_meta_block(desc->meta_block, &file_meta_block, disk);
+
+    if (!file_meta_block.flags & FLAG_W) {
+        return -ERROR_IO;
+    }
+
+
     int block = file_meta_block.start;
     if (!block) {
         int new_block_n = get_free_block(1, disk);
@@ -702,6 +734,66 @@ int neofs_remove(struct disk *disk, struct path_part *path) {
     int file_meta_block_n = neofs_get_path_meta_block(path, false, disk);
     remove_file(file_meta_block_n, disk);
     return 0;
+}
+
+struct dirent neofs_readdir(struct disk *disk, void *private) {
+    struct dirent dirent;
+    memset(&dirent, 0, sizeof(dirent));
+
+    struct neofs_file_descriptor *desc = private;
+    if (desc->type != FILE_TYPE_DIR) {
+        return dirent;
+    }
+
+    struct meta_block dir;
+    get_meta_block(desc->meta_block, &dir, disk);
+
+    int i = 0;
+    int curr = dir.start;
+    kbool found = false;
+    while (1) {
+        if (i == desc->pos) {
+            found = true;
+            break;
+        }
+
+        if (!curr) {
+            break;
+        }
+
+        struct meta_block temp;
+        get_meta_block(curr, &temp, disk);
+        if (!temp.next) {
+            break;
+        }
+
+        curr = temp.next;
+
+        i++;
+    }
+
+    if (!found) {
+        return dirent;
+    }
+
+    struct meta_block child;
+    get_meta_block(curr, &child, disk);
+
+    strncpy(dirent.name, child.filename, sizeof(dirent.name));
+
+    if (child.is_dir) {
+        dirent.type = DIRENT_TYPE_DIR;
+    } else {
+        if (child.flags & FLAG_X) {
+            dirent.type = DIRENT_TYPE_EXEC;
+        } else {
+            dirent.type = DIRENT_TYPE_FILE;
+        }
+    }
+
+    desc->pos++;
+
+    return dirent;
 }
 
 int neofs_close(void *private) {

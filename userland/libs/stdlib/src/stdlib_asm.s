@@ -282,3 +282,15 @@ fwrite:
     add esp, 16
     pop ebp
     ret
+
+global sys_readdir:function
+sys_readdir:
+    push ebp
+    mov ebp, esp
+    mov eax, 28
+    push dword[ebp+12]
+    push dword[ebp+8]
+    int 0x80
+    add esp, 8
+    pop ebp
+    ret

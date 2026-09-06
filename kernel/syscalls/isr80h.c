@@ -37,4 +37,5 @@ void isr80h_register_commands() {
     isr80h_register_command(SYSTEM_COMMAND23_GET_TICKS_MS, isr80h_command23_get_ticks_ms);
     isr80h_register_command(SYSTEM_COMMAND26_REMOVE, isr80h_command26_remove);
     isr80h_register_command(SYSTEM_COMMAND27_FWRITE, isr80h_command27_fwrite);
+    isr80h_register_command(SYSTEM_COMMAND28_READDIR, isr80h_command28_readdir);
 }

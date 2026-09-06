@@ -106,6 +106,7 @@ FILE_MODE file_get_mode_by_string(const char *str) {
 
     return mode;
 }
+
 int fopen(const char *filename, const char *mode_str) {    
     int res = 0;
     struct disk *disk = 0;
@@ -291,6 +292,20 @@ int fclose(int fd) {
     }
 out:
     return res;
+}
+
+struct dirent readdir(int fd) {
+    struct dirent dirent;
+    dirent.name[0] = 0x00;
+    dirent.type = 0;
+
+    struct file_descriptor *desc = file_get_descriptor(fd);
+    if (!desc) {
+        return dirent;
+    }
+
+    dirent = desc->filesystem->readdir(desc->disk, desc->private);
+    return dirent;
 }
 
 char *fgets(char *str, int size, int fd) {

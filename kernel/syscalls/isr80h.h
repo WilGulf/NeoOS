@@ -30,6 +30,7 @@ enum SystemCommands {
     SYSTEM_COMMAND25_ENABLE_CURSOR,
     SYSTEM_COMMAND26_REMOVE,
     SYSTEM_COMMAND27_FWRITE,
+    SYSTEM_COMMAND28_READDIR,
 };
 
 void isr80h_register_commands(); 

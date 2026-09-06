@@ -44,20 +44,21 @@ kernel.elf: $(OBJECTS)
 	ld.lld $(LDFLAGS) $(OBJECTS) -o output/kernel.elf
 
 disk_contents: output/disk.img
-	./fstools/copy.neofs output/disk.img userland/configs/boot.cfg sysro/boot.cfg
+	./fstools/copy.neofs output/disk.img userland/configs/boot.cfg sysro/boot.cfg r
 
-	./fstools/copy.neofs output/disk.img userland/launch/output/launch.elf sysro/launch
+	./fstools/copy.neofs output/disk.img userland/launch/output/launch.elf sysro/launch rx
 
-	./fstools/copy.neofs output/disk.img userland/execs/sh/output/sh.elf execs/sh
-	./fstools/copy.neofs output/disk.img userland/execs/fetch/output/fetch.elf execs/fetch
-	./fstools/copy.neofs output/disk.img userland/execs/echo/output/echo.elf execs/echo
-	./fstools/copy.neofs output/disk.img userland/execs/sysinfo/output/sysinfo.elf execs/sysinfo
-	./fstools/copy.neofs output/disk.img userland/execs/read/output/read.elf execs/read
-	./fstools/copy.neofs output/disk.img userland/execs/running/output/running.elf execs/running
-	./fstools/copy.neofs output/disk.img userland/execs/kill/output/kill.elf execs/kill
-	./fstools/copy.neofs output/disk.img userland/execs/test/output/test.elf execs/test
-	./fstools/copy.neofs output/disk.img userland/execs/rm/output/rm.elf execs/rm
-	./fstools/copy.neofs output/disk.img userland/execs/crt/output/crt.elf execs/crt
+	./fstools/copy.neofs output/disk.img userland/execs/sh/output/sh.elf execs/sh rx
+	./fstools/copy.neofs output/disk.img userland/execs/fetch/output/fetch.elf execs/fetch rx
+	./fstools/copy.neofs output/disk.img userland/execs/echo/output/echo.elf execs/echo rx
+	./fstools/copy.neofs output/disk.img userland/execs/sysinfo/output/sysinfo.elf execs/sysinfo rx
+	./fstools/copy.neofs output/disk.img userland/execs/read/output/read.elf execs/read rx
+	./fstools/copy.neofs output/disk.img userland/execs/running/output/running.elf execs/running rx
+	./fstools/copy.neofs output/disk.img userland/execs/kill/output/kill.elf execs/kill rx
+	./fstools/copy.neofs output/disk.img userland/execs/test/output/test.elf execs/test rx
+	./fstools/copy.neofs output/disk.img userland/execs/rm/output/rm.elf execs/rm rx
+	./fstools/copy.neofs output/disk.img userland/execs/crt/output/crt.elf execs/crt rx
+	./fstools/copy.neofs output/disk.img userland/execs/list/output/list.elf execs/list rx
 
 run: all
 	qemu-system-i386 -kernel output/kernel.elf -hda output/disk.img
@@ -84,6 +85,7 @@ userland_execs:
 	cd ./userland/execs/kill && $(MAKE) all
 	cd ./userland/execs/rm && $(MAKE) all
 	cd ./userland/execs/crt && $(MAKE) all
+	cd ./userland/execs/list && $(MAKE) all
 	cd ./userland/execs/test && $(MAKE) all
 
 userland_clean:
@@ -99,6 +101,7 @@ userland_clean:
 	cd ./userland/execs/kill && $(MAKE) clean
 	cd ./userland/execs/rm && $(MAKE) clean
 	cd ./userland/execs/crt && $(MAKE) clean
+	cd ./userland/execs/list && $(MAKE) clean
 	cd ./userland/execs/test && $(MAKE) clean
 
 kernel_clean:

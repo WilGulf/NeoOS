@@ -13,4 +13,6 @@ void *isr80h_command27_fwrite(struct interrupt_frame *frame);
 
 void *isr80h_command26_remove(struct interrupt_frame *frame);
 
+void *isr80h_command28_readdir(struct interrupt_frame *frame);
+
 #endif

@@ -293,7 +293,7 @@ int writer(char *buf) {
                 int last = i;
                 while (bytes[i]) {
                     if (bytes[i] == ';' || !char_is_digit(bytes[i])) {
-                        int len = i - last + 1;
+                        int len = i - last;
                         char formatting[8];
                         strncpy(formatting, bytes + last, len < 7 ? len : 7);
                         formatting[len < 7 ? len : 7] = 0x00;

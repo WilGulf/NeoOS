@@ -99,3 +99,18 @@ void *isr80h_command27_fwrite(struct interrupt_frame *frame) {
     
     return res;
 }
+
+void *isr80h_command28_readdir(struct interrupt_frame *frame) {
+    check_process_promise(task_current()->process, PROMISE_FS);
+    check_allowed_with_privilege(task_current()->process, PRIVILEGE_FS_DATA);
+
+    int fd = task_get_stack_item(task_current(), 0);
+    void *out = task_get_stack_item(task_current(), 1);
+
+    struct dirent dirent = readdir(fd);
+    task_page();
+    memcpy(out, &dirent, sizeof(dirent));
+    kernel_page();
+
+    return 0;
+}
