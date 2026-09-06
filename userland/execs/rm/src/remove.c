@@ -14,6 +14,8 @@ int main(int argc, char **argv) {
             printf("%s ", argv[i]);
             i++;
         }
+
+        putchar('\n');
     }
 
     exit();
