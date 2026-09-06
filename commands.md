@@ -13,6 +13,8 @@
 ### Text & file utilities
 - **echo**: Echos the priveded arguments back
 - **read**: Prints the contents of a file
+- **rm**: Removes provided file(s)
+- **crt**: Creates listed file(s) with size 0
 
 ### Process management
 - **running**: Lists running processes and their associated information
