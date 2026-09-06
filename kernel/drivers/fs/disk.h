@@ -26,5 +26,6 @@ void disk_dev_init();
 
 struct disk *disk_get(char id);
 int disk_read_block(struct disk *idisk, uint32_t lba, int total, void *buf);
+int disk_write_block(struct disk *idisk, uint32_t lba, int total, void *buf);
 
 #endif

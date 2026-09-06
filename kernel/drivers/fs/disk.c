@@ -21,14 +21,94 @@ int disk_read_sector(int lba, int total, void *buf) {
 
     uint16_t *ptr = (uint16_t *) buf;
     for (int b = 0; b < total; b++) {
+        int timeout = 1000000;
+
         char c = inb(0x1F7);
         while(!(c & 0x08)) {
+            if (--timeout == 0) {
+                return -ERROR_IO;
+            }
+
             c = inb(0x1F7);
         }
 
         for (int i = 0; i < 256; i++) {
             *ptr = inw(0x1F0);
             ptr++;
+        }
+    }
+
+    int timeout = 1000000;
+
+    while (1) {
+        uint8_t status = inb(0x1F7);
+
+        if (status & 0x01) {
+            return -ERROR_IO;
+        }
+
+        if (status & 0x20) {
+            return -ERROR_IO;
+        }
+
+        if (!(status & 0x80)) {
+            break;
+        }
+
+        if (--timeout == 0) {
+            return -ERROR_IO;
+        }
+    }
+
+    return 0;
+}
+
+int disk_write_sector(int lba, int total, void *buf) {
+    outb(0x1F6, (lba >> 24) | 0xE0);
+    outb(0x1F2, total);
+    outb(0x1F3, (uint8_t)(lba & 0xFF));
+    outb(0x1F4, (uint8_t)(lba >> 8));
+    outb(0x1F5, (uint8_t)(lba >> 16));
+    outb(0x1F7, 0x30);
+
+    uint16_t *ptr = (uint16_t *) buf;
+    for (int b = 0; b < total; b++) {
+        int timeout = 1000000;
+
+        char c = inb(0x1F7);
+        while (!(c & 0x08)) {
+            if (--timeout == 0) {
+                return -ERROR_IO;
+            }
+
+            c = inb(0x1F7);
+        }
+
+        for (int i = 0; i < 256; i++) {
+            outw(0x1F0, *ptr);
+            ptr++;
+        }
+    }
+
+    int timeout = 1000000;
+
+    while (1) {
+        uint8_t status = inb(0x1F7);
+
+        if (status & 0x01) {
+            return -ERROR_IO;
+        }
+
+        if (status & 0x20) {
+            return -ERROR_IO;
+        }
+
+        if (!(status & 0x80)) {
+            break;
+        }
+
+        if (--timeout == 0) {
+            return -ERROR_IO;
         }
     }
 
@@ -71,4 +151,12 @@ int disk_read_block(struct disk *idisk, uint32_t lba, int total, void *buf) {
     }
 
     return disk_read_sector(lba, total, buf);
+}
+
+int disk_write_block(struct disk *idisk, uint32_t lba, int total, void *buf) {
+    if (idisk != &disk) {
+        return -ERROR_IO;
+    }
+
+    return disk_write_sector(lba, total, buf);
 }
