@@ -11,11 +11,12 @@ int memcmp(void* s1, void* s2, int count);
 
 char *strcpy(char *dest, const char *src);
 char *strncpy(char *dest, const char *src, int n);
-int strlen(char *src);
-int strnlen(char *src, int max);
+size_t strlen(const char *src);
+size_t strnlen(const char *src, int max);
 int strcmp(char *str1, char *str2);
 int strncmp(char *str1, char *str2, int max);
 int istrncmp(const char* s1, const char* s2, int n);
+char *strchr(const char *str, int c);
 
 kbool char_is_digit(char c);
 int char_to_int(char c);

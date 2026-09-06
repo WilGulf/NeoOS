@@ -56,20 +56,23 @@ char *strcpy(char *dest, const char *src) {
 }
 
 char *strncpy(char *dest, const char *src, int n) {
-    int i = 0;
-    for (; i < n - 1; i++) {
-        if (src[i] == 0x00) {
+    int i;
+
+    for (i = 0; i < n; i++) {
+        dest[i] = src[i];
+
+        if (src[i] == '\0') {
+            for (i++; i < n; i++) {
+                dest[i] = '\0';
+            }
             break;
         }
-
-        dest[i] = src[i];
     }
 
-    dest[i] = 0x00;
     return dest;
 }
 
-int strlen(char *src) {
+size_t strlen(const char *src) {
     int i = 0;
     while (*src++) {
         i++;
@@ -77,7 +80,7 @@ int strlen(char *src) {
     return i;
 }
 
-int strnlen(char *src, int max) {
+size_t strnlen(const char *src, int max) {
     int i = 0;
     for (; i < max; i++) {
         if (src[i] == 0) {
@@ -135,6 +138,15 @@ int istrncmp(const char* s1, const char* s2, int n) {
     }
 
     return 0;
+}
+
+char *strchr(const char *str, int c) {
+    while (*str != (char) c) {
+        if (!*str++) {
+            return 0;
+        }
+    }
+    return (char *)str;
 }
 
 kbool char_is_digit(char c) {
