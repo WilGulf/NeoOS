@@ -71,6 +71,10 @@ void *isr80h_command26_remove(struct interrupt_frame *frame) {
     char filename[1024];
     copy_string_from_task(task_current(), user_space_msg_buffer, filename, sizeof(filename));
 
+    if (strncmp(filename, "0:/sys", 6) == 0) {
+        check_allowed_with_privilege(task_current()->process, PRIVILEGE_FS_SYS);
+    }
+
     int res;
     if (filename) {
         res = remove(filename);
