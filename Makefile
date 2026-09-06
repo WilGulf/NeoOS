@@ -7,7 +7,7 @@ OBJECTS = kernel/loader.o kernel/kmain.o kernel/kernel_asm.o \
 	kernel/include/util.o \
 	kernel/memory/paging.o kernel/memory/paging_asm.o kernel/memory/heap.o kernel/memory/kheap.o\
 	kernel/drivers/fs/disk.o kernel/drivers/fs/path_parser.o kernel/drivers/fs/disk_streamer.o kernel/drivers/fs/file.o \
-	kernel/drivers/fs/fat/fat16.o kernel/drivers/fs/ramfs/ramfs.o \
+	kernel/drivers/fs/fat/fat16.o kernel/drivers/fs/ramfs/ramfs.o kernel/drivers/fs/neofs/neofs.o \
 	kernel/panic.o \
 	kernel/task/task.o kernel/task/task_asm.o kernel/task/process.o kernel/task/formats/elf.o kernel/task/formats/elf_loader.o \
 	kernel/syscalls/isr80h.o \
@@ -44,21 +44,19 @@ kernel.elf: $(OBJECTS)
 	ld.lld $(LDFLAGS) $(OBJECTS) -o output/kernel.elf
 
 disk_contents: output/disk.img
-	mdir -i output/disk.img ::/execs >/dev/null 2>&1 || mmd -i output/disk.img ::/execs
-	mdir -i output/disk.img ::/sysro >/dev/null 2>&1 || mmd -i output/disk.img ::/sysro
-	mdir -i output/disk.img ::/data >/dev/null 2>&1 || mmd -i output/disk.img ::/data
+	./fstools/copy.neofs output/disk.img userland/configs/boot.cfg sysro/boot.cfg
 
-	mcopy -o -i output/disk.img -o userland/configs/boot.cfg ::/sysro/boot.cfg
+	./fstools/copy.neofs output/disk.img userland/launch/output/launch.elf sysro/launch
 
-	mcopy -o -i output/disk.img -o userland/launch/output/launch.elf ::/sysro/launch
-	mcopy -o -i output/disk.img -o userland/execs/sh/output/sh.elf ::/execs/sh
-	mcopy -o -i output/disk.img -o userland/execs/fetch/output/fetch.elf ::/execs/fetch
-	mcopy -o -i output/disk.img -o userland/execs/echo/output/echo.elf ::/execs/echo
-	mcopy -o -i output/disk.img -o userland/execs/sysinfo/output/sysinfo.elf ::/execs/sysinfo
-	mcopy -o -i output/disk.img -o userland/execs/read/output/read.elf ::/execs/read
-	mcopy -o -i output/disk.img -o userland/execs/running/output/running.elf ::/execs/running
-	mcopy -o -i output/disk.img -o userland/execs/kill/output/kill.elf ::/execs/kill
-	mcopy -o -i output/disk.img -o userland/execs/test/output/test.elf ::/execs/test
+	./fstools/copy.neofs output/disk.img userland/execs/sh/output/sh.elf execs/sh
+	./fstools/copy.neofs output/disk.img userland/execs/fetch/output/fetch.elf execs/fetch
+	./fstools/copy.neofs output/disk.img userland/execs/echo/output/echo.elf execs/echo
+	./fstools/copy.neofs output/disk.img userland/execs/sysinfo/output/sysinfo.elf execs/sysinfo
+	./fstools/copy.neofs output/disk.img userland/execs/read/output/read.elf execs/read
+	./fstools/copy.neofs output/disk.img userland/execs/running/output/running.elf execs/running
+	./fstools/copy.neofs output/disk.img userland/execs/kill/output/kill.elf execs/kill
+	./fstools/copy.neofs output/disk.img userland/execs/test/output/test.elf execs/test
+
 
 run: all
 	qemu-system-i386 -kernel output/kernel.elf -hda output/disk.img
@@ -70,7 +68,7 @@ run: all
 
 output/disk.img:
 	dd if=/dev/zero of=output/disk.img bs=1M count=64
-	mkfs.fat -F 16 output/disk.img
+	./fstools/mkfs.neofs output/disk.img
 
 userland_execs:
 	cd ./userland/libs/stdlib && $(MAKE) all

@@ -156,6 +156,22 @@ static uint32_t get_next_block(uint32_t block, struct disk *disk) {
     return read_block.next;
 }
 
+static int remove_meta_block(int block, struct disk *disk) {
+    struct meta_block empty_block;
+    memset(&empty_block, 0, sizeof(empty_block));
+
+    neofs_write_block(disk, block, sizeof(empty_block), &empty_block);
+    return 0;
+}
+
+static int remove_block(int block, struct disk *disk) {
+    struct block empty_block;
+    memset(&empty_block, 0, sizeof(empty_block));
+
+    neofs_write_block(disk, block, sizeof(empty_block), &empty_block);
+    return 0;
+}
+
 int neofs_resolve(struct disk *disk) {
     int res = 0;
     struct neofs_private *private = kzalloc(sizeof(struct neofs_private));
@@ -604,8 +620,88 @@ int neofs_write(struct disk *disk, void *private, uint32_t size, uint32_t nmemb,
     return total;
 }
 
+static int remove_file(int file_meta_block_n, struct disk *disk) {
+    if (file_meta_block_n <= 1) {
+        return -1;
+    }
+
+    struct meta_block file_meta_block;
+    get_meta_block(file_meta_block_n, &file_meta_block, disk);
+
+    struct meta_block parent;
+    get_meta_block(file_meta_block.parent, &parent, disk);
+    if (parent.start == file_meta_block_n) {
+        parent.start = file_meta_block.next;
+        neofs_write_block(disk, file_meta_block.parent, sizeof(parent), &parent);
+    } else {
+        struct meta_block child;
+        int child_n = parent.start;
+        get_meta_block(child_n, &child, disk);
+
+        kbool found = false;
+        while (1) {
+            if (child.next == file_meta_block_n) {
+                child.next = file_meta_block.next;
+                neofs_write_block(disk, child_n, sizeof(child), &child);
+                found = true;
+                break;
+            }
+
+            if (!child.next) {
+                break;
+            }
+
+            child_n = child.next;
+            get_meta_block(child_n, &child, disk);
+        }
+
+        if (!found) {
+            return -1;
+        }
+    }
+
+    if (!file_meta_block.start) {
+        remove_meta_block(file_meta_block_n, disk);
+        return 0;
+    }
+
+    if (file_meta_block.is_dir) {
+        struct meta_block child;
+        int child_n = file_meta_block.start;
+        get_meta_block(file_meta_block.start, &child, disk);
+        while (child.next) {
+            int next = child.next;
+            remove_file(child_n, disk);
+            get_meta_block(next, &child, disk);
+            child_n = next;
+        }
+
+        remove_file(child_n, disk);
+
+        remove_meta_block(file_meta_block_n, disk);
+    } else {
+        struct block block;
+        int block_n = file_meta_block.start;
+        get_block(file_meta_block.start, &block, disk);
+        while (block.next) {
+            int next = block.next;
+            remove_block(block_n, disk);
+            get_block(next, &block, disk);
+            block_n = next;
+        }
+
+        remove_block(block_n, disk);
+
+        remove_meta_block(file_meta_block_n, disk);
+    }
+
+    return 0;
+}
+
 int neofs_remove(struct disk *disk, struct path_part *path) {
-    return -ERROR_IO;
+    int file_meta_block_n = neofs_get_path_meta_block(path, false, disk);
+    remove_file(file_meta_block_n, disk);
+    return 0;
 }
 
 int neofs_close(void *private) {
