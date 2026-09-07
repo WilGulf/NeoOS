@@ -9,6 +9,7 @@
 ### System information
 - **sysinfo**: Privdes info close to what uname would provide on a UNIX-like system
 - **fetch**: Fetches and displays system info with the os logo
+- **uptime**: Prints the time since boot
 
 ### Text & file utilities
 - **echo**: Echos the priveded arguments back
