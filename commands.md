@@ -3,8 +3,9 @@
 # NSH Commands
 
 ### Shell
-- **Clear**: Clears the terminal 
-- **Exit**: Exits the shell
+- **clear**: Clears the terminal 
+- **exit**: Exits the shell
+- **help**: Prints a list of commands
 
 ### System information
 - **sysinfo**: Privdes info close to what uname would provide on a UNIX-like system
