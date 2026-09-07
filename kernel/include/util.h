@@ -26,5 +26,6 @@ char char_upper_to_lower(char s1);
 int pow(int x, int power);
 
 int atoi(const char *str);
+char *itoa(int i);
 
 #endif

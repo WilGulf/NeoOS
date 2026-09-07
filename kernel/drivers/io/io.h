@@ -15,6 +15,6 @@ void fb_scroll();
 void fb_enable_cursor();
 void fb_disable_cursor();
 
-int kprintf(char *buf, ...);
+int kprintf(const char *fmt, ...);
 
 #endif

@@ -25,6 +25,9 @@ char *itoa(int i);
 int atoi(const char *str);
 
 int printf(const char *fmt, ...);
+int snprintf(char *out, size_t len, char *fmt, ...);
+int sprintf(char *out, char *fmt, ...);
+
 void putchar(char c);
 int getkey();
 void clear();

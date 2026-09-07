@@ -1,20 +1,23 @@
 #include "stdio.h"
 
 #include <stdarg.h>
-#include "string.h"
+#include <string.h>
+#include <memory.h>
 
 extern void print(const char *msg);
 
-int printf(const char *fmt, ...) {
-    va_list args;
+void prntnum(unsigned long n, int base, char sign, char *outbuf);
+
+int vsprintf(char *out, const char *fmt, va_list arg_ptr) {
     const char *p;
     char *sval;
+    char *integer;
+    char *hexa;
     int cval, ival;
 
     char buffer[1024];
     int buffer_i = 0;
 
-    va_start(args, fmt);
     for (p = fmt; *p; p++) {
         if (buffer_i >= 1022) {
             break;
@@ -25,11 +28,9 @@ int printf(const char *fmt, ...) {
             continue;
         }
 
-        char *integer;
-
         switch(*++p) {
             case 'd':
-                ival = va_arg(args, int);
+                ival = va_arg(arg_ptr, int);
                 integer = itoa(ival);
                 while (*integer && buffer_i < 1022) {
                     buffer[buffer_i++] = *integer++;
@@ -38,7 +39,7 @@ int printf(const char *fmt, ...) {
                 break;
 
             case 's':
-                sval = va_arg(args, char *);
+                sval = va_arg(arg_ptr, char *);
                 while (*sval && buffer_i < 1022) {
                     buffer[buffer_i++] = *sval++;
                 }
@@ -46,15 +47,16 @@ int printf(const char *fmt, ...) {
                 break;
 
             case 'c':
-                cval = va_arg(args, int);
+                cval = va_arg(arg_ptr, int);
                 buffer[buffer_i++] = (char)cval;
                 break;
 
             case 'f':
                 break;
 
-            case 'x':
+            case 'x': {
                 break;
+            }
 
             default:
                 buffer[buffer_i++] = *p;
@@ -64,9 +66,43 @@ int printf(const char *fmt, ...) {
 
     buffer[buffer_i] = '\0';
 
-    print(buffer);
+    memcpy(out, buffer, buffer_i + 1);
+
+    return 0;
+}
+
+int sprintf(char *out, char *fmt, ...) {
+    va_list args;
+    va_start(args, fmt);
+
+    vsprintf(out, fmt, args);
 
     va_end(args);
+    return 0;
+}
+
+int snprintf(char *out, size_t len, char *fmt, ...) {
+    char message[1024];
+
+    va_list args;
+    va_start(args, fmt);
+    vsprintf(message, fmt, args);
+    va_end(args);
+
+    memcpy(out, message, len);
+
+    return 0;
+}
+
+int printf(const char *fmt, ...) {
+    char message[1024];
+
+    va_list args;
+    va_start(args, fmt);
+    vsprintf(message, fmt, args);
+    va_end(args);
+
+    print(message);
 
     return 0;
 }
@@ -107,6 +143,31 @@ int atoi(const char *str) {
     }
 
     return res;
+}
+
+void prntnum(unsigned long num, int base, char sign, char *outbuf)
+{
+
+    int i = 12;
+    int j = 0;
+
+    do{
+        outbuf[i] = "0123456789ABCDEF"[num % base];
+        i--;
+        num = num/base;
+    }while( num > 0);
+
+    if(sign != ' '){
+        outbuf[0] = sign;
+        ++j;
+    }
+
+    while( ++i < 13){
+       outbuf[j++] = outbuf[i];
+    }
+
+    outbuf[j] = 0;
+
 }
 
 char *fgets(char *str, int size, int fd) {

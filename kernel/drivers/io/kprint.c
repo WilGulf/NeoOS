@@ -1,124 +1,110 @@
 #include "io.h"
+
 #include "../../include/util.h"
 #include "../../include/va_list.h"
+#include "../../timer/timer.h"
 
-int int_to_str(int x, char str[], int d) {
-    int i = 0;
-    while (x) {
-        str[i++] = (x % 10) + '0'; 
-        x = x / 10;
-    }
+int vsprintf(char *out, const char *fmt, va_list arg_ptr) {
+    const char *p;
+    char *sval;
+    int cval, ival;
 
-    while (i < d) {
-        str[i++] = '0';
-    }
-    
-    int len = i;
-    int j = 0, k = len - 1, temp;
-    while (j < k) { 
-        temp = str[j]; 
-        str[j] = str[k]; 
-        str[k] = temp; 
-        j++; 
-        k--; 
-    }
-    
-    str[i] = '\0';
-    return i;
-}
+    char buffer[1024];
+    int buffer_i = 0;
 
-int kprintf(char *buf, ...) {
-    va_list args;
-    va_start(args, buf);
+    for (p = fmt; *p; p++) {
+        if (buffer_i >= 1022) {
+            break;
+        }
 
-    char output[256] = "";
+        if (*p != '%') {
+            buffer[buffer_i++] = *p;
+            continue;
+        }
 
-    int buf_i = 0;
-    int output_i = 0;
-    while (buf[buf_i] != 0) {
-        if (buf[buf_i] == '%') {
-            switch (buf[buf_i + 1]) {
+        char *integer;
 
-            case 's': {
-                char * arg = va_arg(args, char *);
-                
-                int i = 0;
-                while (arg[i] != 0) {
-                    output[output_i] = arg[i];
-
-                    output_i++;
-                    i++;
-                }
-
-                break;
-            }
-            
-            case 'c': {
-                output[output_i] = va_arg(args, int);
-                output_i++;
-
-                break;
-            }
-
-            case 'd': {
-                char str[32];
-                int_to_str(va_arg(args, int), str, 0);
-
-                int i = 0;
-                while (str[i] != 0) {
-                    output[output_i] = str[i];
-
-                    output_i++;
-                    i++;
+        switch(*++p) {
+            case 'd':
+                ival = va_arg(arg_ptr, int);
+                integer = itoa(ival);
+                while (*integer && buffer_i < 1022) {
+                    buffer[buffer_i++] = *integer++;
                 }
                 
-
                 break;
-            }
-            
-            case 'f': {
-                float n = va_arg(args, double);
-                char res[32];
 
-                int ipart = (int)n;
-                float fpart = n - (float)ipart;
-
-                int i = int_to_str(ipart, res, 0);
-
-                int afterpoint = 5;
-
-                if (afterpoint != 0) {
-                    res[i] = '.';
-                    fpart = fpart * pow(10, afterpoint) + 0.5;
-                    int_to_str((int)fpart, res + i + 1, afterpoint);
-                }
-
-                i = 0;
-                while (res[i] != 0) {
-                    output[output_i] = res[i];
-                    output_i++;
-                    i++;
+            case 's':
+                sval = va_arg(arg_ptr, char *);
+                while (*sval && buffer_i < 1022) {
+                    buffer[buffer_i++] = *sval++;
                 }
 
                 break;
-            }
-            
+
+            case 'c':
+                cval = va_arg(arg_ptr, int);
+                buffer[buffer_i++] = (char)cval;
+                break;
+
+            case 'f':
+                break;
+
+            case 'x':
+                break;
+
             default:
+                buffer[buffer_i++] = *p;
                 break;
-            }
-
-            buf_i = buf_i + 2;
-        } else {
-            output[output_i] = buf[buf_i];
-
-            output_i++;
-            buf_i++;
         }
     }
 
+    buffer[buffer_i] = '\0';
+
+    memcpy(out, buffer, buffer_i + 1);
+
+    return 0;
+}
+
+int sprintf(char *out, char *fmt, ...) {
+    va_list args;
+    va_start(args, fmt);
+
+    vsprintf(out, fmt, args);
+
     va_end(args);
-    
-    writer(output);
+    return 0;
+}
+
+int snprintf(char *out, size_t len, char *fmt, ...) {
+
+}
+
+int kprintf(const char *fmt, ...) {
+    va_list args;
+
+    char message[1024];
+    char buffer[1152];
+
+    uint32_t ms = timer_get_ms();
+    int sec = ms / 1000;
+    int sec_ms = ms % 1000;
+
+    va_start(args, fmt);
+
+    vsprintf(message, fmt, args);
+
+    va_end(args);
+
+    sprintf(
+        buffer,
+        "[ KERNEL ] [%d.%d] %s",
+        sec,
+        sec_ms,
+        message
+    );
+
+    writer(buffer);
 
     return 0;
 }
