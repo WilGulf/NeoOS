@@ -59,6 +59,7 @@ disk_contents: output/disk.img
 	./fstools/copy.neofs output/disk.img userland/execs/rm/output/rm.elf execs/rm rx
 	./fstools/copy.neofs output/disk.img userland/execs/crt/output/crt.elf execs/crt rx
 	./fstools/copy.neofs output/disk.img userland/execs/list/output/list.elf execs/list rx
+	./fstools/copy.neofs output/disk.img userland/execs/uptime/output/uptime.elf execs/uptime rx
 
 run: all
 	qemu-system-i386 -kernel output/kernel.elf -hda output/disk.img
@@ -86,6 +87,7 @@ userland_execs:
 	cd ./userland/execs/rm && $(MAKE) all
 	cd ./userland/execs/crt && $(MAKE) all
 	cd ./userland/execs/list && $(MAKE) all
+	cd ./userland/execs/uptime && $(MAKE) all
 	cd ./userland/execs/test && $(MAKE) all
 
 userland_clean:
@@ -102,6 +104,7 @@ userland_clean:
 	cd ./userland/execs/rm && $(MAKE) clean
 	cd ./userland/execs/crt && $(MAKE) clean
 	cd ./userland/execs/list && $(MAKE) clean
+	cd ./userland/execs/uptime && $(MAKE) clean
 	cd ./userland/execs/test && $(MAKE) clean
 
 kernel_clean:

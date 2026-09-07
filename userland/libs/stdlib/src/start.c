@@ -12,4 +12,6 @@ void c_start() {
     declarations();
     
     main(arguments.argc, arguments.argv);
+
+    exit();
 }
