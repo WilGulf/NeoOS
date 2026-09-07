@@ -10,6 +10,8 @@ Currently implemented:
 * Multiple programs runnable from the shell
 * Security features inspired from Open BSD
 
+![Showcase](Assets/Showcase.png)
+
 ### The shell
 
 The neo shell (`nsh`) is a basic implementation of a shell. The standard commands are not UNIX-compatible, but some are documented in [commands.md](commands.md).
