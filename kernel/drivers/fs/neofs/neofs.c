@@ -11,6 +11,8 @@
 struct master_block {
     uint32_t magic;
 
+    uint32_t block_size;
+
     uint32_t first_block;
     uint32_t block_count;
 } __attribute__((packed));
@@ -40,8 +42,6 @@ struct block {
 #define MAX_PATH 256
 
 #define BLOCK_DATA_OFFSET sizeof(struct block)
-#define BLOCK_SIZE 512
-#define DATA_SIZE (BLOCK_SIZE - sizeof(struct block))
 
 #define BLOCK_STATUS_FREE 0x00
 #define BLOCK_STATUS_USED 0x01
@@ -58,6 +58,10 @@ struct block {
 
 struct neofs_private {
     struct master_block master_block;
+
+    uint32_t BLOCK_SIZE;
+    uint32_t DATA_SIZE;
+
     struct disk_stream *stream;
 };
 
@@ -103,7 +107,7 @@ static void neofs_init_private(struct disk *disk, struct neofs_private *private)
 static int neofs_read_block(struct disk *disk, uint32_t block, uint32_t size, void *out) {
     struct neofs_private *private = disk->fs_private;
 
-    if (disk_streamer_seek(private->stream, block * BLOCK_SIZE) != ALL_OK) {
+    if (disk_streamer_seek(private->stream, block * private->BLOCK_SIZE) != ALL_OK) {
         return -ERROR_IO;
     }
 
@@ -113,7 +117,7 @@ static int neofs_read_block(struct disk *disk, uint32_t block, uint32_t size, vo
 static int neofs_read_block_data(struct disk *disk, uint32_t block, uint32_t size, void *out) {
     struct neofs_private *private = disk->fs_private;
 
-    if (disk_streamer_seek(private->stream, (block * BLOCK_SIZE) + BLOCK_DATA_OFFSET) != ALL_OK) {
+    if (disk_streamer_seek(private->stream, (block * private->BLOCK_SIZE) + BLOCK_DATA_OFFSET) != ALL_OK) {
         return -ERROR_IO;
     }
 
@@ -123,7 +127,7 @@ static int neofs_read_block_data(struct disk *disk, uint32_t block, uint32_t siz
 static int neofs_write_block(struct disk *disk, uint32_t block, uint32_t size, void *in) {
     struct neofs_private *private = disk->fs_private;
 
-    if (disk_streamer_seek(private->stream, block * BLOCK_SIZE) != ALL_OK) {
+    if (disk_streamer_seek(private->stream, block * private->BLOCK_SIZE) != ALL_OK) {
         return -ERROR_IO;
     }
 
@@ -214,6 +218,8 @@ int neofs_resolve(struct disk *disk) {
     }
 
     private->master_block = master_block;
+    private->BLOCK_SIZE = master_block.block_size;
+    private->DATA_SIZE = master_block.block_size - sizeof(struct block);
 
 out:
     if (stream) {
@@ -476,6 +482,7 @@ err_out:
 
 int neofs_read(struct disk *disk, void *descriptor, uint32_t size, uint32_t nmemb, char *out_ptr) {
     struct neofs_file_descriptor *desc = descriptor;
+    struct neofs_private *private = disk->fs_private;
 
     if (desc->mode != FILE_MODE_READ) {
         return -ERROR_INVALID_ARG;
@@ -484,7 +491,7 @@ int neofs_read(struct disk *disk, void *descriptor, uint32_t size, uint32_t nmem
     struct meta_block meta_block;
     get_meta_block(desc->meta_block, &meta_block, disk);
 
-    if (!meta_block.flags & FLAG_R) {
+    if (!(meta_block.flags & FLAG_R)) {
         return -ERROR_IO;
     }
 
@@ -500,7 +507,7 @@ int neofs_read(struct disk *disk, void *descriptor, uint32_t size, uint32_t nmem
 
     uint32_t total_to_read = 0;
 
-    int blocks_offset = desc->pos / DATA_SIZE;
+    int blocks_offset = desc->pos / private->DATA_SIZE;
 
     uint32_t block = meta_block.start;
     struct block temp;
@@ -521,17 +528,17 @@ int neofs_read(struct disk *disk, void *descriptor, uint32_t size, uint32_t nmem
     while (block && requested > 0) {    
         uint32_t offset;
         if (first) {
-            offset = desc->pos % DATA_SIZE;
+            offset = desc->pos % private->DATA_SIZE;
             first = false;
         } else {
             offset = 0;
         }
 
-        uint32_t available = DATA_SIZE - offset;
+        uint32_t available = private->DATA_SIZE - offset;
         uint32_t size = requested < remaining ? requested : remaining;
         size_t to_read = (size > available) ? available : size;
-        char buffer[DATA_SIZE];
-        int res = neofs_read_block_data(disk, block, DATA_SIZE, buffer);
+        char buffer[private->DATA_SIZE];
+        int res = neofs_read_block_data(disk, block, private->DATA_SIZE, buffer);
         if (res < 0) {
             return -ERROR_IO;
         }
@@ -561,10 +568,11 @@ int neofs_stat(struct disk *disk, void *private, struct file_stat *stat) {
     return 0;
 }
 
-int neofs_write(struct disk *disk, void *private, uint32_t size, uint32_t nmemb, const char *in) {
+int neofs_write(struct disk *disk, void *descriptor, uint32_t size, uint32_t nmemb, const char *in) {
+    struct neofs_private *private = disk->fs_private;
     uint32_t total = size * nmemb;
 
-    struct neofs_file_descriptor *desc = private;
+    struct neofs_file_descriptor *desc = descriptor;
     if (desc->mode != FILE_MODE_WRITE) {
         return -ERROR_INVALID_ARG;
     }
@@ -572,7 +580,7 @@ int neofs_write(struct disk *disk, void *private, uint32_t size, uint32_t nmemb,
     struct meta_block file_meta_block;
     get_meta_block(desc->meta_block, &file_meta_block, disk);
 
-    if (!file_meta_block.flags & FLAG_W) {
+    if (!(file_meta_block.flags & FLAG_W)) {
         return -ERROR_IO;
     }
 
@@ -596,8 +604,8 @@ int neofs_write(struct disk *disk, void *private, uint32_t size, uint32_t nmemb,
 
     int blocks_written = 0;
 
-    int blocks_needed = total / DATA_SIZE;
-    if (total % DATA_SIZE) {
+    int blocks_needed = total / private->DATA_SIZE;
+    if (total % private->DATA_SIZE) {
         blocks_needed++;
     }
 
@@ -631,15 +639,15 @@ int neofs_write(struct disk *disk, void *private, uint32_t size, uint32_t nmemb,
     size_t remaining = total;
     curr = block;
     while (curr) {
-        char buffer[BLOCK_SIZE];
+        char buffer[private->BLOCK_SIZE];
         struct block curr_block;
         get_block(curr, &curr_block, disk);
         memset(buffer, 0, sizeof(buffer));
         memcpy(&buffer, &curr_block, sizeof(curr_block));
 
-        size_t to_copy = (remaining > DATA_SIZE) ? DATA_SIZE : remaining;
+        size_t to_copy = (remaining > private->DATA_SIZE) ? private->DATA_SIZE : remaining;
         memcpy(buffer + sizeof(curr_block), in, to_copy);
-        neofs_write_block(disk, curr, BLOCK_SIZE, buffer);
+        neofs_write_block(disk, curr, private->BLOCK_SIZE, buffer);
         curr = curr_block.next;
         in += to_copy;
         remaining -= to_copy;

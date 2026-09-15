@@ -44,23 +44,23 @@ kernel.elf: $(OBJECTS)
 	ld.lld $(LDFLAGS) $(OBJECTS) -o output/kernel.elf
 
 disk_contents: output/disk.img
-	./fstools/copy.neofs output/disk.img userland/configs/boot.cfg sysro/boot.cfg r
+	./fstools/copy.neofs --disk output/disk.img if=userland/configs/boot.cfg trgt=sysro/boot.cfg --flags r
 
-	./fstools/copy.neofs output/disk.img userland/launch/output/launch.elf sysro/launch rx
+	./fstools/copy.neofs --disk output/disk.img if=userland/launch/output/launch.elf trgt=sysro/launch --flags rx
 
-	./fstools/copy.neofs output/disk.img userland/execs/sh/output/sh.elf execs/sh rx
-	./fstools/copy.neofs output/disk.img userland/execs/fetch/output/fetch.elf execs/fetch rx
-	./fstools/copy.neofs output/disk.img userland/execs/echo/output/echo.elf execs/echo rx
-	./fstools/copy.neofs output/disk.img userland/execs/sysinfo/output/sysinfo.elf execs/sysinfo rx
-	./fstools/copy.neofs output/disk.img userland/execs/read/output/read.elf execs/read rx
-	./fstools/copy.neofs output/disk.img userland/execs/running/output/running.elf execs/running rx
-	./fstools/copy.neofs output/disk.img userland/execs/kill/output/kill.elf execs/kill rx
-	./fstools/copy.neofs output/disk.img userland/execs/test/output/test.elf execs/test rx
-	./fstools/copy.neofs output/disk.img userland/execs/rm/output/rm.elf execs/rm rx
-	./fstools/copy.neofs output/disk.img userland/execs/crt/output/crt.elf execs/crt rx
-	./fstools/copy.neofs output/disk.img userland/execs/list/output/list.elf execs/list rx
-	./fstools/copy.neofs output/disk.img userland/execs/help/output/help.elf execs/help rx
-	./fstools/copy.neofs output/disk.img userland/execs/uptime/output/uptime.elf execs/uptime rx
+	./fstools/copy.neofs --disk output/disk.img if=userland/execs/sh/output/sh.elf 				trgt=execs/sh 		--flags rx
+	./fstools/copy.neofs --disk output/disk.img if=userland/execs/fetch/output/fetch.elf 		trgt=execs/fetch 	--flags rx
+	./fstools/copy.neofs --disk output/disk.img if=userland/execs/echo/output/echo.elf 			trgt=execs/echo 	--flags rx
+	./fstools/copy.neofs --disk output/disk.img if=userland/execs/sysinfo/output/sysinfo.elf 	trgt=execs/sysinfo 	--flags rx
+	./fstools/copy.neofs --disk output/disk.img if=userland/execs/read/output/read.elf 			trgt=execs/read 	--flags rx
+	./fstools/copy.neofs --disk output/disk.img if=userland/execs/running/output/running.elf 	trgt=execs/running 	--flags rx
+	./fstools/copy.neofs --disk output/disk.img if=userland/execs/kill/output/kill.elf 			trgt=execs/kill 	--flags rx
+	./fstools/copy.neofs --disk output/disk.img if=userland/execs/test/output/test.elf 			trgt=execs/test 	--flags rx
+	./fstools/copy.neofs --disk output/disk.img if=userland/execs/rm/output/rm.elf 				trgt=execs/rm 		--flags rx
+	./fstools/copy.neofs --disk output/disk.img if=userland/execs/crt/output/crt.elf 			trgt=execs/crt 		--flags rx
+	./fstools/copy.neofs --disk output/disk.img if=userland/execs/list/output/list.elf 			trgt=execs/list 	--flags rx
+	./fstools/copy.neofs --disk output/disk.img if=userland/execs/help/output/help.elf 			trgt=execs/help 	--flags rx
+	./fstools/copy.neofs --disk output/disk.img if=userland/execs/uptime/output/uptime.elf 		trgt=execs/uptime 	--flags rx
 
 run: all
 	qemu-system-i386 -kernel output/kernel.elf -hda output/disk.img
@@ -72,7 +72,7 @@ run: all
 
 output/disk.img:
 	dd if=/dev/zero of=output/disk.img bs=1M count=64
-	./fstools/mkfs.neofs output/disk.img
+	./fstools/mkfs.neofs --disk output/disk.img
 
 userland_execs:
 	cd ./userland/libs/stdlib && $(MAKE) all
