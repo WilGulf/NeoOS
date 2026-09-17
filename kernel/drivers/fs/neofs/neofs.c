@@ -8,6 +8,8 @@
 #include "../../../include/util.h"
 #include "../../../memory/kheap.h"
 
+#include "../../io/io.h"
+
 struct master_block {
     uint32_t magic;
 
@@ -117,10 +119,6 @@ static int neofs_read_block(struct disk *disk, uint32_t block, uint32_t size, vo
         
     struct neofs_private *private = disk->fs_private;
 
-    if (size > private->BLOCK_SIZE) {
-        return -ERROR_IO;
-    }
-
     if (disk_streamer_seek(private->stream, block * private->BLOCK_SIZE) != ALL_OK) {
         return -ERROR_IO;
     }
@@ -133,10 +131,6 @@ static int neofs_read_block_data(struct disk *disk, uint32_t block, uint32_t siz
         return -1;
 
     struct neofs_private *private = disk->fs_private;
-
-    if (size > private->DATA_SIZE) {
-        return -ERROR_IO;
-    }
 
     if (disk_streamer_seek(private->stream, (block * private->BLOCK_SIZE) + BLOCK_DATA_OFFSET) != ALL_OK) {
         return -ERROR_IO;
@@ -161,7 +155,13 @@ static int neofs_write_block(struct disk *disk, uint32_t block, uint32_t size, v
 }
 
 static int get_master_block(struct master_block *out, struct disk *disk) {
-    return neofs_read_block(disk, 0, sizeof(struct master_block), out);
+    struct neofs_private *private = disk->fs_private;
+
+    if (disk_streamer_seek(private->stream, 0) != ALL_OK) {
+        return -ERROR_IO;
+    }
+
+    return disk_streamer_read(private->stream, out, sizeof(struct master_block));
 }
 
 static int get_meta_block(uint32_t block, struct meta_block *out, struct disk *disk) {
@@ -181,7 +181,8 @@ static int get_block(uint32_t block, struct block *out, struct disk *disk) {
 static int get_free_block(uint32_t start, struct disk *disk) {
     struct neofs_private *private = disk->fs_private;
     struct meta_block bitmap;
-    get_meta_block(private->master_block.bitmap_meta_block, &bitmap, disk);
+    if (get_meta_block(private->master_block.bitmap_meta_block, &bitmap, disk) < 0)
+        return -1;
 
     unsigned char *buffer = kzalloc(bitmap.size);
     if (!buffer) {
@@ -211,7 +212,8 @@ int set_block_on_bitmap(uint32_t block, bool state, struct disk *disk) {
         
     struct neofs_private *private = disk->fs_private;
     struct meta_block bitmap;
-    get_meta_block(private->master_block.bitmap_meta_block, &bitmap, disk);
+    if (get_meta_block(private->master_block.bitmap_meta_block, &bitmap, disk) < 0)
+        return -1;
 
     unsigned char *buffer = kzalloc(bitmap.size);
     if (!buffer) {
@@ -235,7 +237,9 @@ int set_block_on_bitmap(uint32_t block, bool state, struct disk *disk) {
 
 static uint32_t get_next_block(uint32_t block, struct disk *disk) {
     struct block read_block;
-    get_block(block, &read_block, disk);
+    if (get_block(block, &read_block, disk) < 0)
+        return -1;
+
     return read_block.next;
 }
 
@@ -272,7 +276,8 @@ int neofs_resolve(struct disk *disk) {
     }
 
     struct master_block master_block;
-    get_master_block(&master_block, disk);
+    if (get_master_block(&master_block, disk) < 0)
+        return -1;
     
     if (master_block.magic != NEOFS_MAGIC) {
         res = -ERROR_IO;
@@ -284,12 +289,12 @@ int neofs_resolve(struct disk *disk) {
         goto out;
     }
 
-    if (!master_block.block_size) {
+    if (master_block.block_size < sizeof(struct meta_block)) {
         res = -ERROR_IO;
         goto out;
     }
 
-    if (master_block.block_size < sizeof(struct meta_block)) {
+    if (!master_block.block_size) {
         res = -ERROR_IO;
         goto out;
     }
@@ -357,22 +362,27 @@ static int create_meta_block(uint32_t parent, kbool is_dir, const char *name, st
     neofs_write_block(disk, new_block_n, sizeof(new_block), &new_block);
 
     struct meta_block parent_block;
-    get_meta_block(parent, &parent_block, disk);
+    if (get_meta_block(parent, &parent_block, disk) < 0)
+        return -1;
     
     if (!parent_block.start) {
         parent_block.start = new_block_n;
         neofs_write_block(disk, parent, sizeof(parent_block), &parent_block);
     } else {
         struct meta_block child_block;
-        get_meta_block(parent_block.start, &child_block, disk);
+        if (get_meta_block(parent_block.start, &child_block, disk) < 0)
+            return -1;
 
         int prev_child_block_n = parent_block.start;
         while (child_block.next) {
             prev_child_block_n = child_block.next;
-            get_meta_block(child_block.next, &child_block, disk);
+            if (get_meta_block(child_block.next, &child_block, disk) < 0)
+                return -1;
         }
 
-        get_meta_block(prev_child_block_n, &child_block, disk);
+        if (get_meta_block(prev_child_block_n, &child_block, disk) < 0)
+            return -1;
+
         child_block.next = new_block_n;
         neofs_write_block(disk, prev_child_block_n, sizeof(child_block), &child_block);
     }
@@ -412,7 +422,8 @@ int read_file(uint32_t file_meta_block_n, void *out, struct disk *disk) {
     struct neofs_private *private = disk->fs_private;
     
     struct meta_block file_meta_block;
-    get_meta_block(file_meta_block_n, &file_meta_block, disk);
+    if (get_meta_block(file_meta_block_n, &file_meta_block, disk) < 0)
+        return -1;
 
     int block = file_meta_block.start;
     size_t remaining = file_meta_block.size;
@@ -435,7 +446,8 @@ int read_file(uint32_t file_meta_block_n, void *out, struct disk *disk) {
 
 int write_file(uint32_t file_meta_block_n, void *in, uint32_t total, struct disk *disk) {
     struct meta_block file_meta_block;
-    get_meta_block(file_meta_block_n, &file_meta_block, disk);
+    if (get_meta_block(file_meta_block_n, &file_meta_block, disk) < 0)
+        return -1;
 
     struct neofs_private *private = disk->fs_private;
 
@@ -480,7 +492,9 @@ int write_file(uint32_t file_meta_block_n, void *in, uint32_t total, struct disk
             neofs_write_block(disk, new_block_n, sizeof(new_block), &new_block);
 
             struct block prev_block;
-            get_block(prev, &prev_block, disk);
+            if (get_block(prev, &prev_block, disk) < 0)
+                return -1;
+
             prev_block.next = new_block_n;
             curr = new_block_n;
             neofs_write_block(disk, prev, sizeof(prev_block), &prev_block);
@@ -495,7 +509,9 @@ int write_file(uint32_t file_meta_block_n, void *in, uint32_t total, struct disk
     while (curr) {
         char buffer[private->BLOCK_SIZE];
         struct block curr_block;
-        get_block(curr, &curr_block, disk);
+        if (get_block(curr, &curr_block, disk) < 0)
+            return -1;
+
         memset(buffer, 0, sizeof(buffer));
         memcpy(&buffer, &curr_block, sizeof(curr_block));
 
@@ -518,10 +534,12 @@ static int neofs_get_path_meta_block(struct path_part *path_part, kbool allow_cr
     int res = 0;
 
     struct master_block master_block;
-    get_master_block(&master_block, disk);
+    if (get_master_block(&master_block, disk) < 0)
+        return -1;
     
     struct meta_block root;
-    get_meta_block(master_block.first_block, &root, disk);
+    if (get_meta_block(master_block.first_block, &root, disk) < 0)
+        return -1;
     
     struct meta_block curr;
     struct meta_block dir;
@@ -529,11 +547,13 @@ static int neofs_get_path_meta_block(struct path_part *path_part, kbool allow_cr
     int dir_n = master_block.first_block; // Dir being searched
     int curr_n = root.start; // Inspected file in dir
 
-    get_meta_block(master_block.first_block, &dir, disk);
+    if (get_meta_block(master_block.first_block, &dir, disk) < 0)
+        return -1;
 
     if (dir.start) {
         curr_n = dir.start;
-        get_meta_block(curr_n, &curr, disk);
+        if (get_meta_block(curr_n, &curr, disk) < 0)
+            return -1;
     }
 
     while (path_part->part) {
@@ -553,7 +573,8 @@ static int neofs_get_path_meta_block(struct path_part *path_part, kbool allow_cr
             }
 
             curr_n = curr.next;
-            get_meta_block(curr_n, &curr, disk);
+            if (get_meta_block(curr_n, &curr, disk) < 0)
+                return -1;
         }
 
         if (found && path_part->next) {
@@ -563,11 +584,13 @@ static int neofs_get_path_meta_block(struct path_part *path_part, kbool allow_cr
             }
 
             dir_n = curr_n; // Jump into new dir
-            get_meta_block(dir_n, &dir, disk);
+            if (get_meta_block(dir_n, &dir, disk) < 0)
+                return -1;
 
             curr_n = dir.start; // Start next search on first child in new dir
             if (curr_n) {
-                get_meta_block(curr_n, &curr, disk);
+                if (get_meta_block(curr_n, &curr, disk) < 0)
+                    return -1;
             }
 
             path_part = path_part->next; // Go to the next path_part
@@ -588,7 +611,9 @@ static int neofs_get_path_meta_block(struct path_part *path_part, kbool allow_cr
             int new_dir = create_meta_block(dir_n, true, path_part->part, disk);
             
             dir_n = new_dir;
-            get_meta_block(dir_n, &dir, disk);
+            if (get_meta_block(dir_n, &dir, disk) < 0)
+                return -1;
+
             curr_n = dir.start;
             path_part = path_part->next;
             continue;
@@ -658,7 +683,9 @@ void *neofs_open(struct disk *disk, struct path_part *path, FILE_MODE mode) {
     descriptor->type = FILE_TYPE_FILE;
 
     struct meta_block meta_block;
-    get_meta_block(meta_block_n, &meta_block, disk);
+    if (get_meta_block(meta_block_n, &meta_block, disk) < 0)
+        return -1;
+
     if (meta_block.is_dir) {
         descriptor->type = FILE_TYPE_DIR;
     }
@@ -682,7 +709,8 @@ int neofs_read(struct disk *disk, void *descriptor, uint32_t size, uint32_t nmem
     }
 
     struct meta_block meta_block;
-    get_meta_block(desc->meta_block, &meta_block, disk);
+    if (get_meta_block(desc->meta_block, &meta_block, disk) < 0)
+        return -1;
 
     if (!(meta_block.flags & FLAG_R)) {
         return -ERROR_IO;
@@ -704,7 +732,8 @@ int neofs_read(struct disk *disk, void *descriptor, uint32_t size, uint32_t nmem
 
     uint32_t block = meta_block.start;
     struct block temp;
-    get_block(block, &temp, disk);
+    if (get_block(block, &temp, disk) < 0)
+        return -1;
     
     int i = 0;
     while (i < blocks_offset) {
@@ -713,7 +742,9 @@ int neofs_read(struct disk *disk, void *descriptor, uint32_t size, uint32_t nmem
             return -ERROR_IO;
         }
 
-        get_block(temp.next, &temp, disk);
+        if (get_block(temp.next, &temp, disk) < 0)
+            return -1;
+
         i++;
     }
 
@@ -753,7 +784,8 @@ int neofs_read(struct disk *disk, void *descriptor, uint32_t size, uint32_t nmem
 int neofs_stat(struct disk *disk, void *private, struct file_stat *stat) {
     struct neofs_file_descriptor *desc = private;
     struct meta_block meta_block;
-    get_meta_block(desc->meta_block, &meta_block, disk);
+    if (get_meta_block(desc->meta_block, &meta_block, disk) < 0)
+        return -1;
 
     stat->filesize = meta_block.size;
     stat->flags = 0x00;
@@ -771,7 +803,8 @@ int neofs_write(struct disk *disk, void *descriptor, uint32_t size, uint32_t nme
     }
     
     struct meta_block file_meta_block;
-    get_meta_block(desc->meta_block, &file_meta_block, disk);
+    if (get_meta_block(desc->meta_block, &file_meta_block, disk) < 0)
+        return -1;
 
     if (!(file_meta_block.flags & FLAG_W)) {
         return -ERROR_IO;
@@ -786,17 +819,21 @@ static int remove_file(uint32_t file_meta_block_n, struct disk *disk) {
     }
 
     struct meta_block file_meta_block;
-    get_meta_block(file_meta_block_n, &file_meta_block, disk);
+    if (get_meta_block(file_meta_block_n, &file_meta_block, disk) < 0)
+        return -1;
 
     struct meta_block parent;
-    get_meta_block(file_meta_block.parent, &parent, disk);
+    if (get_meta_block(file_meta_block.parent, &parent, disk) < 0)
+        return -1;
+
     if (parent.start == file_meta_block_n) {
         parent.start = file_meta_block.next;
         neofs_write_block(disk, file_meta_block.parent, sizeof(parent), &parent);
     } else {
         struct meta_block child;
         int child_n = parent.start;
-        get_meta_block(child_n, &child, disk);
+        if (get_meta_block(child_n, &child, disk) < 0)
+            return -1;
 
         kbool found = false;
         while (1) {
@@ -812,7 +849,8 @@ static int remove_file(uint32_t file_meta_block_n, struct disk *disk) {
             }
 
             child_n = child.next;
-            get_meta_block(child_n, &child, disk);
+            if (get_meta_block(child_n, &child, disk) < 0)
+                return -1;
         }
 
         if (!found) {
@@ -828,11 +866,15 @@ static int remove_file(uint32_t file_meta_block_n, struct disk *disk) {
     if (file_meta_block.is_dir) {
         struct meta_block child;
         int child_n = file_meta_block.start;
-        get_meta_block(file_meta_block.start, &child, disk);
+        if (get_meta_block(file_meta_block.start, &child, disk) < 0)
+            return -1;
+
         while (child.next) {
             int next = child.next;
             remove_file(child_n, disk);
-            get_meta_block(next, &child, disk);
+            if (get_meta_block(next, &child, disk) < 0)
+                return -1;
+
             child_n = next;
         }
 
@@ -842,7 +884,9 @@ static int remove_file(uint32_t file_meta_block_n, struct disk *disk) {
     } else {
         struct block block;
         int block_n = file_meta_block.start;
-        get_block(file_meta_block.start, &block, disk);
+        if (get_block(file_meta_block.start, &block, disk) < 0)
+            return -1;
+
         while (block.next) {
             int next = block.next;
             remove_block(block_n, disk);
@@ -874,7 +918,8 @@ struct dirent neofs_readdir(struct disk *disk, void *private) {
     }
 
     struct meta_block dir;
-    get_meta_block(desc->meta_block, &dir, disk);
+    if (get_meta_block(desc->meta_block, &dir, disk) < 0)
+        return dirent;
 
     int i = 0;
     int curr = dir.start;
@@ -890,7 +935,9 @@ struct dirent neofs_readdir(struct disk *disk, void *private) {
         }
 
         struct meta_block temp;
-        get_meta_block(curr, &temp, disk);
+        if (get_meta_block(curr, &temp, disk) < 0)
+            return dirent;
+
         if (!temp.next) {
             break;
         }
@@ -905,7 +952,8 @@ struct dirent neofs_readdir(struct disk *disk, void *private) {
     }
 
     struct meta_block child;
-    get_meta_block(curr, &child, disk);
+    if (get_meta_block(curr, &child, disk) < 0)
+        return dirent;
 
     strncpy(dirent.name, child.filename, sizeof(dirent.name));
 
