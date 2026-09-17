@@ -106,7 +106,15 @@ static void neofs_init_private(struct disk *disk, struct neofs_private *private)
     private->stream = disk_streamer_new(disk->id);
 }
 
+static int block_is_valid(uint32_t block, struct disk *disk) {
+    struct neofs_private *private = disk->fs_private;
+    return block < private->master_block.block_count;
+}
+
 static int neofs_read_block(struct disk *disk, uint32_t block, uint32_t size, void *out) {
+    if (!block_is_valid(block, disk))
+        return -1;
+        
     struct neofs_private *private = disk->fs_private;
 
     if (disk_streamer_seek(private->stream, block * private->BLOCK_SIZE) != ALL_OK) {
@@ -117,6 +125,9 @@ static int neofs_read_block(struct disk *disk, uint32_t block, uint32_t size, vo
 }
 
 static int neofs_read_block_data(struct disk *disk, uint32_t block, uint32_t size, void *out) {
+    if (!block_is_valid(block, disk))
+        return -1;
+
     struct neofs_private *private = disk->fs_private;
 
     if (disk_streamer_seek(private->stream, (block * private->BLOCK_SIZE) + BLOCK_DATA_OFFSET) != ALL_OK) {
@@ -127,6 +138,9 @@ static int neofs_read_block_data(struct disk *disk, uint32_t block, uint32_t siz
 }
 
 static int neofs_write_block(struct disk *disk, uint32_t block, uint32_t size, void *in) {
+    if (!block_is_valid(block, disk))
+        return -1;
+
     struct neofs_private *private = disk->fs_private;
 
     if (disk_streamer_seek(private->stream, block * private->BLOCK_SIZE) != ALL_OK) {
@@ -143,10 +157,16 @@ static int get_master_block(struct master_block *out, struct disk *disk) {
 }
 
 static int get_meta_block(uint32_t block, struct meta_block *out, struct disk *disk) {
+    if (!block_is_valid(block, disk))
+        return -1;
+
     return neofs_read_block(disk, block, sizeof(struct meta_block), out);
 }
 
 static int get_block(uint32_t block, struct block *out, struct disk *disk) {
+    if (!block_is_valid(block, disk))
+        return -1;
+
     return neofs_read_block(disk, block, sizeof(struct block), out);
 }
 
@@ -165,6 +185,9 @@ static int get_free_block(uint32_t start, struct disk *disk) {
         unsigned char mask = 1 << (bit % 8);
         if (!(buffer[bit / 8] & mask)) {
             kfree(buffer);
+            if (!block_is_valid(bit, disk))
+                return -1;
+
             return bit;
         }
     }
@@ -175,6 +198,9 @@ static int get_free_block(uint32_t start, struct disk *disk) {
 }
 
 int set_block_on_bitmap(uint32_t block, bool state, struct disk *disk) {
+    if (!block_is_valid(block, disk))
+        return -1;
+        
     struct neofs_private *private = disk->fs_private;
     struct meta_block bitmap;
     get_meta_block(private->master_block.bitmap_meta_block, &bitmap, disk);
@@ -245,7 +271,22 @@ int neofs_resolve(struct disk *disk) {
         goto out;
     }
 
+    if (!master_block.block_count) {
+        res = -ERROR_IO;
+        goto out;
+    }
+
+    if (!master_block.block_size) {
+        res = -ERROR_IO;
+        goto out;
+    }
+
     if (!master_block.first_block) {
+        res = -ERROR_IO;
+        goto out;
+    }
+
+    if (master_block.first_block > master_block.block_count) {
         res = -ERROR_IO;
         goto out;
     }
