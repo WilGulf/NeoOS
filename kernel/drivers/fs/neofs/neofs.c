@@ -276,8 +276,10 @@ int neofs_resolve(struct disk *disk) {
     }
 
     struct master_block master_block;
-    if (get_master_block(&master_block, disk) < 0)
-        return -1;
+    if (get_master_block(&master_block, disk) < 0) {
+        res = -1;
+        goto out;
+    }
     
     if (master_block.magic != NEOFS_MAGIC) {
         res = -ERROR_IO;
