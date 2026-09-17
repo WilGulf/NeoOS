@@ -117,6 +117,10 @@ static int neofs_read_block(struct disk *disk, uint32_t block, uint32_t size, vo
         
     struct neofs_private *private = disk->fs_private;
 
+    if (size > private->BLOCK_SIZE) {
+        return -ERROR_IO;
+    }
+
     if (disk_streamer_seek(private->stream, block * private->BLOCK_SIZE) != ALL_OK) {
         return -ERROR_IO;
     }
@@ -129,6 +133,10 @@ static int neofs_read_block_data(struct disk *disk, uint32_t block, uint32_t siz
         return -1;
 
     struct neofs_private *private = disk->fs_private;
+
+    if (size > private->DATA_SIZE) {
+        return -ERROR_IO;
+    }
 
     if (disk_streamer_seek(private->stream, (block * private->BLOCK_SIZE) + BLOCK_DATA_OFFSET) != ALL_OK) {
         return -ERROR_IO;
