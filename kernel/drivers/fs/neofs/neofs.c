@@ -13,13 +13,13 @@ struct master_block {
 
     uint32_t block_size;
 
+    uint32_t bitmap_meta_block;
+
     uint32_t first_block;
     uint32_t block_count;
 } __attribute__((packed));
 
 struct meta_block {
-    uint8_t status;
-
     char filename[8];
     char ext[3];
 
@@ -33,7 +33,6 @@ struct meta_block {
 } __attribute__((packed));
 
 struct block {
-    uint8_t status;
     uint32_t next;
 } __attribute__((packed));
 
@@ -94,6 +93,9 @@ struct filesystem neofs = {
     .readdir = neofs_readdir,
 };
 
+int read_file(uint32_t file_meta_block_n, void *out, struct disk *disk);
+int write_file(uint32_t file_meta_block_n, void *in, uint32_t total, struct disk *disk);
+
 struct filesystem *neofs_init() {
     strcpy(neofs.name, "NEOFS");
     return &neofs;
@@ -140,32 +142,61 @@ static int get_master_block(struct master_block *out, struct disk *disk) {
     return neofs_read_block(disk, 0, sizeof(struct master_block), out);
 }
 
-static int get_meta_block(int block, struct meta_block *out, struct disk *disk) {
+static int get_meta_block(uint32_t block, struct meta_block *out, struct disk *disk) {
     return neofs_read_block(disk, block, sizeof(struct meta_block), out);
 }
 
-static int get_block(int block, struct block *out, struct disk *disk) {
+static int get_block(uint32_t block, struct block *out, struct disk *disk) {
     return neofs_read_block(disk, block, sizeof(struct block), out);
 }
 
-static int get_free_block(int start, struct disk *disk) {
-    int pos = start;
-    struct block block;
-
+static int get_free_block(uint32_t start, struct disk *disk) {
     struct neofs_private *private = disk->fs_private;
-    uint32_t i = start;
-    while (i < private->master_block.block_count) {
-        neofs_read_block(disk, pos, sizeof(block), &block);
+    struct meta_block bitmap;
+    get_meta_block(private->master_block.bitmap_meta_block, &bitmap, disk);
 
-        if (!block.status) {
-            return pos;
+    unsigned char *buffer = kzalloc(bitmap.size);
+    if (!buffer) {
+        return -ERROR_NO_MEM;
+    }
+    read_file(private->master_block.bitmap_meta_block, buffer, disk);
+
+    for (uint32_t bit = start; bit < private->master_block.block_count; bit++) {
+        unsigned char mask = 1 << (bit % 8);
+        if (!(buffer[bit / 8] & mask)) {
+            kfree(buffer);
+            return bit;
         }
-
-        pos++;
-        i++;
     }
 
+    kfree(buffer);
+
     return -1;
+}
+
+int set_block_on_bitmap(uint32_t block, bool state, struct disk *disk) {
+    struct neofs_private *private = disk->fs_private;
+    struct meta_block bitmap;
+    get_meta_block(private->master_block.bitmap_meta_block, &bitmap, disk);
+
+    unsigned char *buffer = kzalloc(bitmap.size);
+    if (!buffer) {
+        return -ERROR_NO_MEM;
+    }
+    read_file(private->master_block.bitmap_meta_block, buffer, disk);
+
+    unsigned char mask = 1 << (block % 8);
+    if (state) {
+        buffer[block / 8] |= mask;
+    } else {
+        buffer[block / 8] &= ~mask;
+    }
+
+    write_file(private->master_block.bitmap_meta_block, buffer, bitmap.size, disk);
+
+    kfree(buffer);
+
+    return 0;
 }
 
 static uint32_t get_next_block(uint32_t block, struct disk *disk) {
@@ -174,19 +205,21 @@ static uint32_t get_next_block(uint32_t block, struct disk *disk) {
     return read_block.next;
 }
 
-static int remove_meta_block(int block, struct disk *disk) {
+static int remove_meta_block(uint32_t block, struct disk *disk) {
     struct meta_block empty_block;
     memset(&empty_block, 0, sizeof(empty_block));
 
     neofs_write_block(disk, block, sizeof(empty_block), &empty_block);
+    set_block_on_bitmap(block, false, disk);
     return 0;
 }
 
-static int remove_block(int block, struct disk *disk) {
+static int remove_block(uint32_t block, struct disk *disk) {
     struct block empty_block;
     memset(&empty_block, 0, sizeof(empty_block));
 
     neofs_write_block(disk, block, sizeof(empty_block), &empty_block);
+    set_block_on_bitmap(block, false, disk);
     return 0;
 }
 
@@ -234,7 +267,7 @@ out:
     return res;
 }
 
-static int create_meta_block(int parent, kbool is_dir, const char *name, struct disk *disk) {
+static int create_meta_block(uint32_t parent, kbool is_dir, const char *name, struct disk *disk) {
     int new_block_n = get_free_block(1, disk);
     if (new_block_n < 0) {
         return -1;
@@ -265,7 +298,7 @@ static int create_meta_block(int parent, kbool is_dir, const char *name, struct 
     new_block.size = 0;
     new_block.start = 0;
     new_block.flags = FLAG_R | FLAG_W;
-    new_block.status = BLOCK_STATUS_USED;
+    /*new_block.status = BLOCK_STATUS_USED;*/set_block_on_bitmap(new_block_n, true, disk);
 
     neofs_write_block(disk, new_block_n, sizeof(new_block), &new_block);
 
@@ -319,6 +352,112 @@ static int name_matches(struct meta_block *meta_block, const char *part) {
 
         return true;
     }
+}
+
+int read_file(uint32_t file_meta_block_n, void *out, struct disk *disk) {
+    struct neofs_private *private = disk->fs_private;
+    
+    struct meta_block file_meta_block;
+    get_meta_block(file_meta_block_n, &file_meta_block, disk);
+
+    int block = file_meta_block.start;
+    size_t remaining = file_meta_block.size;
+    int total_to_read = 0;
+
+    while (block && remaining > 0) {
+        size_t to_read = (remaining > private->DATA_SIZE) ? private->DATA_SIZE : remaining;
+        char buffer[private->DATA_SIZE];
+        int res = neofs_read_block(disk, block, sizeof(buffer), buffer);
+        memcpy(out, buffer, to_read);
+
+        out += to_read;
+        remaining -= to_read;
+        total_to_read += to_read;
+        block = get_next_block(block, disk);;
+    }
+
+    return total_to_read;
+}
+
+int write_file(uint32_t file_meta_block_n, void *in, uint32_t total, struct disk *disk) {
+    struct meta_block file_meta_block;
+    get_meta_block(file_meta_block_n, &file_meta_block, disk);
+
+    struct neofs_private *private = disk->fs_private;
+
+    int block = file_meta_block.start;
+    if (!block) {
+        int new_block_n = get_free_block(1, disk);
+        if (new_block_n < 0) {
+            return -1;
+        }
+
+        struct block new_block;
+        /*new_block.status = BLOCK_STATUS_USED;*/set_block_on_bitmap(new_block_n, true, disk);
+        new_block.next = 0;
+        neofs_write_block(disk, new_block_n, sizeof(new_block), &new_block);
+
+        file_meta_block.start = new_block_n;
+        neofs_write_block(disk, file_meta_block_n, sizeof(file_meta_block), &file_meta_block);
+        block = file_meta_block.start;
+    }
+
+    int blocks_written = 0;
+
+    int blocks_needed = total / private->DATA_SIZE;
+    if (total % private->DATA_SIZE) {
+        blocks_needed++;
+    }
+
+    int curr = block;
+    int prev = curr;
+    int blocks_allocated = 1;
+    while (blocks_allocated < blocks_needed) {
+        curr = get_next_block(curr, disk);
+        if (!curr) {
+            int new_block_n = get_free_block(1, disk);
+            if (new_block_n < 0) {
+                return -1;
+            }
+
+            struct block new_block;
+            /*new_block.status = BLOCK_STATUS_USED;*/set_block_on_bitmap(new_block_n, true, disk);
+            new_block.next = 0;
+            neofs_write_block(disk, new_block_n, sizeof(new_block), &new_block);
+
+            struct block prev_block;
+            get_block(prev, &prev_block, disk);
+            prev_block.next = new_block_n;
+            curr = new_block_n;
+            neofs_write_block(disk, prev, sizeof(prev_block), &prev_block);
+        }
+
+        prev = curr;
+        blocks_allocated++;
+    }
+
+    size_t remaining = total;
+    curr = block;
+    while (curr) {
+        char buffer[private->BLOCK_SIZE];
+        struct block curr_block;
+        get_block(curr, &curr_block, disk);
+        memset(buffer, 0, sizeof(buffer));
+        memcpy(&buffer, &curr_block, sizeof(curr_block));
+
+        size_t to_copy = (remaining > private->DATA_SIZE) ? private->DATA_SIZE : remaining;
+        memcpy(buffer + sizeof(curr_block), in, to_copy);
+        neofs_write_block(disk, curr, private->BLOCK_SIZE, buffer);
+        curr = curr_block.next;
+        in += to_copy;
+        remaining -= to_copy;
+        blocks_written++;
+    }
+
+    file_meta_block.size = total;
+    neofs_write_block(disk, file_meta_block_n, sizeof(file_meta_block), &file_meta_block);
+
+    return total;
 }
 
 static int neofs_get_path_meta_block(struct path_part *path_part, kbool allow_creation, struct disk *disk) {
@@ -584,83 +723,10 @@ int neofs_write(struct disk *disk, void *descriptor, uint32_t size, uint32_t nme
         return -ERROR_IO;
     }
 
-
-    int block = file_meta_block.start;
-    if (!block) {
-        int new_block_n = get_free_block(1, disk);
-        if (new_block_n < 0) {
-            return -1;
-        }
-
-        struct block new_block;
-        new_block.status = BLOCK_STATUS_USED;
-        new_block.next = 0;
-        neofs_write_block(disk, new_block_n, sizeof(new_block), &new_block);
-
-        file_meta_block.start = new_block_n;
-        neofs_write_block(disk, desc->meta_block, sizeof(file_meta_block), &file_meta_block);
-        block = file_meta_block.start;
-    }
-
-    int blocks_written = 0;
-
-    int blocks_needed = total / private->DATA_SIZE;
-    if (total % private->DATA_SIZE) {
-        blocks_needed++;
-    }
-
-    int curr = block;
-    int prev = curr;
-    int blocks_allocated = 1;
-    while (blocks_allocated < blocks_needed) {
-        curr = get_next_block(curr, disk);
-        if (!curr) {
-            int new_block_n = get_free_block(1, disk);
-            if (new_block_n < 0) {
-                return -1;
-            }
-
-            struct block new_block;
-            new_block.status = BLOCK_STATUS_USED;
-            new_block.next = 0;
-            neofs_write_block(disk, new_block_n, sizeof(new_block), &new_block);
-
-            struct block prev_block;
-            get_block(prev, &prev_block, disk);
-            prev_block.next = new_block_n;
-            curr = new_block_n;
-            neofs_write_block(disk, prev, sizeof(prev_block), &prev_block);
-        }
-
-        prev = curr;
-        blocks_allocated++;
-    }
-
-    size_t remaining = total;
-    curr = block;
-    while (curr) {
-        char buffer[private->BLOCK_SIZE];
-        struct block curr_block;
-        get_block(curr, &curr_block, disk);
-        memset(buffer, 0, sizeof(buffer));
-        memcpy(&buffer, &curr_block, sizeof(curr_block));
-
-        size_t to_copy = (remaining > private->DATA_SIZE) ? private->DATA_SIZE : remaining;
-        memcpy(buffer + sizeof(curr_block), in, to_copy);
-        neofs_write_block(disk, curr, private->BLOCK_SIZE, buffer);
-        curr = curr_block.next;
-        in += to_copy;
-        remaining -= to_copy;
-        blocks_written++;
-    }
-
-    file_meta_block.size = total;
-    neofs_write_block(disk, desc->meta_block, sizeof(file_meta_block), &file_meta_block);
-
-    return total;
+    return write_file(desc->meta_block, in, total, disk);
 }
 
-static int remove_file(int file_meta_block_n, struct disk *disk) {
+static int remove_file(uint32_t file_meta_block_n, struct disk *disk) {
     if (file_meta_block_n <= 1) {
         return -1;
     }
