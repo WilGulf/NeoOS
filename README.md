@@ -4,7 +4,7 @@ A 32-bit hobby Operating System for the x86 architecture.
 ## Features
 Currently implemented:
 * 32-bit x86 kernel
-* Filesystem support, FAT16 and NeoFS
+* Filesystem support, FAT16 and [NeoFS](https://github.com/WilGulf/NeoFS)
 * RAM-only filesystem
 * A basic shell with a set of command
 * Multiple programs runnable from the shell
