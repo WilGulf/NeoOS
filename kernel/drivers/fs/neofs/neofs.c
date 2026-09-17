@@ -281,6 +281,11 @@ int neofs_resolve(struct disk *disk) {
         goto out;
     }
 
+    if (master_block.block_size < sizeof(struct meta_block)) {
+        res = -ERROR_IO;
+        goto out;
+    }
+
     if (!master_block.first_block) {
         res = -ERROR_IO;
         goto out;
