@@ -189,7 +189,7 @@ int fseek(int fd, int offset, FILE_SEEK_MODE whence) {
         goto out;
     }
 
-    res = desc->filesystem->seek(desc->private, offset, whence);
+    res = desc->filesystem->seek(desc->disk, desc->private, offset, whence);
 out:
     return res;
 }

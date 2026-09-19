@@ -74,7 +74,7 @@ struct neofs_file_descriptor {
 };
 
 int neofs_resolve(struct disk *disk);
-int neofs_seek(void *private, uint32_t offset, FILE_SEEK_MODE seek_mode);
+int neofs_seek(struct disk *disk, void *private, uint32_t offset, FILE_SEEK_MODE seek_mode);
 void *neofs_open(struct disk *disk, struct path_part *path, FILE_MODE mode);
 int neofs_read(struct disk *disk, void *descriptor, uint32_t size, uint32_t nmemb, char *out_ptr);
 int neofs_stat(struct disk *disk, void *private, struct file_stat *stat);
@@ -434,7 +434,7 @@ int read_file(uint32_t file_meta_block_n, void *out, struct disk *disk) {
     while (block && remaining > 0) {
         size_t to_read = (remaining > private->DATA_SIZE) ? private->DATA_SIZE : remaining;
         char buffer[private->DATA_SIZE];
-        int res = neofs_read_block(disk, block, sizeof(buffer), buffer);
+        int res = neofs_read_block_data(disk, block, sizeof(buffer), buffer);
         memcpy(out, buffer, to_read);
 
         out += to_read;
@@ -489,7 +489,7 @@ int write_file(uint32_t file_meta_block_n, void *in, uint32_t total, struct disk
             }
 
             struct block new_block;
-            /*new_block.status = BLOCK_STATUS_USED;*/set_block_on_bitmap(new_block_n, true, disk);
+            set_block_on_bitmap(new_block_n, true, disk);
             new_block.next = 0;
             neofs_write_block(disk, new_block_n, sizeof(new_block), &new_block);
 
@@ -637,9 +637,20 @@ out:
     return res;
 }
    
-int neofs_seek(void *private, uint32_t offset, FILE_SEEK_MODE seek_mode) {
+int neofs_seek(struct disk *disk, void *private, uint32_t offset, FILE_SEEK_MODE seek_mode) {
     int res = 0;
     struct neofs_file_descriptor *desc = private;
+
+    struct meta_block meta_block;
+    if (get_meta_block(desc->meta_block, &meta_block, disk) < 0) {
+        res = -1;
+        goto out;
+    }
+
+    if (desc->mode == FILE_MODE_APPEND) {
+        desc->pos = meta_block.size;
+        goto out;
+    }
 
     switch(seek_mode) {
         case SEEK_SET:
@@ -681,7 +692,6 @@ void *neofs_open(struct disk *disk, struct path_part *path, FILE_MODE mode) {
 
     descriptor->meta_block = meta_block_n;
     descriptor->mode = mode;
-    descriptor->pos = 0;
     descriptor->type = FILE_TYPE_FILE;
 
     struct meta_block meta_block;
@@ -690,6 +700,12 @@ void *neofs_open(struct disk *disk, struct path_part *path, FILE_MODE mode) {
 
     if (meta_block.is_dir) {
         descriptor->type = FILE_TYPE_DIR;
+    }
+
+    if (descriptor->mode == FILE_MODE_APPEND) {
+        descriptor->pos = meta_block.size;
+    } else {
+        descriptor->pos = 0;
     }
 
     return descriptor;
@@ -800,7 +816,7 @@ int neofs_write(struct disk *disk, void *descriptor, uint32_t size, uint32_t nme
     uint32_t total = size * nmemb;
 
     struct neofs_file_descriptor *desc = descriptor;
-    if (desc->mode != FILE_MODE_WRITE) {
+    if (!(desc->mode == FILE_MODE_WRITE | desc->mode == FILE_MODE_APPEND)) {
         return -ERROR_INVALID_ARG;
     }
     
@@ -811,8 +827,27 @@ int neofs_write(struct disk *disk, void *descriptor, uint32_t size, uint32_t nme
     if (!(file_meta_block.flags & FLAG_W)) {
         return -ERROR_IO;
     }
+    
+    if (desc->mode == FILE_MODE_APPEND) {
+        uint32_t buffer_size = file_meta_block.size + total;
+        char *buffer = kzalloc(buffer_size);
+        if (!buffer) {
+            return -ERROR_NO_MEM;
+        }
+        
+        read_file(desc->meta_block, buffer, disk);
+        memcpy(buffer + file_meta_block.size, in, total);
+        int res = write_file(desc->meta_block, buffer, buffer_size, disk);
+        
+        if (res >= 0) {
+            desc->pos = res;
+        }
 
-    return write_file(desc->meta_block, in, total, disk);
+        kfree(buffer);
+        return res;
+    } else {
+        return write_file(desc->meta_block, in, total, disk);
+    }
 }
 
 static int remove_file(uint32_t file_meta_block_n, struct disk *disk) {
@@ -892,7 +927,9 @@ static int remove_file(uint32_t file_meta_block_n, struct disk *disk) {
         while (block.next) {
             int next = block.next;
             remove_block(block_n, disk);
-            get_block(next, &block, disk);
+            if (get_block(next, &block, disk) < 0)
+                return -1;
+
             block_n = next;
         }
 

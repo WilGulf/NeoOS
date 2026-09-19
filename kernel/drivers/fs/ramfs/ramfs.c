@@ -13,7 +13,7 @@ int ramfs_resolve(struct disk *disk);
 void *ramfs_open(struct disk *disk, struct path_part *path, FILE_MODE mode);
 int ramfs_read(struct disk *disk, void *descriptor, uint32_t size, uint32_t nmemb, char *out_ptr);
 int ramfs_stat(struct disk *disk, void *descriptor, struct file_stat *stat);
-int ramfs_seek(void *descriptor, uint32_t offset, FILE_SEEK_MODE seek_mode);
+int ramfs_seek(struct disk *disk, void *descriptor, uint32_t offset, FILE_SEEK_MODE seek_mode);
 int ramfs_write(struct disk *disk, void *private, uint32_t size, uint32_t nmemb, const char *in);
 int ramfs_remove(struct disk *disk, struct path_part *path);
 int ramfs_close(void *private);
@@ -309,7 +309,7 @@ int ramfs_stat(struct disk *disk, void *descriptor, struct file_stat *stat) {
     return 0;
 }
 
-int ramfs_seek(void *descriptor, uint32_t offset, FILE_SEEK_MODE seek_mode) {
+int ramfs_seek(struct disk *disk, void *descriptor, uint32_t offset, FILE_SEEK_MODE seek_mode) {
     int res = 0;
     struct ramfs_file_descriptor *desc = descriptor;
     struct ramfs_file *file = desc->file;
