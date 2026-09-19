@@ -238,7 +238,7 @@ void *ramfs_open(struct disk *disk, struct path_part *path, FILE_MODE mode) {
         }
     }
 
-    if (mode == FILE_MODE_READ) {
+    if (mode == FILE_MODE_READ || mode == FILE_MODE_APPEND) {
         if (!file) {
             goto err_out;
         }
@@ -263,7 +263,12 @@ void *ramfs_open(struct disk *disk, struct path_part *path, FILE_MODE mode) {
     }
 
     descriptor->file = file;
-    descriptor->pos = 0;
+    if (mode == FILE_MODE_APPEND) {
+        descriptor->pos = file->size;
+    } else {
+        descriptor->pos = 0;
+    }
+
     descriptor->mode = mode;
     return descriptor;
 
@@ -303,7 +308,7 @@ int ramfs_stat(struct disk *disk, void *descriptor, struct file_stat *stat) {
     struct ramfs_file_descriptor *desc = descriptor;
     struct ramfs_file *file = desc->file;
 
-    stat->filesize = file->total_size;
+    stat->filesize = file->size;
     stat->flags = 0x00;
 
     return 0;
@@ -320,6 +325,12 @@ int ramfs_seek(struct disk *disk, void *descriptor, uint32_t offset, FILE_SEEK_M
 
     if (offset >= file->total_size) {
         res = -ERROR_IO;
+        goto out;
+    }
+
+    if (desc->mode == FILE_MODE_APPEND) {
+        desc->pos = desc->file->size;
+        res = 0;
         goto out;
     }
 
@@ -351,8 +362,8 @@ int ramfs_write(struct disk *disk, void *private, uint32_t size, uint32_t nmemb,
     struct ramfs_file *file = desc->file;
     int offset = desc->pos;
 
-    if (desc->mode != FILE_MODE_WRITE) {
-        return 0;
+    if (!(desc->mode == FILE_MODE_WRITE || desc->mode == FILE_MODE_APPEND)) {
+        return -ERROR_IO;
     }
 
     uint32_t total_to_write = size * nmemb;
@@ -369,6 +380,13 @@ int ramfs_write(struct disk *disk, void *private, uint32_t size, uint32_t nmemb,
 
     desc->pos = offset;
     res = total_to_write / size;
+    if (offset > file->size) {
+        file->size = offset;
+    }
+
+    if (desc->mode == FILE_MODE_APPEND) {
+        desc->pos = file->size;
+    }
 
     return res;
 }
