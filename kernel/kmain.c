@@ -73,7 +73,7 @@ int kmain(uint32_t magic, struct multiboot_info* bootInfo) {
     void *kernel_stack = kzalloc(4096);
     set_tss_stack(&stack_top);
 
-    kernel_chunk = paging_new_4gb(PAGING_IS_WRITEABLE | PAGING_IS_PRESENT | PAGING_ACCESS_FROM_ALL);
+    kernel_chunk = paging_new_4gb(PAGING_IS_WRITEABLE | PAGING_IS_PRESENT);
     kprintf("Paging new\n");
     
     paging_switch(kernel_chunk);
