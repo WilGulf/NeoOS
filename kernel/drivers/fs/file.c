@@ -1,5 +1,4 @@
 #include "file.h"
-#include "fat/fat16.h"
 #include "ramfs/ramfs.h"
 #include "neofs/neofs.h"
 #include "disk.h"

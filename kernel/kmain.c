@@ -61,8 +61,6 @@ int kmain(uint32_t magic, struct multiboot_info* bootInfo) {
     kheap_init();
     kprintf("Inititalized kernel heap\n");
 
-    disk_search_and_init();
-
     gdt_init();
     kprintf("GDT Initialized\n");
     idt_init();
