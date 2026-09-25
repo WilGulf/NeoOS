@@ -10,8 +10,6 @@ remain licensed under GPL-2.0 until they are rewritten as original
 implementations. They are NOT covered by this project's BSD-3-Clause
 license.
 
-  kernel/drivers/fs/disk.c
-  kernel/drivers/fs/disk.h
   kernel/drivers/fs/disk_streamer.c
   kernel/drivers/fs/disk_streamer.h
   kernel/drivers/fs/path_parser.c

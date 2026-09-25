@@ -1,7 +1,7 @@
 #include "neofs.h"
 
 #include "../file.h"
-#include "../disk_streamer.h"
+#include "../../disk/disk_streamer.h"
 
 #include "../../../include/stdint.h"
 #include "../../../include/status.h"

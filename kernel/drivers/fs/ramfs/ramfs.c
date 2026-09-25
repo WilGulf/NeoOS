@@ -1,7 +1,7 @@
 #include "ramfs.h"
 
 #include "../file.h"
-#include "../disk.h"
+#include "../../disk/disk.h"
 #include "../../../include/stdint.h"
 #include "../../../include/status.h"
 #include "../../../include/util.h"

@@ -21,7 +21,7 @@
 #include "task/task.h"
 #include "task/process.h"
 #include "syscalls/isr80h.h"
-#include "drivers/fs/disk.h"
+#include "drivers/disk/disk.h"
 #include "drivers/fs/path_parser.h"
 #include "drivers/keyboard/keyboard.h"
 #include "include/util.h"
@@ -62,9 +62,9 @@ int kmain(uint32_t magic, struct multiboot_info* bootInfo) {
     kprintf("Inititalized kernel heap\n");
 
     gdt_init();
-    kprintf("GDT Initialized\n");
+    kprintf("GDT initialized\n");
     idt_init();
-    kprintf("IDT Initialized\n");
+    kprintf("IDT initialized\n");
 
     timer_init();
 
@@ -72,7 +72,6 @@ int kmain(uint32_t magic, struct multiboot_info* bootInfo) {
     set_tss_stack(&stack_top);
 
     kernel_chunk = paging_new_4gb(PAGING_IS_WRITEABLE | PAGING_IS_PRESENT);
-    kprintf("Paging new\n");
     
     paging_switch(kernel_chunk);
     kprintf("Paging switch\n");
@@ -80,15 +79,19 @@ int kmain(uint32_t magic, struct multiboot_info* bootInfo) {
     enable_paging();
     kprintf("Paging enabled\n");
 
+    ramdisk_init();
+    fs_init();
+    kprintf("RamFS initialized\n");
+
     isr80h_register_commands();
 
-    fs_init();
+    kprintf("Registering disk devices\n");
+    kprintf("Found %d disks\n", disks_search_and_init());
 
-    disk_search_and_init();
-    disk_dev_init();
-
+    kprintf("Keyboard drivers initialized\n");
     keyboard_init();
 
+    kprintf("Handing over to launch\n");
     int fd = fopen("0:/sysro/boot.cfg", "r");
 
     char line[256];

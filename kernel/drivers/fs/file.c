@@ -21,7 +21,7 @@
 #include "file.h"
 #include "ramfs/ramfs.h"
 #include "neofs/neofs.h"
-#include "disk.h"
+#include "../disk/disk.h"
 
 #include "../io/io.h"
 #include "../../include/util.h"
