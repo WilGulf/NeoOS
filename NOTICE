@@ -1,0 +1,52 @@
+THIRD-PARTY NOTICES
+
+This project was built while following a kernel-development course whose
+reference implementation is based on PeachOS (github.com/nibblebits/PeachOS),
+Copyright (C) 2026 Daniel McCarthy <daniel@dragonzap.com>, licensed under
+the GNU General Public License v2.0.
+
+The following files in this repository are derived from that codebase and
+remain licensed under GPL-2.0 until they are rewritten as original
+implementations. They are NOT covered by this project's BSD-3-Clause
+license.
+
+  kernel/drivers/fs/disk.c
+  kernel/drivers/fs/disk.h
+  kernel/drivers/fs/disk_streamer.c
+  kernel/drivers/fs/disk_streamer.h
+  kernel/drivers/fs/path_parser.c
+  kernel/drivers/fs/path_parser.h
+  kernel/drivers/fs/file.c
+  kernel/drivers/fs/file.h
+  kernel/task/process.c
+  kernel/task/process.h
+  kernel/task/task.c
+  kernel/task/task.h
+  kernel/task/formats/elf.h
+  kernel/task/formats/elf_loader.c
+  kernel/task/formats/elf_loader.h
+  kernel/memory/heap.c
+  kernel/memory/heap.h
+  kernel/memory/kheap.c
+  kernel/memory/kheap.h
+  kernel/memory/paging.c
+  kernel/memory/paging.h
+  kernel/idt/idt.c
+  kernel/idt/idt.h
+  kernel/idt/idt_asm.s
+  kernel/drivers/keyboard/keyboard.c
+  kernel/drivers/keyboard/keyboard.h
+  kernel/drivers/keyboard/ps2.c
+  kernel/drivers/keyboard/ps2.h
+  kernel/drivers/io/io_asm.s
+  kernel/syscalls/heap.c
+  kernel/include/util.c
+  kernel/include/util.h
+
+
+As each file above is rewritten as an independent implementation, it will
+be removed from this list and relicensed under this project's BSD-3-Clause
+license. Once this list is empty, this NOTICE file will be removed.
+
+Full text of the GPL-2.0 license these files are held under:
+https://www.gnu.org/licenses/old-licenses/gpl-2.0.html
