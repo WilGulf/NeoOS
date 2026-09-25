@@ -2,20 +2,11 @@
 #include "stddef.h"
 #include "memory.h"
 
-char char_upper_to_lower(char c) {
-    if (c >= 65 && c <= 90) {
-        c += 32;
-    }
-
-    return c;
-}
-
 char *strcpy(char *dest, const char *src) {
     char *res = dest;
+    
     while (*src != 0) {
-        *dest = *src;
-        src += 1;
-        dest += 1;
+        *dest++ = *src++;
     }
 
     *dest = 0x00;
@@ -24,17 +15,16 @@ char *strcpy(char *dest, const char *src) {
 }
 
 char *strncpy(char *dest, const char *src, int max) {
-    int i = 0;
-    for (; i < max - 1; i++) {
-        if (src[i] == 0x00) {
-            break;
-        }
+    char *res = dest;
 
-        dest[i] = src[i];
+    int i = 0;
+    while (*src != 0 && i < max) {
+        *dest++ = *src++;
+        i++;
     }
 
-    dest[i] = 0x00;
-    return dest;
+    *dest = 0x00;
+    return res;
 }
 
 int strlen(char *src) {
@@ -90,20 +80,6 @@ int strncmp(char *str1, char *str2, int max) {
     return 0;
 }
 
-int istrncmp(const char* str1, const char* str2, int max) {
-    unsigned char u1, u2;
-    while(max-- > 0) {
-        u1 = (unsigned char)*str1++;
-        u2 = (unsigned char)*str2++;
-        if (u1 != u2 && char_upper_to_lower(u1) != char_upper_to_lower(u2))
-            return u1 - u2;
-        if (u1 == '\0')
-            return 0;
-    }
-
-    return 0;
-}
-
 char *strchr(const char *str, int c) {
     while (*str != (char) c) {
         if (!*str++) {
@@ -124,55 +100,59 @@ char *strstr(const char *str1, const char *str2) {
     return 0;
 }
 
-int char_to_int(char c) {
-    return c - '0';
-}
-
-char *sp = 0;
+char *olds = 0;
 char *strtok(char *str, const char *delimiters) {
-    int i = 0;
-    int len = strlen(delimiters);
-    if (!str && !sp) {
-        return 0;
-    }
-    
-    if (str) {
-        sp = str;
+    static char *input = NULL;
+
+    if (str != NULL) {
+        input = str;
     }
 
-    char *p_start = sp;
-    while(1) {
-        for (i = 0; i < len; i++) {
-            if (*p_start == delimiters[i]) {
-                p_start++;
+    if (input == NULL) {
+        return NULL;
+    }
+
+    while (*input) {
+        bool delimiter = 0;
+        for (int i = 0; delimiters[i]; i++) {
+            if (*input == delimiters[i]) {
+                delimiter = true;
                 break;
             }
         }
 
-        if (i == len) {
-            sp = p_start;
+        if (!delimiter) {
             break;
         }
+
+        input++;
     }
 
-    if (*sp == '\0') {
-        sp = 0;
-        return sp;
+    if (!input) {
+        input = NULL;
+        return NULL;
     }
 
-    while(*sp != '\0') {
-        for (i = 0; i < len; i++) {
-            if (*sp == delimiters[i]) {
-                *sp = '\0';
+    char *result = input;
+
+    while (*input) {
+        bool delimiter = 0;
+        for (int i = 0; delimiters[i]; i++) {
+            if (*input == delimiters[i]) {
+                delimiter = true;
                 break;
             }
         }
 
-        sp++;
-        if (i < len) {
-            break;
+        if (delimiter) {
+            *input = '\0';
+            input++;
+            return result;
         }
+
+        input++;
     }
 
-    return p_start;
+    input = NULL;
+    return result;
 }

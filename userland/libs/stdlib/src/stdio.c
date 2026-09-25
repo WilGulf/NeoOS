@@ -108,29 +108,34 @@ int printf(const char *fmt, ...) {
 }
 
 char *itoa(int i) {
+    int i2 = i;
     static char text[12];
-    int loc = 11;
-    text[11] = 0;
-    char neg = -1;
-    if (i >= 0) {
-        neg = 0;
-        i = -i;
+    int textpos = 0;
+
+    if (i == 0) {
+        text[textpos++] = '0';
     }
 
-    while (i) {
-        text[--loc] = '0' - (i % 10);
-        i /= 10;
+    if (i < 0) {
+        text[textpos++] = '-';
+        i2 = -i;
     }
 
-    if (loc == 11) {
-        text[--loc] = '0';
+    while (i2) {
+        text[textpos++] = '0' + (i2 % 10);
+        i2 /= 10;
     }
 
-    if (neg) {
-        text[--loc] = '-';
+    text[textpos] = '\0';
+
+    int a = (text[0] == '-') ? 1 : 0;
+    for (int b = textpos - 1; a < b; a++, b--) {
+        char tmp = text[a];
+        text[a] = text[b];
+        text[b] = tmp;
     }
 
-    return &text[loc];
+    return text;
 }
 
 int atoi(const char *str) {
