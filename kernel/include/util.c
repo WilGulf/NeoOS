@@ -10,33 +10,34 @@ char char_upper_to_lower(char s1) {
 }
 
 void *memset(void *ptr, int c, size_t size) {
-    char *c_ptr = (char*) ptr;
-    for (int i = 0; i < size; i++){
-        c_ptr[i] = (char) c;
+    unsigned char *b = ptr;
+    for (int i = 0; i < size; i++) {
+        *b = c;
+        b++;
     }
-
     return ptr;
 }
 
-void *memcpy(void *dest, void *src, uint32_t len) {
+void *memcpy(void *dest, void *src, int len) {
     char *d = dest;
     char *s = src;
-    while (len--) {
+    
+    int i = 0;
+    while (i < len) {
         *d++ = *s++;
+        i++;
     }
 
     return dest;
 }
 
-int memcmp(void* s1, void* s2, int count) {
-    char* c1 = s1;
-    char* c2 = s2;
-    while(count-- > 0)
-    {
-        if (*c1++ != *c2++)
-        {
-            return c1[-1] < c2[-1] ? -1 : 1;
-        }
+int memcmp(void* ptr1, void* ptr2, int count) {
+    char *char1 = ptr1;
+    char *char2 = ptr2;
+
+    while (count-- && *char1 == *char2) {
+        char1++;
+        char2++;
     }
 
     return 0;
@@ -44,10 +45,9 @@ int memcmp(void* s1, void* s2, int count) {
 
 char *strcpy(char *dest, const char *src) {
     char *res = dest;
+    
     while (*src != 0) {
-        *dest = *src;
-        src += 1;
-        dest += 1;
+        *dest++ = *src++;
     }
 
     *dest = 0x00;
@@ -55,24 +55,20 @@ char *strcpy(char *dest, const char *src) {
     return res;
 }
 
-char *strncpy(char *dest, const char *src, int n) {
-    int i;
+char *strncpy(char *dest, const char *src, int max) {
+    char *res = dest;
 
-    for (i = 0; i < n; i++) {
-        dest[i] = src[i];
-
-        if (src[i] == '\0') {
-            for (i++; i < n; i++) {
-                dest[i] = '\0';
-            }
-            break;
-        }
+    int i = 0;
+    while (*src != 0 && i < max) {
+        *dest++ = *src++;
+        i++;
     }
 
-    return dest;
+    *dest = 0x00;
+    return res;
 }
 
-size_t strlen(const char *src) {
+int strlen(char *src) {
     int i = 0;
     while (*src++) {
         i++;
@@ -80,7 +76,7 @@ size_t strlen(const char *src) {
     return i;
 }
 
-size_t strnlen(const char *src, int max) {
+int strnlen(char *src, int max) {
     int i = 0;
     for (; i < max; i++) {
         if (src[i] == 0) {
@@ -125,21 +121,6 @@ int strncmp(char *str1, char *str2, int max) {
     return 0;
 }
 
-
-int istrncmp(const char* s1, const char* s2, int n) {
-    unsigned char u1, u2;
-    while(n-- > 0) {
-        u1 = (unsigned char)*s1++;
-        u2 = (unsigned char)*s2++;
-        if (u1 != u2 && char_upper_to_lower(u1) != char_upper_to_lower(u2))
-            return u1 - u2;
-        if (u1 == '\0')
-            return 0;
-    }
-
-    return 0;
-}
-
 char *strchr(const char *str, int c) {
     while (*str != (char) c) {
         if (!*str++) {
@@ -147,6 +128,17 @@ char *strchr(const char *str, int c) {
         }
     }
     return (char *)str;
+}
+
+char *strstr(const char *str1, const char *str2) {
+    size_t n = strlen(str2);
+    while (*str1) {
+        if (!memcmp(str1++, str2, n)) {
+            return (char *)(str1 - 1);
+        }
+    }
+
+    return 0;
 }
 
 kbool char_is_digit(char c) {
@@ -180,27 +172,32 @@ int atoi(const char *str) {
 }
 
 char *itoa(int i) {
+    int i2 = i;
     static char text[12];
-    int loc = 11;
-    text[11] = 0;
-    char neg = -1;
-    if (i >= 0) {
-        neg = 0;
-        i = -i;
+    int textpos = 0;
+
+    if (i == 0) {
+        text[textpos++] = '0';
     }
 
-    while (i) {
-        text[--loc] = '0' - (i % 10);
-        i /= 10;
+    if (i < 0) {
+        text[textpos++] = '-';
+        i2 = -i;
     }
 
-    if (loc == 11) {
-        text[--loc] = '0';
+    while (i2) {
+        text[textpos++] = '0' + (i2 % 10);
+        i2 /= 10;
     }
 
-    if (neg) {
-        text[--loc] = '-';
+    text[textpos] = '\0';
+
+    int a = (text[0] == '-') ? 1 : 0;
+    for (int b = textpos - 1; a < b; a++, b--) {
+        char tmp = text[a];
+        text[a] = text[b];
+        text[b] = tmp;
     }
 
-    return &text[loc];
+    return text;
 }

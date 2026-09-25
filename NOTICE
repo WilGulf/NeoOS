@@ -10,8 +10,6 @@ remain licensed under GPL-2.0 until they are rewritten as original
 implementations. They are NOT covered by this project's BSD-3-Clause
 license.
 
-  kernel/drivers/fs/disk_streamer.c
-  kernel/drivers/fs/disk_streamer.h
   kernel/drivers/fs/path_parser.c
   kernel/drivers/fs/path_parser.h
   kernel/drivers/fs/file.c
@@ -36,10 +34,7 @@ license.
   kernel/drivers/keyboard/keyboard.h
   kernel/drivers/keyboard/ps2.c
   kernel/drivers/keyboard/ps2.h
-  kernel/drivers/io/io_asm.s
   kernel/syscalls/heap.c
-  kernel/include/util.c
-  kernel/include/util.h
 
 
 As each file above is rewritten as an independent implementation, it will

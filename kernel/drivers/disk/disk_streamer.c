@@ -1,23 +1,3 @@
-/*
- *
- * Copyright (C) 2026 Daniel McCarthy <daniel@dragonzap.com>
-  * This file is drerived from the PeachOS Kernel (github.com/nibblebits/PeachOS).
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * version 2 as published by the Free Software Foundation.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License version 2 for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, see <https://www.gnu.org/licenses/>.
- * 
- * See NOTICE for the full list of GPL-derived files in this project.
- */
-
 #include "disk_streamer.h"
 #include "../../include/util.h"
 #include "../../include/status.h"
@@ -25,18 +5,12 @@
 #include "../io/io.h"
 
 struct disk_stream *disk_streamer_new(char disk_id) {
-    struct disk *disk = disk_get(disk_id);
-    if (!disk) {
-        return 0;
-    }
-
-    struct disk_stream *streamer = kzalloc(sizeof(struct disk_stream));
+    struct disk_stream *streamer = kmalloc(sizeof(struct disk_stream));
     if (!streamer) {
         return -ERROR_NO_MEM;
     }
-
-    streamer->pos = 0;
-    streamer->disk = disk;
+    memset(streamer, 0, sizeof(struct disk_stream));
+    streamer->disk_id = disk_id;
     return streamer;
 }
 
@@ -46,54 +20,60 @@ int disk_streamer_seek(struct disk_stream *stream, int pos) {
 }
 
 int disk_streamer_read(struct disk_stream *stream, void *out, int total) {
-    int sector = stream->pos / SECTOR_SIZE;
-    int offset = stream->pos % SECTOR_SIZE;
-    int total_to_read = total > SECTOR_SIZE ? SECTOR_SIZE : total;
-    
-    kbool overflow = (offset + total_to_read) > SECTOR_SIZE;
+    char *out_ptr = out;
+
+    int start_sector = stream->pos / SECTOR_SIZE;
+    struct disk *disk = disk_get(stream->disk_id);
+    if (!disk) {
+        return -ERROR_IO;
+    }
+
+    int offset_in_sector = stream->pos % SECTOR_SIZE;
     char buf[SECTOR_SIZE];
-
-    if (overflow) {
-        total_to_read -= (offset + total_to_read) - SECTOR_SIZE;
+    if (disk_read_block(disk, start_sector, 1, buf) < 0) {
+        return -ERROR_IO;
     }
 
-    int res = disk_read_block(stream->disk, sector, 1, buf);
-    if (res < 0) {
-        goto out;
+    int to_read = SECTOR_SIZE - offset_in_sector;
+    if (total < SECTOR_SIZE - offset_in_sector) {
+        to_read = total;
+    }
+    memcpy(out_ptr, buf + offset_in_sector, to_read);
+    
+    stream->pos += to_read;
+    out_ptr += to_read;
+    int new_total = total - to_read;
+    if (new_total > 0) {
+        disk_streamer_read(stream, out_ptr, total - to_read);
     }
 
-    for (int i = 0; i < total_to_read; i++) {
-        *(char *)out++ = buf[offset + i];
-    }
-
-    stream->pos += total_to_read;
-    if (overflow) {
-        res = disk_streamer_read(stream, out, total - total_to_read);
-    }
-
-out:
-    return res;
+    return 0;
 }
 
 int disk_streamer_write(struct disk_stream *stream, void *in, int total) {
-    int sector = stream->pos / SECTOR_SIZE;
-    int offset = stream->pos % SECTOR_SIZE;
+    struct disk *disk = disk_get(stream->disk_id);
+    if (!disk) {
+        return -ERROR_IO;
+    }
+
+    int start_sector = stream->pos / SECTOR_SIZE;
+    int offset_in_sector = stream->pos % SECTOR_SIZE;
     int total_to_write = total > SECTOR_SIZE ? SECTOR_SIZE : total;
     
-    kbool overflow = (offset + total_to_write) > SECTOR_SIZE;
+    kbool overflow = (offset_in_sector + total_to_write) > SECTOR_SIZE;
     char buf[SECTOR_SIZE];
 
     if (overflow) {
-        total_to_write -= (offset + total_to_write) - SECTOR_SIZE;
+        total_to_write -= (offset_in_sector + total_to_write) - SECTOR_SIZE;
     }
 
-    int res = disk_read_block(stream->disk, sector, 1, buf);
+    int res = disk_read_block(disk, start_sector, 1, buf);
     if (res < 0) {
         goto out;
     }
 
-    memcpy(buf + offset, in, total_to_write);
-    disk_write_block(stream->disk, sector, 1, buf);
+    memcpy(buf + offset_in_sector, in, total_to_write);
+    disk_write_block(disk, start_sector, 1, buf);
     if (res < 0) {
         goto out;
     }
@@ -107,6 +87,7 @@ out:
     return res;
 }
 
-void disk_stream_close(struct disk_stream *stream) {
+int disk_stream_close(struct disk_stream *stream) {
     kfree(stream);
+    return 0;
 }
