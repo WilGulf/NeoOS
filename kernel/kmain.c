@@ -2,7 +2,7 @@
 //      KERNEL INFO      //
 #define KERNEL_NAME "Nexus"
 #define KERNEL_VERSION_MAJOR 1
-#define KERNEL_VERSION_MINOR 0
+#define KERNEL_VERSION_MINOR 1
 #define KERNEL_VERSION_PATCH 0
 #define KERNEL_FLAVOUR ""
 //-----------------------//
