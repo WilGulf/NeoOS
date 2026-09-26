@@ -17,8 +17,6 @@ int main(int argc, char **argv) {
     if (fd) {
         struct dirent dirent = readdir(fd);
         while (dirent.name[0]) {
-            dirent = readdir(fd);
-
             if (dirent.type == DIRENT_TYPE_FILE) {
                 printf("\033[0m");
             }
@@ -30,6 +28,7 @@ int main(int argc, char **argv) {
             }
 
             printf("%s ", dirent.name);
+            dirent = readdir(fd);
         }
 
         printf("\033[0m\n");
