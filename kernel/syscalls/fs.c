@@ -4,9 +4,11 @@
 
 #include "../include/config.h"
 #include "../include/util.h"
+#include "../include/status.h"
 #include "../task/task.h"
 #include "../task/process.h"
 #include "../drivers/fs/file.h"
+#include "../drivers/fs/path_parser.h"
 #include "../kernel.h"
 
 void *isr80h_command18_fopen(struct interrupt_frame *frame) {
@@ -16,16 +18,26 @@ void *isr80h_command18_fopen(struct interrupt_frame *frame) {
     int fd = 0;
     void *user_space_path_buffer = task_get_stack_item(task_current(), 0);
     void *user_space_mode_buffer = task_get_stack_item(task_current(), 1);
-    char path[MAX_PATH];
-    char mode[8];
-    copy_string_from_task(task_current(), user_space_path_buffer, path, sizeof(path));
-    copy_string_from_task(task_current(), user_space_mode_buffer, mode, sizeof(mode));
+    char raw_filename[MAX_PATH];
+    copy_string_from_task(task_current(), user_space_path_buffer, raw_filename, sizeof(raw_filename));
 
-    if (strncmp(path, "0:/sys", 6) == 0) {
+    char filename[MAX_PATH];
+    if (get_full_path(task_current()->process->cwd, raw_filename, filename, sizeof(filename)) < 0) {
+        return (void *)-ERROR_IO;
+    }
+
+    if (!strncmp(filename, "0:/sysro", 8)) {
         check_allowed_with_privilege(task_current()->process, PRIVILEGE_FS_SYS);
     }
 
-    fd = fopen(path, mode);
+    char mode[8];
+    copy_string_from_task(task_current(), user_space_mode_buffer, mode, sizeof(mode));
+
+    if (strncmp(filename, "0:/sys", 6) == 0) {
+        check_allowed_with_privilege(task_current()->process, PRIVILEGE_FS_SYS);
+    }
+
+    fd = fopen(filename, mode);
 
     return (void *)fd;
 }
@@ -68,10 +80,15 @@ void *isr80h_command26_remove(struct interrupt_frame *frame) {
     check_allowed_with_privilege(task_current()->process, PRIVILEGE_FS_DATA);
 
     void *user_space_msg_buffer = task_get_stack_item(task_current(), 0);
-    char filename[1024];
-    copy_string_from_task(task_current(), user_space_msg_buffer, filename, sizeof(filename));
+    char raw_filename[MAX_PATH];
+    copy_string_from_task(task_current(), user_space_msg_buffer, raw_filename, sizeof(raw_filename));
 
-    if (strncmp(filename, "0:/sys", 6) == 0) {
+    char filename[MAX_PATH];
+    if (get_full_path(task_current()->process->cwd, raw_filename, filename, sizeof(filename)) < 0) {
+        return (void *)-ERROR_IO;
+    }
+
+    if (!strncmp(filename, "0:/sysro", 8)) {
         check_allowed_with_privilege(task_current()->process, PRIVILEGE_FS_SYS);
     }
 

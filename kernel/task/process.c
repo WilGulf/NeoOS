@@ -440,6 +440,7 @@ int process_load_for_slot(const char *filename, struct process **process, int pr
     }
 
     process_init(_process);
+    strncpy(_process->cwd, "0:/", sizeof(_process->cwd) - 1);
     res = process_load_data(filename, _process);
     if (res < 0) {
         goto out;

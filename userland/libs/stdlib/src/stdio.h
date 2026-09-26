@@ -9,6 +9,8 @@
 #define MODIFIER_CTRL  0B00000010
 #define MODIFIER_ALT   0B00000100
 
+#define MAX_PATH 108
+
 struct key_event {
     char c;
     uint8_t modifiers;

@@ -18,5 +18,7 @@ void *isr80h_command12_system(struct interrupt_frame *frame);
 void *isr80h_command14_fork(struct interrupt_frame *frame);
 void *isr80h_command16_get_processes(struct interrupt_frame *frame);
 void *isr80h_command17_terminate_process(struct interrupt_frame *frame);
+void *isr80h_command29_chwd(struct interrupt_frame *frame);
+void *isr80h_command30_cwd(struct interrupt_frame *frame);
 
 #endif

@@ -11,6 +11,7 @@ int strcmp(char *str1, char *str2);
 int strncmp(char *str1, char *str2, int max);
 
 char *strchr(const char *str, int c);
+char *strrchr(const char *str, int c);
 char *strstr(const char *str1, const char *str2);
 
 char *strtok(char *str, const char *delimiters);

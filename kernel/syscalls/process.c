@@ -8,6 +8,7 @@
 #include "../task/task.h"
 #include "../task/process.h"
 #include "../kernel.h"
+#include "../drivers/fs/file.h"
 
 #include "../drivers/io/io.h"
 
@@ -54,6 +55,8 @@ void *isr80h_command12_system(struct interrupt_frame *frame) {
         return ERROR(res);
     }
 
+    strncpy(process->cwd, calling_task->process->cwd, sizeof(process->cwd) - 1);
+
     res = process_inject_arguments(process, root_command_argument);
     if (res < 0) {
         return ERROR(res);
@@ -96,6 +99,8 @@ void *isr80h_command14_fork(struct interrupt_frame *frame) {
     if (res < 0) {
         return ERROR(res);
     }
+
+    strncpy(process->cwd, task_current()->process->cwd, sizeof(process->cwd) - 1);
 
     res = process_inject_arguments(process, root_command_argument);
     if (res < 0) {
@@ -166,5 +171,48 @@ void *isr80h_command17_terminate_process(struct interrupt_frame *frame) {
         return 0;
     }
 
+    return 0;
+}
+
+void *isr80h_command29_chwd(struct interrupt_frame *frame) {
+    struct process *process = task_current()->process;
+
+    void *user_space_buffer = task_get_stack_item(task_current(), 0);
+    char raw_path[MAX_PATH];
+    copy_string_from_task(task_current(), user_space_buffer, raw_path, sizeof(raw_path));
+
+    char clean_path[MAX_PATH];
+    if (get_full_path(process->cwd, raw_path, clean_path, sizeof(clean_path)) < 0) {
+        return (void *)-ERROR_IO;
+    }
+
+    kprintf("Trying switch to %s\n", clean_path);
+
+    if (!strncmp(clean_path, "0:/sysro", 8)) {
+        check_allowed_with_privilege(process, PRIVILEGE_FS_SYS);
+    }
+
+    int fd = fopen(clean_path, "r");
+    if (!fd) {
+        return (void *)-ERROR_IO;
+    }
+    fclose(fd);
+
+    strncpy(process->cwd, clean_path, sizeof(process->cwd) - 1);
+
+    return (void *)0;
+}
+
+void *isr80h_command30_cwd(struct interrupt_frame *frame) {
+    void *out = task_get_stack_item(task_current(), 0);
+    uint16_t size = (size_t)task_get_stack_item(task_current(), 1);
+    struct process *process = task_current()->process;
+
+    char cwd[MAX_PATH];
+    strcpy(cwd, process->cwd);
+
+    task_page();
+    strncpy((char *)out, task_current()->process->cwd, size - 1);
+    kernel_page();
     return 0;
 }

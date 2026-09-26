@@ -58,6 +58,7 @@ struct process {
     struct process *sibling_child;
 
     char filename[MAX_PATH];
+    char cwd[MAX_PATH];
     struct task *task;
 
     struct process_allocation allocations[MAX_PROGRAM_ALLOCATIONS];

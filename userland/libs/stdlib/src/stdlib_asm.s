@@ -294,3 +294,26 @@ sys_readdir:
     add esp, 8
     pop ebp
     ret
+
+global chwd:function
+chwd:
+    push ebp
+    mov ebp, esp
+    mov eax, 29
+    push dword[ebp+8]
+    int 0x80
+    add esp, 4
+    pop ebp
+    ret
+
+global get_cwd:function
+get_cwd:
+    push ebp
+    mov ebp, esp
+    mov eax, 30
+    push dword[ebp+12]
+    push dword[ebp+8]
+    int 0x80
+    add esp, 8
+    pop ebp
+    ret

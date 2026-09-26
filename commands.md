@@ -6,6 +6,8 @@
 - **clear**: Clears the terminal 
 - **exit**: Exits the shell
 - **help**: Prints a list of commands
+- **cd**: Change current working directory
+- **pwd**: Print current working directory
 
 ### System information
 - **sysinfo**: Privdes info close to what uname would provide on a UNIX-like system

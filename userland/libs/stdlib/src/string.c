@@ -89,6 +89,19 @@ char *strchr(const char *str, int c) {
     return (char *)str;
 }
 
+char *strrchr(const char *str, int c) {
+    const char *p = 0;
+    
+    for (;;) {
+        if (*str == (char)c) {
+            p = str;
+        }
+        if (*str++ == '\0') {
+            return (char *)p;
+        }
+    }
+}
+
 char *strstr(const char *str1, const char *str2) {
     size_t n = strlen(str2);
     while (*str1) {

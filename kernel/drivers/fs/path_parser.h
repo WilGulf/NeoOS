@@ -18,8 +18,13 @@
  * See NOTICE for the full list of GPL-derived files in this project.
  */
 
+#include "../../include/stdint.h"
+
 #ifndef PATH_PARSER_H
 #define PATH_PARSER_H
+
+#define PATH_MAX_DEPTH 16
+#define PATH_SEGMENT_MAX 32
 
 struct path_root {
     char drive_id;
@@ -33,5 +38,8 @@ struct path_part {
 
 struct path_root *parse_path(const char *path, const char *current_directory_path);
 void path_parser_free(struct path_root *root);
+
+int path_is_absolute(const char *path);
+int get_full_path(const char *cwd, const char *in, char *out, size_t out_size);
 
 #endif

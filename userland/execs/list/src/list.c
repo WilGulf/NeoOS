@@ -7,29 +7,33 @@ void declarations(void) {
 }
 
 int main(int argc, char **argv) {
+    int fd = 0;
     if (argv[1]) {
-        int fd = fopen(argv[1], "r");
-        if (fd) {
-            struct dirent dirent = readdir(fd);
-            while (dirent.name[0]) {
-                dirent = readdir(fd);
+        fd = fopen(argv[1], "r");
+    } else {
+        fd = fopen(".", "r");
+    }
 
-                if (dirent.type == DIRENT_TYPE_FILE) {
-                    printf("\033[0m");
-                }
-                if (dirent.type == DIRENT_TYPE_DIR) {
-                    printf("\033[34m");
-                }
-                if (dirent.type == DIRENT_TYPE_EXEC) {
-                    printf("\033[32m");
-                }
+    if (fd) {
+        struct dirent dirent = readdir(fd);
+        while (dirent.name[0]) {
+            dirent = readdir(fd);
 
-                printf("%s ", dirent.name);
+            if (dirent.type == DIRENT_TYPE_FILE) {
+                printf("\033[0m");
+            }
+            if (dirent.type == DIRENT_TYPE_DIR) {
+                printf("\033[34m");
+            }
+            if (dirent.type == DIRENT_TYPE_EXEC) {
+                printf("\033[32m");
             }
 
-            printf("\033[0m\n");
-            putchar('\n');
+            printf("%s ", dirent.name);
         }
+
+        printf("\033[0m\n");
+        putchar('\n');
     }
     
     exit();

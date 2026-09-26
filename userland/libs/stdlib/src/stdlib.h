@@ -18,6 +18,9 @@ void kfree(void *ptr);
 
 int promise(int promise);
 
+int chwd(const char *path);
+void get_cwd(char *buf, size_t size);
+
 struct kernel_info;
 
 struct command_argument {

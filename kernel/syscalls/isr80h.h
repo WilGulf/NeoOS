@@ -31,6 +31,8 @@ enum SystemCommands {
     SYSTEM_COMMAND26_REMOVE,
     SYSTEM_COMMAND27_FWRITE,
     SYSTEM_COMMAND28_READDIR,
+    SYSTEM_COMMAND29_CHWD,
+    SYSTEM_COMMAND30_GET_CWD,
 };
 
 void isr80h_register_commands(); 

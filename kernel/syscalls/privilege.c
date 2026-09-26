@@ -53,6 +53,8 @@ void *isr80h_command13_system_run_as(struct interrupt_frame *frame) {
         return ERROR(res);
     }
 
+    strncpy(process->cwd, calling_task->process->cwd, sizeof(process->cwd) - 1);
+
     res = process_inject_arguments(process, root_command_argument);
     if (res < 0) {
         return ERROR(res);
@@ -99,6 +101,8 @@ void *isr80h_command15_fork_as(struct interrupt_frame *frame) {
     if (res < 0) {
         return ERROR(res);
     }
+
+    strncpy(process->cwd, task_current()->process->cwd, sizeof(process->cwd) - 1);
 
     res = process_inject_arguments(process, root_command_argument);
     if (res < 0) {

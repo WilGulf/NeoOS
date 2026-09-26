@@ -1,7 +1,7 @@
 /*
  *
  * Copyright (C) 2026 Daniel McCarthy <daniel@dragonzap.com>
-  * This file is drerived from the PeachOS Kernel (github.com/nibblebits/PeachOS).
+ * This file is drerived from the PeachOS Kernel (github.com/nibblebits/PeachOS).
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -24,6 +24,9 @@
 #include "../../include/status.h"
 #include "../../include/util.h"
 #include "../../include/config.h"
+#include "../../include/stdint.h"
+
+#include "../../drivers/io/io.h"
 
 static int path_is_valid_format(const char *path) {
     int len = strnlen(path, MAX_PATH);
@@ -161,4 +164,114 @@ out:
         }
     }
     return path_root;
+}
+
+int path_is_absolute(const char *path) {
+    return path_is_valid_format(path);
+}
+
+int get_full_path(const char *cwd, const char *in, char *out, size_t out_size) {
+    size_t buffer_sz = MAX_PATH * 2;
+    char buffer[buffer_sz];
+
+    if (!cwd || !cwd[0]) {
+        return -ERROR_IO;
+    }
+
+    if (!out_size) {
+        return -ERROR_IO;
+    }
+
+    if (!in || in[0] == '\0') {
+        in = ".";
+    }
+
+    if (path_is_valid_format(in)) {
+        strncpy(buffer, in, buffer_sz);
+        buffer[buffer_sz - 1] = '\0';
+    } else {
+        strncpy(buffer, cwd, buffer_sz);
+        buffer[buffer_sz - 1] = '\0';
+        size_t len = strlen(buffer);
+        if (buffer[len - 1] != '/' && in[0] != '/') {
+            buffer[len] = '/';
+            strncpy(buffer + len + 1, in, buffer_sz - len - 1);
+        } else if (buffer[len - 1] == '/' && in[0] == '/') {
+            buffer[len--] = '\0';
+            strncpy(buffer + len, in, buffer_sz - len - 1);
+        } else {
+            strncpy(buffer + len, in, buffer_sz - len - 1);
+        }
+
+        buffer[buffer_sz - 1] = '\0';
+    }
+
+    char *buffer_ptr = buffer;
+    char drive = *buffer_ptr;
+    buffer_ptr += 3;
+
+    char part[PATH_SEGMENT_MAX];
+    size_t part_len = 0;
+
+    char parts[PATH_MAX_DEPTH][PATH_SEGMENT_MAX];
+    size_t depth = 0;
+    while (1) {
+        char c = *buffer_ptr;
+
+        if (c != '/' && c != '\0') {
+            if (part_len < PATH_SEGMENT_MAX - 1) {
+                part[part_len++] = c;
+            } else {
+                break;
+            }
+        } else {
+            part[part_len] = '\0';
+
+            // Process part
+            if (!strcmp(part, ".")) {
+                
+            } else if (!strcmp(part, "..")) {
+                if (depth > 0) {
+                    depth--;
+                }
+            } else if (!part[0]) {
+                
+            } else {
+                if (depth == PATH_MAX_DEPTH) {
+                    break;
+                }
+                strncpy(parts[depth++], part, PATH_SEGMENT_MAX);
+            }
+
+            part_len = 0;
+        }
+
+        if (c == '\0') {
+            break;
+        }
+
+        buffer_ptr++;
+    }
+
+    char output[sizeof(parts)];
+    output[0] = drive;
+    output[1] = ':';
+    output[2] = '/';
+    output[3] = '\0';
+
+    for (int i = 0; i < depth; i++) {
+        size_t len = strlen(output);
+        if (i != 0) {
+            output[len] = '/';
+            strcpy(output + len + 1, parts[i]);
+        } else {
+            strcpy(output + len, parts[i]);
+        }
+    }
+    output[sizeof(output) - 1] = '\0';
+
+    strncpy(out, output, out_size);
+    out[out_size - 1] = '\0';
+
+    return 0;
 }
