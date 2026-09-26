@@ -186,8 +186,6 @@ void *isr80h_command29_chwd(struct interrupt_frame *frame) {
         return (void *)-ERROR_IO;
     }
 
-    kprintf("Trying switch to %s\n", clean_path);
-
     if (!strncmp(clean_path, "0:/sysro", 8)) {
         check_allowed_with_privilege(process, PRIVILEGE_FS_SYS);
     }
