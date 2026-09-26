@@ -12,6 +12,9 @@ int main(int argc, char **argv) {
         int i = 1;
         while (argv[i]) {
             int fd = fopen(argv[i], "w");
+            for (int j = 0; j < 10; j++) {
+                fwrite(0, 1, 1, fd);
+            }
             fclose(fd);
             printf("%s ", argv[i]);
             i++;
