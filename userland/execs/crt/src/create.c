@@ -8,15 +8,18 @@ void declarations(void) {
 
 int main(int argc, char **argv) {
     if (argv[1]) {
-        printf("Created: ");
         int i = 1;
         while (argv[i]) {
             int fd = fopen(argv[i], "w");
-            for (int j = 0; j < 10; j++) {
-                fwrite(0, 1, 1, fd);
+            if (fd) {
+                for (int j = 0; j < 10; j++) {
+                    fwrite(0, 1, 1, fd);
+                }
+                fclose(fd);
+
+                printf("Created: ");
+                printf("%s\n", argv[i]);
             }
-            fclose(fd);
-            printf("%s ", argv[i]);
             i++;
         }
 

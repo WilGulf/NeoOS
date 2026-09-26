@@ -135,12 +135,14 @@ struct path_root *parse_path(const char *path, const char *current_directory_pat
     }
 
     first_part = parse_path_part(NULL, &temp_path);
-    if (!first_part) {
-        res = -ERROR_IO;
-        goto out;
-    }
-
     path_root->first = first_part;
+
+    if (first_part) {
+        part = parse_path_part(first_part, &temp_path);
+        while (part) {
+            part = parse_path_part(part, &temp_path);
+        }
+    }
 
     part = parse_path_part(first_part, &temp_path);
     while (part) {

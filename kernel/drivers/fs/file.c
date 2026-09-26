@@ -139,11 +139,6 @@ int fopen(const char *filename, const char *mode_str) {
         goto out;
     }
 
-    if (!root_path->first) {
-        res = -ERROR_INVALID_ARG;
-        goto out;
-    }
-
     disk = disk_get(root_path->drive_id);
     if (!disk) {
         res = -ERROR_IO;

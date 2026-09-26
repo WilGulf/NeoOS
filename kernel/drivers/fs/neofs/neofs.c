@@ -538,6 +538,10 @@ static int neofs_get_path_meta_block(struct path_part *path_part, kbool allow_cr
     struct master_block master_block;
     if (get_master_block(&master_block, disk) < 0)
         return -1;
+
+    if (!path_part || !path_part->part) {
+        return master_block.first_block;
+    }
     
     struct meta_block root;
     if (get_meta_block(master_block.first_block, &root, disk) < 0)
@@ -963,7 +967,7 @@ struct dirent neofs_readdir(struct disk *disk, void *private) {
     int i = 0;
     int curr = dir.start;
     kbool found = false;
-    while (1) {
+    while (curr) {
         if (i == desc->pos) {
             found = true;
             break;
@@ -976,10 +980,6 @@ struct dirent neofs_readdir(struct disk *disk, void *private) {
         struct meta_block temp;
         if (get_meta_block(curr, &temp, disk) < 0)
             return dirent;
-
-        if (!temp.next) {
-            break;
-        }
 
         curr = temp.next;
 
