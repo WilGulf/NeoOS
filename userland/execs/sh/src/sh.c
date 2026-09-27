@@ -82,7 +82,7 @@ int main(int argc, char **argv) {
                         }
                     }
                 } else {
-                    strncpy(path1 + 9, cmd, sizeof(path1));
+                    strncpy(path1 + 9, cmd, sizeof(path1) - 10);
                     run(path1);
                 }
 
