@@ -7,16 +7,12 @@ void declarations(void) {
 }
 
 int main(int argc, char **argv) {
-    if (argv[1]) {
-        int i = 1;
-        while (argv[i]) {
-            if (create(argv[1]) == 0) {
-                printf("Created: %s\n", argv[1]);
-            }
-            i++;
+    int i = 1;
+    while (argv[i]) {
+        if (create(argv[i]) == 0) {
+            printf("Created: %s\n", argv[i]);
         }
-
-        putchar('\n');
+        i++;
     }
 
     exit();

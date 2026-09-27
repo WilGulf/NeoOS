@@ -10,8 +10,8 @@ int main(int argc, char **argv) {
     if (argv[1]) {
         int i = 1;
         while (argv[i]) {
-            if (mkdir(argv[1]) == 0) {
-                printf("Created: %s\n", argv[1]);
+            if (mkdir(argv[i]) == 0) {
+                printf("Created: %s\n", argv[i]);
             }
             i++;
         }
