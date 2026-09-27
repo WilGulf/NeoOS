@@ -392,6 +392,7 @@ static int create_meta_block(uint32_t parent, kbool is_dir, const char *name, st
         neofs_write_block(disk, prev_child_block_n, sizeof(child_block), &child_block);
     }
 
+    set_block_on_bitmap(new_block_n, true, disk);
     return new_block_n;
 }
 
@@ -1060,8 +1061,13 @@ int neofs_mkdir(struct disk *disk, struct path_part *path) {
         if (get_master_block(&master, disk) < 0) {
             return -ERROR_IO;
         }
-
-        return create_meta_block(master.first_block, true, tmp->part, disk);
+        
+        int res = create_meta_block(master.first_block, true, tmp->part, disk);
+        if (res > 0) {
+            return 0;
+        } else {
+            return -ERROR_IO;
+        }
     }
 
     struct path_part *save = tmp->next;
@@ -1072,7 +1078,12 @@ int neofs_mkdir(struct disk *disk, struct path_part *path) {
     tmp->next = save;
 
     if (parent > 0 && block_is_valid(parent, disk)) {
-        return create_meta_block(parent, true, save->part, disk);
+        int res = create_meta_block(parent, true, save->part, disk);
+        if (res > 0) {
+            return 0;
+        } else {
+            return -ERROR_IO;
+        }
     } else {
         return -ERROR_IO;
     }
