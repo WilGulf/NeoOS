@@ -261,35 +261,27 @@ out:
 int remove(const char *filename) {
     int res = 0;
     struct disk *disk = 0;
-    FILE_MODE mode = FILE_MODE_INVALID;
-    void *descriptor_private_data = 0;
-    struct file_descriptor *desc = 0;
 
     struct path_root *root_path = parse_path(filename, NULL);
     if (!root_path) {
-        res = -ERROR_INVALID_ARG;
-        goto out;
+        return -ERROR_INVALID_ARG;
     }
 
     if (!root_path->first) {
-        res = -ERROR_INVALID_ARG;
-        goto out;
+        return -ERROR_INVALID_ARG;
     }
 
     disk = disk_get(root_path->drive_id);
     if (!disk) {
-        res = -ERROR_IO;
-        goto out;
+        return -ERROR_IO;
     }
 
     if (!disk->filesystem) {
-        res = -ERROR_IO;
-        goto out;
+        return -ERROR_IO;
     }
     
     disk->filesystem->remove(disk, root_path->first);
-out:
-    return res;
+    return 0;
 }
 
 int fclose(int fd) {
@@ -348,4 +340,56 @@ char *fgets(char *str, int size, int fd) {
 
     str[i] = '\0';
     return str;
+}
+
+int create(const char *filename) {
+    int res = 0;
+    struct disk *disk = 0;
+
+    struct path_root *root_path = parse_path(filename, NULL);
+    if (!root_path) {
+        return -ERROR_INVALID_ARG;
+    }
+
+    if (!root_path->first) {
+        return -ERROR_INVALID_ARG;
+    }
+
+    disk = disk_get(root_path->drive_id);
+    if (!disk) {
+        return -ERROR_IO;
+    }
+
+    if (!disk->filesystem) {
+        return -ERROR_IO;
+    }
+    
+    disk->filesystem->create(disk, root_path->first);
+    return 0;
+}
+
+int mkdir(const char *filename) {
+    int res = 0;
+    struct disk *disk = 0;
+
+    struct path_root *root_path = parse_path(filename, NULL);
+    if (!root_path) {
+        return -ERROR_INVALID_ARG;
+    }
+
+    if (!root_path->first) {
+        return -ERROR_INVALID_ARG;
+    }
+
+    disk = disk_get(root_path->drive_id);
+    if (!disk) {
+        return -ERROR_IO;
+    }
+
+    if (!disk->filesystem) {
+        return -ERROR_IO;
+    }
+    
+    disk->filesystem->mkdir(disk, root_path->first);
+    return 0;
 }

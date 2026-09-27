@@ -82,6 +82,8 @@ int neofs_write(struct disk *disk, void *private, uint32_t size, uint32_t nmemb,
 int neofs_remove(struct disk *disk, struct path_part *path);
 int neofs_close(void *private);
 struct dirent neofs_readdir(struct disk *disk, void *private);
+int neofs_create(struct disk *disk, struct path_part *path);
+int neofs_mkdir(struct disk *disk, struct path_part *path);
 
 struct filesystem neofs = {
     .resolve = neofs_resolve,
@@ -93,6 +95,8 @@ struct filesystem neofs = {
     .remove = neofs_remove,
     .close = neofs_close,
     .readdir = neofs_readdir,
+    .create = neofs_create,
+    .mkdir = neofs_mkdir,
 };
 
 int read_file(uint32_t file_meta_block_n, void *out, struct disk *disk);
@@ -359,7 +363,6 @@ static int create_meta_block(uint32_t parent, kbool is_dir, const char *name, st
     new_block.size = 0;
     new_block.start = 0;
     new_block.flags = FLAG_R | FLAG_W;
-    /*new_block.status = BLOCK_STATUS_USED;*/set_block_on_bitmap(new_block_n, true, disk);
 
     neofs_write_block(disk, new_block_n, sizeof(new_block), &new_block);
 
@@ -1015,4 +1018,62 @@ int neofs_close(void *private) {
     struct neofs_file_descriptor *desc = private;
     kfree(desc);
     return 0;
+}
+
+int neofs_create(struct disk *disk, struct path_part *path) {
+    struct path_part *tmp = path;
+    while (tmp->next && tmp->next->next) {
+        tmp = tmp->next;
+    }
+
+    if (!tmp->next) {
+        struct master_block master;
+        if (get_master_block(&master, disk) < 0) {
+            return -ERROR_IO;
+        }
+
+        return create_meta_block(master.first_block, false, tmp->part, disk);
+    }
+
+    struct path_part *save = tmp->next;
+    tmp->next = NULL;
+
+    uint32_t parent = neofs_get_path_meta_block(path, false, disk);
+
+    tmp->next = save;
+
+    if (parent > 0 && block_is_valid(parent, disk)) {
+        return create_meta_block(parent, false, save->part, disk);
+    } else {
+        return -ERROR_IO;
+    }
+}
+
+int neofs_mkdir(struct disk *disk, struct path_part *path) {
+    struct path_part *tmp = path;
+    while (tmp->next && tmp->next->next) {
+        tmp = tmp->next;
+    }
+
+    if (!tmp->next) {
+        struct master_block master;
+        if (get_master_block(&master, disk) < 0) {
+            return -ERROR_IO;
+        }
+
+        return create_meta_block(master.first_block, true, tmp->part, disk);
+    }
+
+    struct path_part *save = tmp->next;
+    tmp->next = NULL;
+
+    uint32_t parent = neofs_get_path_meta_block(path, false, disk);
+
+    tmp->next = save;
+
+    if (parent > 0 && block_is_valid(parent, disk)) {
+        return create_meta_block(parent, true, save->part, disk);
+    } else {
+        return -ERROR_IO;
+    }
 }

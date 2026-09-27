@@ -33,10 +33,6 @@ void *isr80h_command18_fopen(struct interrupt_frame *frame) {
     char mode[8];
     copy_string_from_task(task_current(), user_space_mode_buffer, mode, sizeof(mode));
 
-    if (strncmp(filename, "0:/sys", 6) == 0) {
-        check_allowed_with_privilege(task_current()->process, PRIVILEGE_FS_SYS);
-    }
-
     fd = fopen(filename, mode);
 
     return (void *)fd;
@@ -60,7 +56,7 @@ void *isr80h_command20_fread(struct interrupt_frame *frame) {
     task_page();
     int res = fread(out, size, count, fd);
     kernel_page();
-    return res;
+    return (void *)res;
 }
 
 void *isr80h_command21_fstat(struct interrupt_frame *frame) {
@@ -72,7 +68,7 @@ void *isr80h_command21_fstat(struct interrupt_frame *frame) {
     task_page();
     fstat(fd, out);
     kernel_page();
-    return 0;
+    return (void *)0;
 }
 
 void *isr80h_command26_remove(struct interrupt_frame *frame) {
@@ -97,7 +93,7 @@ void *isr80h_command26_remove(struct interrupt_frame *frame) {
         res = remove(filename);
     }
 
-    return res;
+    return (void *)res;
 }
 
 void *isr80h_command27_fwrite(struct interrupt_frame *frame) {
@@ -114,7 +110,7 @@ void *isr80h_command27_fwrite(struct interrupt_frame *frame) {
     
     int res = fwrite(buffer, size, count, fd);
     
-    return res;
+    return (void *)res;
 }
 
 void *isr80h_command28_readdir(struct interrupt_frame *frame) {
@@ -129,5 +125,45 @@ void *isr80h_command28_readdir(struct interrupt_frame *frame) {
     memcpy(out, &dirent, sizeof(dirent));
     kernel_page();
 
-    return 0;
+    return (void *)0;
+}
+
+void *isr80h_command31_create(struct interrupt_frame *frame) {
+    check_process_promise(task_current()->process, PROMISE_FS);
+    check_allowed_with_privilege(task_current()->process, PRIVILEGE_FS_DATA);
+
+    void *user_space_path_buffer = task_get_stack_item(task_current(), 0);
+    char raw_filename[MAX_PATH];
+    copy_string_from_task(task_current(), user_space_path_buffer, raw_filename, sizeof(raw_filename));
+
+    char filename[MAX_PATH];
+    if (get_full_path(task_current()->process->cwd, raw_filename, filename, sizeof(filename)) < 0) {
+        return (void *)-ERROR_IO;
+    }
+
+    if (!strncmp(filename, "0:/sysro", 8)) {
+        check_allowed_with_privilege(task_current()->process, PRIVILEGE_FS_SYS);
+    }
+
+    return (void *)create(filename);
+}
+
+void *isr80h_command32_mkdir(struct interrupt_frame *frame) {
+    check_process_promise(task_current()->process, PROMISE_FS);
+    check_allowed_with_privilege(task_current()->process, PRIVILEGE_FS_DATA);
+
+    void *user_space_path_buffer = task_get_stack_item(task_current(), 0);
+    char raw_dirpath[MAX_PATH];
+    copy_string_from_task(task_current(), user_space_path_buffer, raw_dirpath, sizeof(raw_dirpath));
+
+    char dirpath[MAX_PATH];
+    if (get_full_path(task_current()->process->cwd, raw_dirpath, dirpath, sizeof(dirpath)) < 0) {
+        return (void *)-ERROR_IO;
+    }
+
+    if (!strncmp(dirpath, "0:/sysro", 8)) {
+        check_allowed_with_privilege(task_current()->process, PRIVILEGE_FS_SYS);
+    }
+
+    return (void *)mkdir(dirpath);
 }

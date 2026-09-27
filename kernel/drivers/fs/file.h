@@ -83,6 +83,8 @@ typedef int (*FS_WRITE_FUNCTION)(struct disk *disk, void *private, uint32_t size
 typedef int (*FS_REMOVE_FUNCTION)(struct disk *disk, struct path_part *path);
 typedef int (*FS_CLOSE_FUNCTION)(void *private);
 typedef struct dirent (*FS_READDIR_FUNCTION)(struct disk *disk, void *private);
+typedef int (*FS_CREATE_FUNCTION)(struct disk *disk, struct path_part *path);
+typedef int (*FS_MKDIR_FUNCTION)(struct disk *disk, struct path_part *path);
 
 struct filesystem {
     FS_RESOLVE_FUNCTION resolve;
@@ -94,6 +96,8 @@ struct filesystem {
     FS_REMOVE_FUNCTION remove;
     FS_CLOSE_FUNCTION close;
     FS_READDIR_FUNCTION readdir;
+    FS_CREATE_FUNCTION create;
+    FS_MKDIR_FUNCTION mkdir;
 
     char name[20];
 };
@@ -117,6 +121,8 @@ int fstat(int fd, struct file_stat *stat);
 int fwrite(const void *ptr, uint32_t size, uint32_t nmemb, int fd);
 int fclose(int fd);
 char *fgets(char *str, int size, int fd);
+int create(const char *filename);
+int mkdir(const char *filename);
 
 int remove(const char *filename);
 

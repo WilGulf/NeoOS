@@ -19,6 +19,7 @@
 - **read**: Prints the contents of a file
 - **rm**: Removes provided file(s)
 - **crt**: Creates listed file(s) with size 0
+- **mkdir**: Creates dir(s)
 
 ### Process management
 - **running**: Lists running processes and their associated information

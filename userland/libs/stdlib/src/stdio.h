@@ -41,6 +41,7 @@ int fread(void *buffer, size_t size, size_t count, int fd);
 int fstat(int fd, struct file_stat *stat);
 size_t fwrite(const void *in, size_t size, size_t nmemb, int fd);
 int remove(const char *filename);
+int create(const char *filename);
 
 char *fgets(char *str, int size, int fd);
 

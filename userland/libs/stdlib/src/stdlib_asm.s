@@ -317,3 +317,25 @@ get_cwd:
     add esp, 8
     pop ebp
     ret
+
+global create:function
+create:
+    push ebp
+    mov ebp, esp
+    mov eax, 31
+    push dword[ebp+8]
+    int 0x80
+    add esp, 4
+    pop ebp
+    ret
+
+global mkdir:function
+mkdir:
+    push ebp
+    mov ebp, esp
+    mov eax, 32
+    push dword[ebp+8]
+    int 0x80
+    add esp, 4
+    pop ebp
+    ret

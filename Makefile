@@ -53,13 +53,14 @@ disk_contents: output/disk.img
 	./fstools/copy.neofs --disk output/disk.img if=userland/execs/fetch/output/fetch.elf 		trgt=execs/fetch 	--flags rx
 	./fstools/copy.neofs --disk output/disk.img if=userland/execs/echo/output/echo.elf 			trgt=execs/echo 	--flags rx
 	./fstools/copy.neofs --disk output/disk.img if=userland/execs/sysinfo/output/sysinfo.elf 	trgt=execs/sysinfo 	--flags rx
-	./fstools/copy.neofs --disk output/disk.img if=userland/execs/read/output/read.elf 			trgt=execs/read 	--flags rx
+	./fstools/copy.neofs --disk output/disk.img if=userland/execs/fileutils/output/read.elf 	trgt=execs/read 	--flags rx
 	./fstools/copy.neofs --disk output/disk.img if=userland/execs/running/output/running.elf 	trgt=execs/running 	--flags rx
 	./fstools/copy.neofs --disk output/disk.img if=userland/execs/kill/output/kill.elf 			trgt=execs/kill 	--flags rx
 	./fstools/copy.neofs --disk output/disk.img if=userland/execs/test/output/test.elf 			trgt=execs/test 	--flags rx
-	./fstools/copy.neofs --disk output/disk.img if=userland/execs/rm/output/rm.elf 				trgt=execs/rm 		--flags rx
-	./fstools/copy.neofs --disk output/disk.img if=userland/execs/crt/output/crt.elf 			trgt=execs/crt 		--flags rx
-	./fstools/copy.neofs --disk output/disk.img if=userland/execs/list/output/list.elf 			trgt=execs/list 	--flags rx
+	./fstools/copy.neofs --disk output/disk.img if=userland/execs/fileutils/output/rm.elf 		trgt=execs/rm 		--flags rx
+	./fstools/copy.neofs --disk output/disk.img if=userland/execs/fileutils/output/crt.elf 		trgt=execs/crt 		--flags rx
+	./fstools/copy.neofs --disk output/disk.img if=userland/execs/fileutils/output/list.elf 	trgt=execs/list 	--flags rx
+	./fstools/copy.neofs --disk output/disk.img if=userland/execs/fileutils/output/mkdir.elf 	trgt=execs/mkdir 	--flags rx
 	./fstools/copy.neofs --disk output/disk.img if=userland/execs/help/output/help.elf 			trgt=execs/help 	--flags rx
 	./fstools/copy.neofs --disk output/disk.img if=userland/execs/uptime/output/uptime.elf 		trgt=execs/uptime 	--flags rx
 	./fstools/copy.neofs --disk output/disk.img if=userland/execs/pwd/output/pwd.elf 			trgt=execs/pwd 	 	--flags rx
@@ -84,16 +85,13 @@ userland_execs:
 	cd ./userland/execs/fetch && $(MAKE) all
 	cd ./userland/execs/echo && $(MAKE) all
 	cd ./userland/execs/sysinfo && $(MAKE) all
-	cd ./userland/execs/read && $(MAKE) all
 	cd ./userland/execs/running && $(MAKE) all
 	cd ./userland/execs/kill && $(MAKE) all
-	cd ./userland/execs/rm && $(MAKE) all
-	cd ./userland/execs/crt && $(MAKE) all
-	cd ./userland/execs/list && $(MAKE) all
 	cd ./userland/execs/uptime && $(MAKE) all
 	cd ./userland/execs/help && $(MAKE) all
 	cd ./userland/execs/test && $(MAKE) all
 	cd ./userland/execs/pwd && $(MAKE) all
+	cd ./userland/execs/fileutils && $(MAKE) all
 
 userland_clean:
 	cd ./userland/libs/stdlib && $(MAKE) clean 
@@ -103,16 +101,13 @@ userland_clean:
 	cd ./userland/execs/fetch && $(MAKE) clean
 	cd ./userland/execs/echo && $(MAKE) clean
 	cd ./userland/execs/sysinfo && $(MAKE) clean
-	cd ./userland/execs/read && $(MAKE) clean
 	cd ./userland/execs/running && $(MAKE) clean
 	cd ./userland/execs/kill && $(MAKE) clean
-	cd ./userland/execs/rm && $(MAKE) clean
-	cd ./userland/execs/crt && $(MAKE) clean
-	cd ./userland/execs/list && $(MAKE) clean
 	cd ./userland/execs/uptime && $(MAKE) clean
 	cd ./userland/execs/help && $(MAKE) clean
 	cd ./userland/execs/test && $(MAKE) clean
 	cd ./userland/execs/pwd && $(MAKE) clean
+	cd ./userland/execs/fileutils && $(MAKE) clean
 
 kernel_clean:
 	rm -f output/*.elf

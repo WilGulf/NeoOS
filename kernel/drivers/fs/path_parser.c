@@ -147,11 +147,6 @@ struct path_root *parse_path(const char *path, const char *current_directory_pat
         }
     }
 
-    part = parse_path_part(first_part, &temp_path);
-    while (part) {
-        part = parse_path_part(part, &temp_path);
-    }
-
 out:
     if (res < 0) {
         if (path_root) {

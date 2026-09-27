@@ -33,6 +33,8 @@ enum SystemCommands {
     SYSTEM_COMMAND28_READDIR,
     SYSTEM_COMMAND29_CHWD,
     SYSTEM_COMMAND30_GET_CWD,
+    SYSTEM_COMMAND31_CREATE,
+    SYSTEM_COMMAND32_MKDIR,
 };
 
 void isr80h_register_commands(); 

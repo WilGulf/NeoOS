@@ -16,5 +16,6 @@ struct dirent {
 };
 
 struct dirent readdir(int fd);
+int mkdir(const char *path);
 
 #endif

@@ -40,4 +40,6 @@ void isr80h_register_commands() {
     isr80h_register_command(SYSTEM_COMMAND28_READDIR, isr80h_command28_readdir);
     isr80h_register_command(SYSTEM_COMMAND29_CHWD, isr80h_command29_chwd);
     isr80h_register_command(SYSTEM_COMMAND30_GET_CWD, isr80h_command30_cwd);
+    isr80h_register_command(SYSTEM_COMMAND31_CREATE, isr80h_command31_create);
+    isr80h_register_command(SYSTEM_COMMAND32_MKDIR, isr80h_command32_mkdir);
 }
