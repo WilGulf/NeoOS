@@ -251,6 +251,11 @@ void fb_putc(char c) {
     } else {
         uint16_t pos = fb_get_cursor_position();
         fb_write_cell((pos * 2), c, current_fg, current_bg);
+        if ((pos % 80) == 79) {
+            fb_new_line();
+        }
+        pos = fb_get_cursor_position();
+        
         fb_move_cursor(pos + 1);
     }
 }
@@ -318,7 +323,12 @@ int writer(char *buf) {
                 }
             }
         } else {
-            fb_write_cell(pos * 2, bytes[i], current_fg, current_bg);
+            if ((pos % 80) == 79) {
+                fb_new_line();
+                pos = fb_get_cursor_position();
+            }
+            
+            fb_write_cell((pos * 2), bytes[i], current_fg, current_bg);
             pos++;
             i++;
         }
