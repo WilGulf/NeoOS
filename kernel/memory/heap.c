@@ -40,7 +40,7 @@ out:
 }
 
 static kbool heap_validate_alignment(void *ptr) {
-    return ((uint32_t)ptr % KHEAP_BLOCK_SIZE) == 0;
+    return ((uintptr_t)ptr % KHEAP_BLOCK_SIZE) == 0;
 }
 
 int heap_create(struct heap *heap, void *ptr, void *end, struct heap_table *table) {

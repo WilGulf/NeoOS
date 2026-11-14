@@ -1,47 +1,34 @@
 ENTRY(loader)
+OUTPUT_FORMAT(binary)
 
 SECTIONS {
     . = 0x00100000;
 
-    .multiboot ALIGN (0x1000):
-    {
-        *(.multiboot)
-    }
+    kernel_virtual_start = .;
+    kernel_physical_start = .;
 
-    .note.gnu.build-id ALIGN (0x1000):
-    {
-        *(.note.gnu.build-id)
-    }
-
-    .boot ALIGN (0x1000):
-    {
-        *(.boot)
-    }
-
-    .text ALIGN (0x1000) : AT(ADDR(.text))
+    .text : ALIGN(0x1000)
     {
         *(.text)
     }
     
-    .rodata ALIGN (0x1000) : AT(ADDR(.rodata))
+    .rodata : ALIGN (0x1000)
     {
         *(.rodata*)
     }
 
-    .data ALIGN (0x1000) : AT(ADDR(.data))
+    .data : ALIGN (0x1000)
     {
         *(.data)
     }
 
-    .bss ALIGN (0x1000) : AT(ADDR(.bss))
+    .bss : ALIGN (0x1000)
     {
         *(COMMON)
         *(.bss)
     }
 
-    kernel_virtual_start = 0x00100000;
     kernel_virtual_end = .;
-    kernel_physical_start = 0x00100000;
     kernel_physical_end = .;
 
 }

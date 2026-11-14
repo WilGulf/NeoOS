@@ -10,6 +10,7 @@ typedef short int16_t;
 typedef int int32_t;
 
 typedef long unsigned int size_t;
+typedef unsigned long uintptr_t;
 
 typedef _Bool kbool;
 

@@ -1,5 +1,5 @@
 #Files to be output of compilation
-OBJECTS = kernel/loader.o kernel/kmain.o kernel/kernel_asm.o \
+#OBJECTS = kernel/loader.o kernel/kmain.o kernel/kernel_asm.o \
 	kernel/drivers/io/fb_io.o kernel/drivers/io/kprint.o kernel/drivers/io/io_ports.o \
 	kernel/drivers/keyboard/keyboard.o kernel/drivers/keyboard/ps2.o \
 	kernel/gdt/gdt_asm.o kernel/gdt/gdt.o \
@@ -21,28 +21,52 @@ OBJECTS = kernel/loader.o kernel/kmain.o kernel/kernel_asm.o \
 	kernel/syscalls/fs.o \
 	kernel/syscalls/timer.o
 
+OBJECTS = kernel/loader.o kernel/kmain.o \
+	kernel/include/util.o \
+	kernel/drivers/io/fb_io.o kernel/drivers/io/kprint.o kernel/drivers/io/io_ports.o \
+	kernel/memory/heap.o kernel/memory/kheap.o
+
+
 #C compiler
-CC = i686-elf-gcc
-CFLAGS = -m32 -nostdlib -nostdinc -fno-builtin -fno-stack-protector \
-	-nostartfiles -nodefaultlibs \
-	-Wall -Wextra -Wno-int-conversion -c
+CC = x86_64-elf-gcc
+CFLAGS = -m64 -ffreestanding -nostdlib -nostdinc -fno-builtin -fno-stack-protector \
+	-fno-pic -fno-pie -mno-red-zone -mno-mmx -mno-sse -mno-sse2 -mno-80387 \
+	-Wall -Wextra -g -c
 
 #Linker
-LDFLAGS = -m elf_i386 -T kernel/link.ld
+LDFLAGS = -m elf_x86_64 -T kernel/link.ld
 
 #Assembly compiler
 AS = nasm
-ASFLAGS = -f elf32
+ASFLAGS = -f elf64
 
-all: mkdir kernel userland_execs disk_contents
+# Emulator
+QEMU=qemu-system-x86_64
 
-kernel: kernel.elf
+.PHONY: all run clean kernel_clean mkdir
 
-mkdir:
+all: output/nexus.bin #userland_execs disk_contents
+
+output:
 	mkdir -p output
 
-kernel.elf: $(OBJECTS)
-	ld.lld $(LDFLAGS) $(OBJECTS) -o output/kernel.elf
+%.o: %.c
+	$(CC) $(CFLAGS) $< -o $@
+%.o: %.s
+	$(AS) $(ASFLAGS) $< -o $@
+
+output/kernel.bin: $(OBJECTS) | output
+	ld.lld $(LDFLAGS) $(OBJECTS) -o $@
+
+output/boot.bin: kernel/boot.s output/kernel.bin | output
+	nasm -f bin -DKERNEL_SECTORS=$$(( ($$(wc -c < output/kernel.bin) + 511) / 512 )) $< -o $@
+
+output/nexus.bin: output/boot.bin output/kernel.bin
+	cat output/boot.bin output/kernel.bin > $@
+	dd if=/dev/zero bs=1M count=16 >> $@
+
+run: all
+	$(QEMU) -hda output/nexus.bin
 
 disk_contents: output/disk.img
 	./fstools/copy.neofs --disk output/disk.img if=userland/configs/boot.cfg trgt=sysro/boot.cfg --flags r
@@ -64,14 +88,6 @@ disk_contents: output/disk.img
 	./fstools/copy.neofs --disk output/disk.img if=userland/execs/help/output/help.elf 			trgt=execs/help 	--flags rx
 	./fstools/copy.neofs --disk output/disk.img if=userland/execs/uptime/output/uptime.elf 		trgt=execs/uptime 	--flags rx
 	./fstools/copy.neofs --disk output/disk.img if=userland/execs/pwd/output/pwd.elf 			trgt=execs/pwd 	 	--flags rx
-
-run: all
-	qemu-system-i386 -kernel output/kernel.elf -hda output/disk.img
-
-%.o: %.c
-	$(CC) $(CFLAGS) $< -o $@
-%.o: %.s
-	$(AS) $(ASFLAGS) $< -o $@
 
 output/disk.img:
 	dd if=/dev/zero of=output/disk.img bs=1M count=64
@@ -110,11 +126,7 @@ userland_clean:
 	cd ./userland/execs/fileutils && $(MAKE) clean
 
 kernel_clean:
-	rm -f output/*.elf
-	rm -f output/*.img
-	rm -f kernel/*/*/*.o
-	rm -f kernel/*/*/*/*.o
-	rm -f kernel/*/*.o
-	rm -f kernel/*.o
+	rm -f output/*
+	find kernel -name "*.o" -delete
 
-clean: kernel_clean userland_clean
+clean: kernel_clean #userland_clean

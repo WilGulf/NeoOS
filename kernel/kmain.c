@@ -1,8 +1,8 @@
 //-----------------------//
 //      KERNEL INFO      //
 #define KERNEL_NAME "Nexus"
-#define KERNEL_VERSION_MAJOR 1
-#define KERNEL_VERSION_MINOR 1
+#define KERNEL_VERSION_MAJOR 26
+#define KERNEL_VERSION_MINOR 0
 #define KERNEL_VERSION_PATCH 0
 #define KERNEL_FLAVOUR ""
 //-----------------------//
@@ -10,25 +10,27 @@
 #include "kernel.h"
 
 #include "include/stdint.h"
-
-#include "multiboot.h"
+#include "include/util.h"
+#include "include/status.h"
+#include "include/va_list.h"
 #include "drivers/io/io.h"
+#include "memory/kheap.h"
+#include "memory/heap.h"
+
+/*
+#include "multiboot.h"
 #include "gdt/gdt.h"
 #include "idt/idt.h"
 #include "memory/paging.h"
-#include "memory/kheap.h"
-#include "memory/heap.h"
 #include "task/task.h"
 #include "task/process.h"
 #include "syscalls/isr80h.h"
 #include "drivers/disk/disk.h"
 #include "drivers/fs/path_parser.h"
 #include "drivers/keyboard/keyboard.h"
-#include "include/util.h"
-#include "include/status.h"
-#include "include/va_list.h"
 #include "panic.h"
 #include "timer/timer.h"
+*/
 
 extern uint32_t kernel_virtual_start;
 extern uint32_t kernel_virtual_end;
@@ -38,10 +40,10 @@ extern uint32_t stack_top;
 
 static struct paging_4gb_chunk *kernel_chunk = 0;
 
-void kernel_page() {
-    kernel_registers();
-    paging_switch(kernel_chunk);
-}
+//void kernel_page() {
+//    kernel_registers();
+//    paging_switch(kernel_chunk);
+//}
 
 static struct kernel_version kernel_version = {
     .name = KERNEL_NAME,
@@ -57,9 +59,12 @@ struct kernel_version *get_kernel_version() {
 
 int kmain(uint32_t magic, struct multiboot_info* bootInfo) {    
     fb_clear();
-
+    kprintf("\n");
+    
     kheap_init();
     kprintf("Inititalized kernel heap\n");
+
+    /*
 
     gdt_init();
     kprintf("GDT initialized\n");
@@ -109,6 +114,7 @@ int kmain(uint32_t magic, struct multiboot_info* bootInfo) {
     }
 
     task_run_first_ever_task();
+    */
 
     while (1) {}
 
