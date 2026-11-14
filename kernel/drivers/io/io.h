@@ -2,6 +2,7 @@
 #define INCLUDE_IO_H
 
 #include "../../include/stdint.h"
+#include "../../include/va_list.h"
 
 void outb(uint16_t port, uint8_t data);
 void outw(uint16_t port, uint16_t data);
@@ -18,5 +19,8 @@ void fb_enable_cursor();
 void fb_disable_cursor();
 
 int kprintf(const char *fmt, ...);
+int snprintf(char *out, size_t len, char *fmt, ...);
+int sprintf(char *out, char *fmt, ...);
+int vsprintf(char *out, const char *fmt, va_list arg_ptr);
 
 #endif

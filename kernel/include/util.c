@@ -32,12 +32,13 @@ void *memcpy(void *dest, void *src, int len) {
 }
 
 int memcmp(void* ptr1, void* ptr2, int count) {
-    char *char1 = ptr1;
-    char *char2 = ptr2;
+    const unsigned char *s1 = (const unsigned char *)ptr1;
+    const unsigned char *s2 = (const unsigned char *)ptr2;
 
-    while (count-- && *char1 == *char2) {
-        char1++;
-        char2++;
+    while (count-- > 0) {
+        if (*s1++ != *s2++) {
+            return s1[-1] < s2[-1] ? -1 : 1;
+        }
     }
 
     return 0;

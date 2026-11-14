@@ -16,19 +16,19 @@
 #include "drivers/io/io.h"
 #include "memory/kheap.h"
 #include "memory/heap.h"
+#include "memory/paging.h"
+#include "panic.h"
 
 /*
 #include "multiboot.h"
 #include "gdt/gdt.h"
 #include "idt/idt.h"
-#include "memory/paging.h"
 #include "task/task.h"
 #include "task/process.h"
 #include "syscalls/isr80h.h"
 #include "drivers/disk/disk.h"
 #include "drivers/fs/path_parser.h"
 #include "drivers/keyboard/keyboard.h"
-#include "panic.h"
 #include "timer/timer.h"
 */
 
@@ -38,12 +38,12 @@ extern uint32_t kernel_physical_start;
 extern uint32_t kernel_physical_end;
 extern uint32_t stack_top;
 
-static struct paging_4gb_chunk *kernel_chunk = 0;
+struct paging_descriptor *kernel_paging_descriptor = 0;
 
-//void kernel_page() {
-//    kernel_registers();
-//    paging_switch(kernel_chunk);
-//}
+void kernel_page() {
+    kernel_registers();
+    paging_switch(kernel_paging_descriptor);
+}
 
 static struct kernel_version kernel_version = {
     .name = KERNEL_NAME,
@@ -57,13 +57,18 @@ struct kernel_version *get_kernel_version() {
     return &kernel_version;
 }
 
-int kmain(uint32_t magic, struct multiboot_info* bootInfo) {    
+int kmain() {    
     fb_clear();
     kprintf("\n");
     
     kheap_init();
     kprintf("Inititalized kernel heap\n");
 
+    kernel_paging_descriptor = paging_descriptor_new(PAGING_MAP_LEVEL_4);
+    paging_map_range(kernel_paging_descriptor, (void *)0x000000000, (void *)0x000000000, 1024 * 100, PAGING_IS_WRITEABLE | PAGING_IS_PRESENT);
+    paging_switch(kernel_paging_descriptor);
+
+    kprintf("Paging inititalized\n");
     /*
 
     gdt_init();

@@ -29,33 +29,59 @@
 #define PAGING_IS_WRITEABLE     0B00000010
 #define PAGING_IS_PRESENT       0B00000001
 
-#define PAGING_TOTAL_ENTRIES_PER_TABLE 1024
+#define PAGING_TOTAL_ENTRIES_PER_TABLE 512
+
 #define PAGE_SIZE 4096
 
-struct paging_4gb_chunk {
-    uint32_t *directory_entry;
+enum {
+    PAGING_MAP_LEVEL_4 = 4,
+    PAGING_MAP_LEVEL_5 = 5,
 };
 
-struct paging_4gb_chunk *paging_new_4gb(uint8_t flags);
-void paging_free_4gb(struct paging_4gb_chunk *chunk);
+typedef uint8_t paging_map_level_t;
 
-void paging_switch(struct paging_4gb_chunk *chunk);
-void enable_paging();
+enum {
+    PAGING_PLM4T_MAX_ADDRESSABLE = 0x8000000000,
+    PAGING_PDPT_MAX_ADDRESSABLE = 0x40000000,
+    PAGING_PD_MAX_ADDRESSABLE = 0x200000,
+    PAGING_PAGE_MAX_ADDRESSABLE = PAGE_SIZE,
+};
 
-int paging_set(uint32_t *directory, void *vaddr, uint32_t val);
-kbool paging_is_aligned(void *addr);
+struct paging_descriptor_entry {
+    uint64_t present : 1;
+    uint64_t read_write : 1;
+    uint64_t user_supervisor : 1;
+    uint64_t pwt : 1;
+    uint64_t pcd : 1;
+    uint64_t accessed : 1;
+    uint64_t ignored : 1;
+    uint64_t reserved0 : 1;
+    uint64_t reserved1 : 4;
+    uint64_t address : 40;
+    uint64_t available : 11;
+    uint64_t execute_disable : 1;
+} __attribute__((packed));
 
+struct paging_pml_entries {
+    struct paging_descriptor_entry entries[PAGING_TOTAL_ENTRIES_PER_TABLE];
+} __attribute__((packed));
+
+struct paging_descriptor {
+    struct paging_pml_entries *pml;
+    paging_map_level_t level;
+} __attribute__((packed));
+
+
+struct paging_pml_entries *paging_pml4_entries_new();
 void *paging_align_address(void *ptr);
 void *paging_align_to_lower_page(void *addr);
+struct paging_descriptor *paging_descriptor_new(paging_map_level_t root_map_level);
+int paging_map(struct paging_descriptor *desc, void *virt, void *phys, int flags);
+int paging_map_range(struct paging_descriptor *desc, void *virt, void *phys, size_t count, int flags);
+int paging_map_to(struct paging_descriptor *desc, void *virt, void *phys, void *phys_end, int flags);
 
-int paging_map_to(struct paging_4gb_chunk *directory, void *virt, void *phys, void *phys_end, int flags);
-int paging_map_range(struct paging_4gb_chunk *directory, void *virt, void *phys, int count, int flags);
-int paging_map(struct paging_4gb_chunk *directory, void *virt, void *phys, int flags);
-
-uint32_t *paging_4gb_chunk_get_directory(struct paging_4gb_chunk *chunk);
-
-uint32_t paging_get(uint32_t *directory, void *virt);
-
-void *paging_get_physical_address(uint32_t *directory, void *virt);
+void paging_invalidate_tlb_entry(void *addr);
+void paging_load_directory(uintptr_t *directory);
+void paging_switch(struct paging_descriptor *desc);
 
 #endif

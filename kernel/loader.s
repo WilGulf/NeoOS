@@ -61,11 +61,13 @@ long_mode_entry:
     push kernel_physical_start
     push kernel_physical_end
 
-    jmp kmain
+    xor ebp, ebp
+    call kmain
 
-halt:
+.halt:
+    cli
     hlt
-    jmp halt
+    jmp .halt
 
 align 8
 gdt:
@@ -117,18 +119,10 @@ pdpt_table:
     dq pd_table + 0x03
     times 511 dq 0
 
-%define ps_flag 0x03
-%define page_increment 0x1000
-
 align 0x1000
 pd_table:
-    dq pt_table + ps_flag
-    times 511 dq 0
-
-align 0x1000
-pt_table:
     %assign addr 0x00000000
     %rep 512
-        dq addr + ps_flag
-        %assign addr addr + page_increment
+        dq addr + 0x83
+        %assign addr addr + 0x200000
     %endrep

@@ -1,3 +1,5 @@
+bits 64
+
 global kernel_registers
 kernel_registers:
     mov ax, 0x10

@@ -22,159 +22,147 @@
 #include "kheap.h"
 
 #include "../drivers/io/io.h"
+#include "../include/util.h"
 #include "../include/status.h"
 
-void paging_load_directory(uint32_t *directory);
+static struct paging_descriptor *current_paging_descriptor = 0;
 
-static uint32_t *current_directory = 0;
+struct paging_pml_entries *paging_pml4_entries_new() {
+    struct paging_pml_entries *entries_descriptor = kzalloc(sizeof(struct paging_pml_entries));
+    return entries_descriptor;
+}
+
+static bool paging_map_level_is_valid(paging_map_level_t level) {
+    return level == PAGING_MAP_LEVEL_4;
+}
 
 void *paging_align_address(void *ptr) {
-    if ((uint32_t)ptr % PAGE_SIZE) {
-        return (void *)((uint32_t)ptr + PAGE_SIZE - ((uint32_t)ptr % PAGE_SIZE));
+    if ((uintptr_t)ptr % PAGE_SIZE) {
+        return (void *)((uintptr_t)ptr + PAGE_SIZE - ((uintptr_t)ptr % PAGE_SIZE));
     }
-
     return ptr;
 }
 
 void *paging_align_to_lower_page(void *addr) {
-    uint32_t _addr = (uint32_t)addr;
+    uintptr_t _addr = (uintptr_t)addr;
     _addr -= (_addr % PAGE_SIZE);
     return (void *)_addr;
 }
 
-struct paging_4gb_chunk *paging_new_4gb(uint8_t flags) {
-    uint32_t *directory = kzalloc(sizeof(uint32_t) * PAGING_TOTAL_ENTRIES_PER_TABLE);
-    int offset = 0;
-    
-    for (int i = 0; i < PAGING_TOTAL_ENTRIES_PER_TABLE; i++) {
-        uint32_t *entry = kzalloc(sizeof(uint32_t) * PAGING_TOTAL_ENTRIES_PER_TABLE);
-        for (int b = 0; b < PAGING_TOTAL_ENTRIES_PER_TABLE; b++) {
-            entry[b] = (offset + (b * PAGE_SIZE)) | flags;
-        }
-        
-        offset += (PAGING_TOTAL_ENTRIES_PER_TABLE * PAGE_SIZE);
-        directory[i] = (uint32_t) entry | flags | PAGING_IS_WRITEABLE;
+void paging_switch(struct paging_descriptor *desc) {
+    current_paging_descriptor = desc;
+    paging_load_directory((uint64_t *)(&desc->pml->entries[0]));
+}
+
+struct paging_descriptor *paging_descriptor_new(paging_map_level_t root_map_level) {
+    if (!paging_map_level_is_valid(root_map_level)) {
+        return NULL;
     }
 
-    struct paging_4gb_chunk *chunk_4gb = kzalloc(sizeof(struct paging_4gb_chunk));
-    chunk_4gb->directory_entry = directory;
-    return chunk_4gb;
-}
-
-void paging_switch(struct paging_4gb_chunk *directory) {
-    paging_load_directory(directory->directory_entry);
-    current_directory = directory->directory_entry;
-}
-
-void paging_free_4gb(struct paging_4gb_chunk *chunk) {
-    for (int i = 0; i < 1024; i++) {
-        uint32_t entry = chunk->directory_entry[i];
-        uint32_t *table = (uint32_t *)(entry & 0xFFFFF000);
-        kfree(table);
+    struct paging_descriptor *descriptor = kzalloc(sizeof(struct paging_descriptor));
+    if (!descriptor) {
+        return NULL;
     }
 
-    kfree(chunk->directory_entry);
-    kfree(chunk);
+    descriptor->pml = paging_pml4_entries_new();
+    descriptor->level = root_map_level;
+    return descriptor;
 }
 
-uint32_t *paging_4gb_chunk_get_directory(struct paging_4gb_chunk *chunk) {
-    return chunk->directory_entry;
+static bool paging_is_aligned(void *addr) {
+    return ((uintptr_t)addr % PAGE_SIZE) == 0;
 }
 
-kbool paging_is_aligned(void *addr) {
-    return ((uint32_t) addr % PAGE_SIZE) == 0;
+static bool paging_null_entry(struct paging_descriptor_entry *entry) {
+    struct paging_descriptor_entry null_desc = {0};
+    return memcmp(entry, &null_desc, sizeof(struct paging_descriptor_entry)) == 0;
 }
 
-int paging_get_indexes(void *vaddr, uint32_t *directory_index_out, uint32_t *table_index_out) {
-    int res = 0;
-    if (!paging_is_aligned(vaddr)) {
-        res = -ERROR_INVALID_ARG;
-        goto out;
+int paging_map(struct paging_descriptor *desc, void *virt, void *phys, int flags) {
+    uintptr_t va = (uintptr_t)virt;
+    size_t pml4_index = (va >> 39) & 0x1FF;
+    size_t pdpt_index = (va >> 30) & 0x1FF;
+    size_t pd_index = (va >> 21) & 0x1FF;
+    size_t pt_index = (va >> 12) & 0x1FF;
+
+    struct paging_descriptor_entry *pml4_entry = &desc->pml->entries[pml4_index];
+    if (paging_null_entry(pml4_entry)) {
+        void *new_pdpt = kzalloc(sizeof(struct paging_descriptor_entry) * PAGING_TOTAL_ENTRIES_PER_TABLE);
+        pml4_entry->address = ((uintptr_t)new_pdpt) >> 12;
+        pml4_entry->present = 1;
+        pml4_entry->read_write = 1;
     }
 
-    *directory_index_out = ((uint32_t) vaddr / (PAGING_TOTAL_ENTRIES_PER_TABLE * PAGE_SIZE));
-    *table_index_out = ((uint32_t) vaddr % (PAGING_TOTAL_ENTRIES_PER_TABLE * PAGE_SIZE) / PAGE_SIZE);
+    struct paging_descriptor_entry *pdpt_entries = (struct paging_descriptor_entry *)((uintptr_t)(pml4_entry->address) << 12);
 
-out:
-    return res;
-}
-
-int paging_set(uint32_t *directory, void *vaddr, uint32_t val) {
-    if (!paging_is_aligned(vaddr)) {
-        return -ERROR_INVALID_ARG;
+    struct paging_descriptor_entry *pdpt_entry = &pdpt_entries[pdpt_index];
+    if (paging_null_entry(pdpt_entry)) {
+        void *new_pd = kzalloc(sizeof(struct paging_descriptor_entry) * PAGING_TOTAL_ENTRIES_PER_TABLE);
+        pdpt_entry->address = ((uintptr_t)new_pd) >> 12;
+        pdpt_entry->present = 1;
+        pdpt_entry->read_write = 1;
     }
 
-    uint32_t directory_index = 0;
-    uint32_t table_index = 0;
-    int res = paging_get_indexes(vaddr, &directory_index, &table_index);
-    if (res < 0) {
-        return res;
+    struct paging_descriptor_entry *pd_entries = (struct paging_descriptor_entry *)((uintptr_t)(pdpt_entry->address) << 12);
+
+    struct paging_descriptor_entry *pd_entry = &pd_entries[pd_index];
+    if (paging_null_entry(pd_entry)) {
+        void *new_pt = kzalloc(sizeof(struct paging_descriptor_entry) * PAGING_TOTAL_ENTRIES_PER_TABLE);
+        pd_entry->address = ((uintptr_t)new_pt) >> 12;
+        pd_entry->present = 1;
+        pd_entry->read_write = 1;
     }
 
-    uint32_t entry = directory[directory_index];
-    uint32_t *table = (uint32_t *)(entry & 0xFFFFF000);
-    table[table_index] = val;
+    struct paging_descriptor_entry *pt_entries = (struct paging_descriptor_entry *)((uintptr_t)(pd_entry->address) << 12);
+
+    struct paging_descriptor_entry *pt_entry = &pt_entries[pt_index];
+    if (!paging_null_entry(pt_entry)) {
+        paging_invalidate_tlb_entry(virt);
+    }
+    pt_entry->address = ((uintptr_t)phys) >> 12;
+    pt_entry->present = (flags & PAGING_IS_PRESENT) ? 1 : 0;
+    pt_entry->read_write = (flags & PAGING_IS_WRITEABLE) ? 1 : 0;
 
     return 0;
-} 
-
-int paging_map(struct paging_4gb_chunk *directory, void *virt, void *phys, int flags) {
-    if (
-        ((uint32_t)virt % PAGE_SIZE) || 
-        ((uint32_t)phys % PAGE_SIZE)
-    ) {
-        return -ERROR_INVALID_ARG;
-    }
-
-    return paging_set(directory->directory_entry, virt, (uint32_t)phys | flags);
 }
 
-int paging_map_range(struct paging_4gb_chunk *directory, void *virt, void *phys, int count, int flags) {
-    int res = 0;
-    for (int i = 0; i < count; i++) {
-        res = paging_map(directory, virt, phys, flags);
-        if (res < 0) {
-            break;
-        }
-
+int paging_map_range(struct paging_descriptor *desc, void *virt, void *phys, size_t count, int flags) {
+    for (int i = 0; i < count; i++) {        
+        paging_map(desc, virt, phys, flags);
         virt += PAGE_SIZE;
         phys += PAGE_SIZE;
     }
-
-    return res;
+    
+    return 0;
 }
 
-int paging_map_to(struct paging_4gb_chunk *directory, void *virt, void *phys, void *phys_end, int flags) {
+int paging_map_to(struct paging_descriptor *desc, void *virt, void *phys, void *phys_end, int flags) {
     int res = 0;
-    if (
-        ((uint32_t)virt % PAGE_SIZE) || 
-        ((uint32_t)phys % PAGE_SIZE) || 
-        ((uint32_t)phys_end % PAGE_SIZE) || 
-        ((uint32_t)phys_end < (uint32_t)phys)
-    ) {
+
+    if ((uintptr_t)virt % PAGE_SIZE) {
         res = -ERROR_INVALID_ARG;
         goto out;
     }
 
-    uint32_t total_bytes = phys_end - phys;
-    int total_pages = total_bytes / PAGE_SIZE;
-    res = paging_map_range(directory, virt, phys, total_pages, flags);
+    if ((uintptr_t)phys % PAGE_SIZE) {
+        res = -ERROR_INVALID_ARG;
+        goto out;
+    }
+
+    if ((uintptr_t)phys_end % PAGE_SIZE) {
+        res = -ERROR_INVALID_ARG;
+        goto out;
+    }
+
+    if ((uintptr_t)phys_end < (uintptr_t)phys) {
+        res = -ERROR_INVALID_ARG;
+        goto out;
+    }
+
+    uint64_t total_bytes = phys_end - phys;
+    size_t total_pages = total_bytes / PAGE_SIZE;
+    res = paging_map_range(desc, virt, phys, total_pages, flags);
 
 out:
     return res;
-}
-
-uint32_t paging_get(uint32_t *directory, void *virt) {
-    uint32_t directory_index = 0;
-    uint32_t table_index = 0;
-    paging_get_indexes(virt, &directory_index, &table_index);
-    uint32_t entry = directory[directory_index];
-    uint32_t *table = (uint32_t *)(entry & 0xFFFFF000);
-    return table[table_index];
-}
-
-void *paging_get_physical_address(uint32_t *directory, void *virt) {
-    void *vaddr_new = (void *)paging_align_to_lower_page(virt);
-    void *diff = (void *)((uint32_t)virt - (uint32_t)vaddr_new);
-    return (void *)((paging_get(directory, vaddr_new) & 0xFFFFF000) + diff);
 }

@@ -21,16 +21,15 @@
 	kernel/syscalls/fs.o \
 	kernel/syscalls/timer.o
 
-OBJECTS = kernel/loader.o kernel/kmain.o \
+OBJECTS = kernel/loader.o kernel/kmain.o kernel/kernel.o kernel/panic.o \
 	kernel/include/util.o \
 	kernel/drivers/io/fb_io.o kernel/drivers/io/kprint.o kernel/drivers/io/io_ports.o \
-	kernel/memory/heap.o kernel/memory/kheap.o
+	kernel/memory/heap.o kernel/memory/kheap.o kernel/memory/paging.o kernel/memory/paging_asm.o
 
 
 #C compiler
 CC = x86_64-elf-gcc
 CFLAGS = -m64 -ffreestanding -nostdlib -nostdinc -fno-builtin -fno-stack-protector \
-	-fno-pic -fno-pie -mno-red-zone -mno-mmx -mno-sse -mno-sse2 -mno-80387 \
 	-Wall -Wextra -g -c
 
 #Linker
