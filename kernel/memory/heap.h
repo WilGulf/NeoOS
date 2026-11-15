@@ -29,7 +29,17 @@
 #define HEAP_BLOCK_HAS_NEXT 0B10000000
 #define HEAP_BLOCK_IS_FIRST 0B01000000
 
+#define HEAP_BLOCK_SIZE 0x1000
+
+#define MINIMAL_HEAP_ADDRESS 0x01100000
+#define MINIMAL_HEAP_TABLE_ADDRESS 0x01000000
+#define MINIMAL_HEAP_TABLE_SIZE MINIMAL_HEAP_ADDRESS - MINIMAL_HEAP_TABLE_ADDRESS
+
+#define HEAP_MINIMUM_SIZE_BYTES 104857600
+
 typedef unsigned char HEAP_BLOCK_TABLE_ENTRY;
+typedef void *(*HEAP_BLOCK_ALLOCATED_CALLBACK_FUNCTION)(void *ptr, size_t size);
+typedef void (*HEAP_BLOCK_FREE_CALLBACK_FUNCTION)(void *ptr);
 
 struct heap_table {
     HEAP_BLOCK_TABLE_ENTRY *entries;
@@ -39,10 +49,31 @@ struct heap_table {
 struct heap {
     struct heap_table *table;
     void *saddr;
+    void *eaddr;
+    size_t total_blocks;
+    size_t free_blocks;
+    size_t used_blocks;
+    HEAP_BLOCK_ALLOCATED_CALLBACK_FUNCTION block_allocated_callback;
+    HEAP_BLOCK_FREE_CALLBACK_FUNCTION block_free_callback;
 };
+
+uintptr_t heap_align_value_to_upper(uintptr_t val);
+uintptr_t heap_align_value_to_lower(uintptr_t val);
+
+bool heap_is_address_within_heap(struct heap *heap, void *addr);
+int64_t heap_address_to_block(struct heap *heap, void *address);
+
+void heap_callbacks_set(struct heap *heap, HEAP_BLOCK_ALLOCATED_CALLBACK_FUNCTION allocated_function, HEAP_BLOCK_FREE_CALLBACK_FUNCTION free_function);
 
 int heap_create(struct heap *heap, void *ptr, void *end, struct heap_table *table);
 void *heap_malloc(struct heap *heap, size_t size);
 void heap_free(struct heap *heap, void *ptr);
+void *heap_zalloc(struct heap *heap, size_t size);
+
+size_t heap_total_size(struct heap *heap);
+size_t heap_total_used(struct heap *heap);
+size_t heap_total_available(struct heap *heap);
+
+size_t heap_allocation_block_count(struct heap *heap, void *saddr);
 
 #endif

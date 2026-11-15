@@ -1,6 +1,7 @@
 #include "panic.h"
 
 #include "drivers/io/io.h"
+#include "timer/timer.h"
 #include "include/va_list.h"
 
 int pprintf(const char *fmt, ...) {
@@ -9,7 +10,7 @@ int pprintf(const char *fmt, ...) {
     char message[1024];
     char buffer[1152];
 
-    uint32_t ms = 0;//timer_get_ms();
+    uint32_t ms = timer_get_ms();
     int sec = ms / 1000;
     int sec_ms = ms % 1000;
 

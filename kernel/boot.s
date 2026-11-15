@@ -1,104 +1,164 @@
-ORG 0x7C00
-BITS 16
-
-%ifndef KERNEL_SECTORS
-%define KERNEL_SECTORS 256          ; the Makefile overrides this
-%endif
+ORG 0x7c00
+bits 16
 
 CODE_SEG equ gdt_code - gdt_start
 DATA_SEG equ gdt_data - gdt_start
 
+jmp short start
+nop
+
+
 start:
-    cli
-    xor ax, ax
+    jmp 0:step2
+
+step2:
+    mov ax, 0x00
     mov ds, ax
     mov es, ax
     mov ss, ax
-    mov sp, 0x7C00
+    mov fs, ax
+    mov es, ax
 
-    in  al, 0x92                    ; enable A20
-    or  al, 2
+    in al, 0x92
+    or al, 2
     out 0x92, al
 
-    lgdt [gdt_descriptor]
+    mov sp, 0x7C00
+
+    call load_memory_map
+
+    sti
+
+.load_protected:
+    cli
+    lgdt[gdt_descriptor]
     mov eax, cr0
-    or  eax, 1
+    or eax, 0x1
     mov cr0, eax
     jmp CODE_SEG:load32
+    
+gdt_start:
+gdt_null:
+    dd 0x0
+    dd 0x0
 
-BITS 32
-load32:
+gdt_code:
+    dw 0xffff
+    dw 0
+    db 0
+    db 0x9a
+    db 11001111b
+    db 0
+
+gdt_data:
+    dw 0xffff
+    dw 0
+    db 0
+    db 0x92
+    db 11001111b
+    db 0
+
+gdt_end:
+
+gdt_descriptor:
+    dw gdt_end - gdt_start-1
+    dd gdt_start
+
+load_memory_map:
+    mov word [total_memory_map_entries], 0
+    mov di, 0x7E00
+    mov cx, 24
+    xor bx, bx
+
+    o32 mov eax, 0xE820
+    o32 mov edx, 0x534D4150
+    
+.get_e820_entry:
+    int 0x15
+    jc .done
+
+    o32 cmp eax, 0x534D4150
+    jne .done
+
+    inc word [total_memory_map_entries]
+
+    o32 mov eax, 0xE820
+    mov cx, 24
+
+    add di, cx
+
+    test bx, bx
+    jnz .get_e820_entry
+
+.done:
+    ret
+ 
+ bits 32
+ load32:
     mov ax, DATA_SEG
     mov ds, ax
     mov es, ax
     mov fs, ax
     mov gs, ax
     mov ss, ax
-    mov esp, 0x90000
 
-    mov eax, 1                      ; LBA 1 = sector after the boot sector
-    mov ecx, KERNEL_SECTORS
-    mov edi, 0x100000
+    in al, 0x92
+    or al, 2
+    out 0x92, al
+
+    mov eax, 1
+    mov ecx, 100
+    mov edi, 0x0100000
+
+
     call ata_lba_read
-    jmp CODE_SEG:0x100000           ; -> loader
+    jmp CODE_SEG:0x0100000
 
-; eax = start LBA, ecx = sector count, edi = destination
 ata_lba_read:
-.next:
-    push eax
+    mov ebx, eax
+    shr eax, 24
+    or eax, 0xE0
+    mov dx, 0x1F6
+    out dx, al
+
+    mov eax, ecx
+    mov dx, 0x1F2
+    out dx, al
+
+    mov eax, ebx
+    mov dx, 0x1F3
+    out dx, al
+
+    mov dx, 0x1F4
+    mov eax, ebx
+    shr eax, 8
+    out dx, al
+
+    mov dx, 0x1F5
+    mov eax, ebx
+    shr eax, 16
+    out dx, al
+
+    mov dx, 0x1f7
+    mov al, 0x20
+    out dx, al
+
+.next_sector:
     push ecx
-    mov  ebx, eax
 
-    mov  dx, 0x1F6
-    shr  eax, 24
-    or   al, 0xE0                   ; master, LBA mode
-    out  dx, al
+.try_again:
+    mov dx, 0x1f7
+    in al, dx
+    test al, 8
+    jz .try_again
 
-    mov  dx, 0x1F2
-    mov  al, 1
-    out  dx, al
-
-    mov  eax, ebx
-    mov  dx, 0x1F3
-    out  dx, al
-    shr  eax, 8
-    mov  dx, 0x1F4
-    out  dx, al
-    shr  eax, 8
-    mov  dx, 0x1F5
-    out  dx, al
-
-    mov  dx, 0x1F7
-    mov  al, 0x20                   ; READ SECTORS
-    out  dx, al
-.wait:
-    in   al, dx
-    and  al, 0x88                   ; BSY clear, DRQ set
-    cmp  al, 0x08
-    jne  .wait
-
-    mov  ecx, 256
-    mov  dx, 0x1F0
-    rep  insw
-
-    pop  ecx
-    pop  eax
-    inc  eax
-    loop .next
+    mov ecx, 256
+    mov dx, 0x1F0
+    rep insw
+    pop ecx
+    loop .next_sector
     ret
 
-gdt_start:
-    dq 0
-gdt_code:
-    dw 0xFFFF, 0
-    db 0, 0x9A, 0xCF, 0
-gdt_data:
-    dw 0xFFFF, 0
-    db 0, 0x92, 0xCF, 0
-gdt_end:
-gdt_descriptor:
-    dw gdt_end - gdt_start - 1
-    dd gdt_start
-
-times 510 - ($ - $$) db 0
+times 510-($ - $$) db 0
+total_memory_map_entries:
 dw 0xAA55

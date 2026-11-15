@@ -23,8 +23,9 @@
 
 OBJECTS = kernel/loader.o kernel/kmain.o kernel/kernel.o kernel/panic.o \
 	kernel/include/util.o \
+	kernel/timer/timer.o \
 	kernel/drivers/io/fb_io.o kernel/drivers/io/kprint.o kernel/drivers/io/io_ports.o \
-	kernel/memory/heap.o kernel/memory/kheap.o kernel/memory/paging.o kernel/memory/paging_asm.o
+	kernel/memory/heap.o kernel/memory/kheap.o kernel/memory/multiheap.o kernel/memory/paging.o kernel/memory/paging_asm.o kernel/memory/memory.o
 
 
 #C compiler
@@ -40,7 +41,8 @@ AS = nasm
 ASFLAGS = -f elf64
 
 # Emulator
-QEMU=qemu-system-x86_64
+QEMU = qemu-system-x86_64
+QEMUFLAGS ?=
 
 .PHONY: all run clean kernel_clean mkdir
 
@@ -65,7 +67,7 @@ output/nexus.bin: output/boot.bin output/kernel.bin
 	dd if=/dev/zero bs=1M count=16 >> $@
 
 run: all
-	$(QEMU) -hda output/nexus.bin
+	$(QEMU) -hda output/nexus.bin $(QEMUFLAGS)
 
 disk_contents: output/disk.img
 	./fstools/copy.neofs --disk output/disk.img if=userland/configs/boot.cfg trgt=sysro/boot.cfg --flags r

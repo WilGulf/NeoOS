@@ -73,12 +73,16 @@ struct paging_descriptor {
 
 
 struct paging_pml_entries *paging_pml4_entries_new();
+struct paging_descriptor *paging_current_descriptor();
+bool paging_is_aligned(void *addr);
 void *paging_align_address(void *ptr);
 void *paging_align_to_lower_page(void *addr);
 struct paging_descriptor *paging_descriptor_new(paging_map_level_t root_map_level);
 int paging_map(struct paging_descriptor *desc, void *virt, void *phys, int flags);
 int paging_map_range(struct paging_descriptor *desc, void *virt, void *phys, size_t count, int flags);
 int paging_map_to(struct paging_descriptor *desc, void *virt, void *phys, void *phys_end, int flags);
+int paging_map_e820_memory_regions(struct paging_descriptor *desc);
+void *paging_get_physical_address(struct paging_descriptor *desc, void *vaddr);
 
 void paging_invalidate_tlb_entry(void *addr);
 void paging_load_directory(uintptr_t *directory);

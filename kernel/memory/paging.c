@@ -19,7 +19,9 @@
  */
 
 #include "paging.h"
+#include "memory.h"
 #include "kheap.h"
+#include "heap.h"
 
 #include "../drivers/io/io.h"
 #include "../include/util.h"
@@ -34,6 +36,10 @@ struct paging_pml_entries *paging_pml4_entries_new() {
 
 static bool paging_map_level_is_valid(paging_map_level_t level) {
     return level == PAGING_MAP_LEVEL_4;
+}
+
+struct paging_descriptor *paging_current_descriptor() {
+    return current_paging_descriptor;
 }
 
 void *paging_align_address(void *ptr) {
@@ -69,7 +75,7 @@ struct paging_descriptor *paging_descriptor_new(paging_map_level_t root_map_leve
     return descriptor;
 }
 
-static bool paging_is_aligned(void *addr) {
+bool paging_is_aligned(void *addr) {
     return ((uintptr_t)addr % PAGE_SIZE) == 0;
 }
 
@@ -126,6 +132,31 @@ int paging_map(struct paging_descriptor *desc, void *virt, void *phys, int flags
     return 0;
 }
 
+int paging_map_e820_memory_regions(struct paging_descriptor *desc) {
+    paging_map_to(desc, (void *)0x00, (void *)0x00, (void *)0x100000, PAGING_IS_WRITEABLE | PAGING_IS_PRESENT);
+
+    size_t total_entries = e820_total_entries();
+    for (size_t i = 0; i < total_entries; i++) {
+        struct e820_entry *entry = e820_entry(i);
+        if (entry->type == 1) {
+            void *base_addr = (void *)entry->base_addr;
+            void *end_addr = (void *)entry->base_addr + entry->length;
+
+            if (!paging_is_aligned(base_addr)) {
+                base_addr = paging_align_address(base_addr);
+            }
+
+            if (!paging_is_aligned(end_addr)) {
+                base_addr = paging_align_to_lower_page(end_addr);
+            }
+
+            paging_map_to(desc, base_addr, base_addr, end_addr, PAGING_IS_WRITEABLE | PAGING_IS_PRESENT);
+        }
+    }
+
+    return 0;
+}
+
 int paging_map_range(struct paging_descriptor *desc, void *virt, void *phys, size_t count, int flags) {
     for (int i = 0; i < count; i++) {        
         paging_map(desc, virt, phys, flags);
@@ -165,4 +196,60 @@ int paging_map_to(struct paging_descriptor *desc, void *virt, void *phys, void *
 
 out:
     return res;
+}
+
+struct paging_descriptor_entry *paging_get(struct paging_descriptor *desc, void *virt) {
+    uint64_t va = (uint64_t)virt;
+    size_t pml4_index = (va >> 39) & 0x1FF;
+    size_t pdpt_index = (va >> 30) & 0x1FF;
+    size_t pd_index = (va >> 21) & 0x1FF;
+    size_t pt_index = (va >> 12) & 0x1FF;
+
+    struct paging_descriptor_entry *pml4_entry = &desc->pml->entries[pml4_index];
+    if (paging_null_entry(pml4_entry)) {
+        return NULL;
+    }
+
+    struct paging_descriptor_entry *pdpt_entries = (struct paging_descriptor_entry *)((uint64_t)(pml4_entry->address) << 12);
+    if (paging_null_entry(pdpt_entries)) {
+        return NULL;
+    }
+
+    struct paging_descriptor_entry *pdpt_entry = &pdpt_entries[pdpt_index];
+    if (paging_null_entry(pdpt_entries)) {
+        return NULL;
+    }
+
+    struct paging_descriptor_entry *pd_entries = (struct paging_descriptor_entry *)((uint64_t)(pdpt_entry->address) << 12);
+    if (paging_null_entry(pd_entries)) {
+        return NULL;
+    }
+
+    struct paging_descriptor_entry *pd_entry = &pd_entries[pd_index];
+    if (paging_null_entry(pd_entry)) {
+        return NULL;
+    }
+
+    struct paging_descriptor_entry *pt_entries = (struct paging_descriptor_entry *)((uint64_t)(pd_entry->address) << 12);
+    if (paging_null_entry(pt_entries)) {
+        return NULL;
+    }
+
+    struct paging_descriptor_entry *pt_entry = &pt_entries[pt_index];
+
+    return pt_entry;
+}
+
+void *paging_get_physical_address(struct paging_descriptor *desc, void *vaddr) {
+    struct paging_descriptor_entry *desc_entry = paging_get(desc, vaddr);
+    if (!desc_entry) {
+        return NULL;
+    }
+
+    uint64_t phys_base_addr = ((uint64_t)desc_entry->address) << 12;
+    uint64_t offset = ((uint64_t)vaddr) & 0xFFF;
+
+    uint64_t full_addr = phys_base_addr + offset;
+
+    return (void *)full_addr;
 }
