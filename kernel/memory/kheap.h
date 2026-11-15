@@ -24,6 +24,7 @@
 #include "../include/stdint.h"
 
 void kheap_init();
+void kheap_post_paging();
 void *kmalloc(size_t size);
 void *kzalloc(size_t size);
 void *kpalloc(size_t size);

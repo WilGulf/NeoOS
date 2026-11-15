@@ -72,6 +72,8 @@ int kmain() {
     paging_switch(kernel_paging_descriptor);
     kprintf("Paging inititalized\n");
 
+    kheap_post_paging();
+
     /*
 
     gdt_init();
