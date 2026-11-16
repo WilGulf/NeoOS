@@ -1,19 +1,6 @@
-#Files to be output of compilation
-#OBJECTS = kernel/loader.o kernel/kmain.o kernel/kernel_asm.o \
-	kernel/drivers/io/fb_io.o kernel/drivers/io/kprint.o kernel/drivers/io/io_ports.o \
-	kernel/drivers/keyboard/keyboard.o kernel/drivers/keyboard/ps2.o \
-	kernel/gdt/gdt_asm.o kernel/gdt/gdt.o \
-	kernel/include/util.o \
-	kernel/memory/paging.o kernel/memory/paging_asm.o kernel/memory/heap.o kernel/memory/kheap.o\
-	kernel/drivers/disk/disk.o kernel/drivers/fs/file.o \
-	kernel/drivers/fs/path_parser.o kernel/drivers/disk/disk_streamer.o \
-	kernel/drivers/fs/ramfs/ramfs.o kernel/drivers/fs/neofs/neofs.o \
-	kernel/panic.o \
-	kernel/task/task.o kernel/task/task_asm.o kernel/task/process.o kernel/task/formats/elf.o kernel/task/formats/elf_loader.o \
-
 OBJECTS = kernel/loader.o kernel/kmain.o kernel/kernel.o kernel/panic.o \
 	kernel/include/util.o \
-	kernel/idt/idt.o kernel/idt/idt_asm.o kernel/timer/timer.o \
+	kernel/idt/idt.o kernel/idt/idt_asm.o kernel/idt/irq.o kernel/timer/timer.o \
 	kernel/gdt/gdt.o kernel/gdt/gdt_asm.o \
 	kernel/drivers/io/fb_io.o kernel/drivers/io/kprint.o kernel/drivers/io/io_ports.o \
 	kernel/drivers/keyboard/keyboard.o kernel/drivers/keyboard/ps2.o \

@@ -23,6 +23,7 @@
 
 #include "../../kernel.h"
 #include "../../idt/idt.h"
+#include "../../idt/irq.h"
 #include "../../task/task.h"
 #include "../../include/stdint.h"
 #include "../../include/util.h"
@@ -66,6 +67,7 @@ struct keyboard ps2_keyboard = {
 int ps2_keyboard_init() {
     idt_register_interrupt_callback(ISR_KEYBOARD_INTERRUPT, ps2_keyboard_handle_interrupt);
     keyboard_set_capslock(&ps2_keyboard, KEYBOARD_KEY_FALSE);
+    irq_enable(IRQ_KEYBOARD);
     outb(PS2_PORT, PS2_COMMAND_ENABLE_FIRST_PORT);
     return 0;
 }

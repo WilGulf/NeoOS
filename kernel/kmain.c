@@ -21,6 +21,7 @@
 #include "panic.h"
 #include "timer/timer.h"
 #include "idt/idt.h"
+#include "idt/irq.h"
 #include "gdt/gdt.h"
 #include "task/task.h"
 #include "task/process.h"
@@ -81,7 +82,11 @@ int kmain() {
     kheap_post_paging();
 
     idt_init();
+
+    irq_enable(IRQ_TIMER);
     timer_init();
+
+    keyboard_init();
 
     void *mb_stack_tss_end = kzalloc(0x100000);
     void *mb_stack_tss_begin = (void *)(((uintptr_t)mb_stack_tss_end) + 0x100000);

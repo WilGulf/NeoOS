@@ -94,8 +94,28 @@ void *isr80h_handler(int command, struct interrupt_frame *frame) {
     return res;
 }
 
+static void print_hex64(uint64_t v) {
+    static const char *d = "0123456789ABCDEF";
+    char out[19];
+    out[0] = '0'; out[1] = 'x';
+    for (int i = 0; i < 16; i++) out[2 + i] = d[(v >> (60 - i * 4)) & 0xF];
+    out[18] = 0;
+    kprintf("%s", out);
+}
+
 void interrupt_handler(int interrupt, struct interrupt_frame *frame) {
     kernel_page();
+
+    if (interrupt < 0x20) {
+        uint64_t cr2;
+        __asm__ volatile("mov %%cr2, %0" : "=r"(cr2));
+        kprintf("\nEXCEPTION vector %d\n rip=", interrupt);
+        print_hex64(frame->ip);
+        kprintf("\n cs=");  print_hex64(frame->cs);
+        kprintf("\n rsp=");  print_hex64(frame->rsp);
+        kprintf("\n cr2=");  print_hex64(cr2);
+        kprintf("\n");
+    }
 
     if (interrupt_callbacks[interrupt] != 0) {
         task_current_save_state(frame);
@@ -103,7 +123,6 @@ void interrupt_handler(int interrupt, struct interrupt_frame *frame) {
     }
 
     task_page();
-    
     outb(0x20, 0x20);
 }
 

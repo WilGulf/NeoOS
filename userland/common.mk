@@ -18,7 +18,7 @@ INCLUDES := -I$(SRC_DIR) -I$(STDLIB_DIR)/src $(EXTRA_INCLUDES)
 CFLAGS := -g $(OPT) -m64 -ffreestanding -fno-builtin -fno-pic -fno-pie \
         -fomit-frame-pointer -nostdlib -nostartfiles -nodefaultlibs \
         -Wall -Werror -Wno-unused-function -Wno-unused-label \
-        -Wno-unused-parameter -Wno-cpp \
+        -Wno-unused-parameter -Wno-cpp -mgeneral-regs-only \
         -MMD -MP $(INCLUDES) $(EXTRA_CFLAGS)
 
 LDFLAGS := -g -ffreestanding -nostdlib -static -no-pie \

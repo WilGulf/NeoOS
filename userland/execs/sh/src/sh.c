@@ -32,12 +32,12 @@ void print_prompt(void) {
     char cwd[MAX_PATH];
     get_cwd(cwd, sizeof(cwd));
     char *path = strrchr(cwd, '/');
-    printf(" sh %s %% ", path);
+    printf(" sh %s %% ", path ? path : cwd);
 }
 
 int main(int argc, char **argv) {
     // VARIABLES
-    char path1[256 + 9] = "0:/execs/";
+    char path1[256 + 9] = "1:/execs/";
 
     char cmd[256] = "";
     char *p;
