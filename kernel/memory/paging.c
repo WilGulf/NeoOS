@@ -23,6 +23,7 @@
 #include "kheap.h"
 #include "heap.h"
 
+#include "../panic.h"
 #include "../drivers/io/io.h"
 #include "../include/util.h"
 #include "../include/status.h"
@@ -60,6 +61,15 @@ void paging_switch(struct paging_descriptor *desc) {
     paging_load_directory((uint64_t *)(&desc->pml->entries[0]));
 }
 
+bool paging_is_aligned(void *addr) {
+    return ((uintptr_t)addr % PAGE_SIZE) == 0;
+}
+
+static bool paging_null_entry(struct paging_descriptor_entry *entry) {
+    struct paging_descriptor_entry null_desc = {0};
+    return memcmp(entry, &null_desc, sizeof(struct paging_descriptor_entry)) == 0;
+}
+
 struct paging_descriptor *paging_descriptor_new(paging_map_level_t root_map_level) {
     if (!paging_map_level_is_valid(root_map_level)) {
         return NULL;
@@ -75,13 +85,48 @@ struct paging_descriptor *paging_descriptor_new(paging_map_level_t root_map_leve
     return descriptor;
 }
 
-bool paging_is_aligned(void *addr) {
-    return ((uintptr_t)addr % PAGE_SIZE) == 0;
+void paging_descriptor_entry_free(struct paging_descriptor_entry *table_entry, paging_map_level_t level) {
+    if (paging_null_entry(table_entry)) {
+        return;
+    }
+
+    if (level == 0) {
+        panic("", 1);
+    }
+
+    if (level > PAGING_MAP_LEVEL_4) {
+        panic("", 1);
+    }
+
+    if (level > 1) {
+        for (int i = 0; i < PAGING_TOTAL_ENTRIES_PER_TABLE; i++) {
+            struct paging_descriptor_entry *entry = &table_entry[i];
+            if (!paging_null_entry(entry)) {
+                struct paging_descriptor_entry *child_entry = (struct paging_descriptor_entry *)((uint64_t)(entry->address) << 12);
+                if (child_entry) {
+                    paging_descriptor_entry_free(child_entry, level - 1);
+                }
+            }
+        }
+    }
+
+    kfree(table_entry);
 }
 
-static bool paging_null_entry(struct paging_descriptor_entry *entry) {
-    struct paging_descriptor_entry null_desc = {0};
-    return memcmp(entry, &null_desc, sizeof(struct paging_descriptor_entry)) == 0;
+void paging_descriptor_free(struct paging_descriptor *descriptor) {
+    paging_map_level_t level = descriptor->level;
+    for (int i = 0; i < PAGING_TOTAL_ENTRIES_PER_TABLE; i++) {
+        struct paging_descriptor_entry *entry = &descriptor->pml->entries[i];
+        if (!paging_null_entry(entry)) {
+            struct paging_descriptor_entry *child_entry = (struct paging_descriptor_entry *)((uint64_t)(entry->address) << 12);
+            if (child_entry) {
+                paging_descriptor_entry_free(child_entry, level - 1);
+            }
+        }
+    }
+
+    kfree(descriptor->pml);
+    kfree(descriptor);
 }
 
 int paging_map(struct paging_descriptor *desc, void *virt, void *phys, int flags) {
@@ -97,6 +142,7 @@ int paging_map(struct paging_descriptor *desc, void *virt, void *phys, int flags
         pml4_entry->address = ((uintptr_t)new_pdpt) >> 12;
         pml4_entry->present = 1;
         pml4_entry->read_write = 1;
+        pml4_entry->user_supervisor = 1;
     }
 
     struct paging_descriptor_entry *pdpt_entries = (struct paging_descriptor_entry *)((uintptr_t)(pml4_entry->address) << 12);
@@ -107,6 +153,7 @@ int paging_map(struct paging_descriptor *desc, void *virt, void *phys, int flags
         pdpt_entry->address = ((uintptr_t)new_pd) >> 12;
         pdpt_entry->present = 1;
         pdpt_entry->read_write = 1;
+        pdpt_entry->user_supervisor = 1;
     }
 
     struct paging_descriptor_entry *pd_entries = (struct paging_descriptor_entry *)((uintptr_t)(pdpt_entry->address) << 12);
@@ -117,6 +164,7 @@ int paging_map(struct paging_descriptor *desc, void *virt, void *phys, int flags
         pd_entry->address = ((uintptr_t)new_pt) >> 12;
         pd_entry->present = 1;
         pd_entry->read_write = 1;
+        pd_entry->user_supervisor = 1;
     }
 
     struct paging_descriptor_entry *pt_entries = (struct paging_descriptor_entry *)((uintptr_t)(pd_entry->address) << 12);
@@ -128,6 +176,7 @@ int paging_map(struct paging_descriptor *desc, void *virt, void *phys, int flags
     pt_entry->address = ((uintptr_t)phys) >> 12;
     pt_entry->present = (flags & PAGING_IS_PRESENT) ? 1 : 0;
     pt_entry->read_write = (flags & PAGING_IS_WRITEABLE) ? 1 : 0;
+    pt_entry->user_supervisor = (flags & PAGING_ACCESS_FROM_ALL) ? 1 : 0;
 
     return 0;
 }
@@ -147,7 +196,7 @@ int paging_map_e820_memory_regions(struct paging_descriptor *desc) {
             }
 
             if (!paging_is_aligned(end_addr)) {
-                base_addr = paging_align_to_lower_page(end_addr);
+                end_addr = paging_align_to_lower_page(end_addr);
             }
 
             paging_map_to(desc, base_addr, base_addr, end_addr, PAGING_IS_WRITEABLE | PAGING_IS_PRESENT);

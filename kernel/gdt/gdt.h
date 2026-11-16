@@ -3,60 +3,53 @@
 
 #include "../include/stdint.h"
 
-struct gdt_entry_struct {
-    unsigned short limit;
-    unsigned short base_low;
-    unsigned char base_middle;
-    unsigned char access;
-    unsigned char flags;
-    unsigned char base_high;
+struct gdt_entry {
+    uint16_t segment;
+    uint16_t base_first;
+    uint8_t base;
+    uint8_t access;
+    uint8_t flags;
+    uint8_t base_last;
 
 } __attribute__((packed));
 
-struct gdt {
-    uint16_t limit;
-    unsigned int base;
-} __attribute__((packed));
+struct tss_descriptor {
+    uint16_t limit0;
+    uint16_t base0;
+    uint8_t base1;
+    uint8_t type;
+    uint8_t limit1_flags;
+    uint8_t base2;
+
+    uint32_t base3;
+    uint32_t reserved;
+};
 
 struct tss {
-    uint32_t link;
-    uint32_t esp0;
-    uint32_t ss0;
-    uint32_t esp1;
-    uint32_t ss1;
-    uint32_t esp2;
-    uint32_t ss2;
-    uint32_t cr3;
-    uint32_t eip;
-    uint32_t eflags;
-    uint32_t eax;
-    uint32_t ecx;
-    uint32_t edx;
-    uint32_t ebx;
-    uint32_t esp;
-    uint32_t ebp;
-    uint32_t esi;
-    uint32_t edi;
+    uint16_t link;
+    uint16_t reserved0;
+    uint64_t rsp0;
+    uint64_t rsp1;
+    uint64_t rsp2;
 
-    uint32_t es;
-    uint32_t cs;
-    uint32_t ss;
-    uint32_t ds;
-    uint32_t fs;
-    uint32_t gs;
-    uint32_t ldtr;
-    uint32_t iobp;
-    uint32_t ssp;
+    uint64_t reserved1;
+    
+    uint64_t ist1;
+    uint64_t ist2;
+    uint64_t ist3;
+    uint64_t ist4;
+    uint64_t ist5;
+    uint64_t ist6;
+    uint64_t ist7;
+
+    uint64_t reserved2;
+    uint16_t reserved3;
+    uint16_t iopb_offset;
+
 } __attribute__((packed));
 
-void load_gdt(struct gdt *);
-void flush_tss();
-
-int gdt_init();
-void set_gdt_gate(uint32_t num, uint32_t base, uint32_t limit, uint8_t access, uint8_t gran);
-void write_tss(uint32_t num, uint16_t ss0, uint32_t esp0);
-
-void switch_to_usermode(uint32_t eip, uint32_t esp);
-void set_tss_stack(uint32_t stack);
+void gdt_set(struct gdt_entry *entry, void *addr, uint16_t limit, uint8_t access, uint8_t flags);
+void gdt_set_tss(struct tss_descriptor *desc, void *tss_addr, uint16_t limit, uint8_t type, uint8_t flags);
+void tss_load(int tss_segment);
 
 #endif

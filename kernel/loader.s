@@ -48,8 +48,50 @@ long_mode_entry:
     mov gs, ax
     mov ss, ax
 
+
+
     mov rsp, 0x00200000
     mov rbp, rsp
+
+    mov al, 0x11
+    out 0x20, al
+
+    mov al, 0x20
+    out 0x21, al
+
+    mov al, 0x04
+    out 0x21, al
+
+    mov al, 0x01
+    out 0x21, al
+
+
+
+    mov al, 0x11
+    out 0xA0, al
+
+    mov al, 0x28
+    out 0xA1, al
+
+    mov al, 0x02
+    out 0xA1, al
+
+    mov al, 0x01
+    out 0xA1, al
+
+
+
+    mov al, 0xFB
+    out 0x21, al
+
+    mov al, 0xFF
+    out 0xA1, al
+
+    mov al, 0x20
+    out 0x20, al
+    out 0xA0, al
+
+
 
     extern kernel_virtual_start
     extern kernel_virtual_end
@@ -69,6 +111,7 @@ long_mode_entry:
     hlt
     jmp .halt
 
+global gdt
 align 8
 gdt:
     dq 0x0000000000000000
@@ -100,6 +143,34 @@ gdt:
     dw 0x0000
     db 0x00
     db 0x92
+    db 0x00
+    db 0x00
+
+    dw 0x0000
+    dw 0x0000
+    db 0x00
+    db 0xFA
+    db 0x20
+    db 0x00
+
+    dw 0x0000
+    dw 0x0000
+    db 0x00
+    db 0xF2
+    db 0x00
+    db 0x00
+
+    dw 0x0000
+    dw 0x0000
+    db 0x00
+    db 0x00
+    db 0x00
+    db 0x00
+
+    dw 0x0000
+    dw 0x0000
+    db 0x00
+    db 0x00
     db 0x00
     db 0x00
 

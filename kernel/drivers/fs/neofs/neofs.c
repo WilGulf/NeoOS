@@ -704,7 +704,7 @@ void *neofs_open(struct disk *disk, struct path_part *path, FILE_MODE mode) {
 
     struct meta_block meta_block;
     if (get_meta_block(meta_block_n, &meta_block, disk) < 0)
-        return -1;
+        return (void *)-1;
 
     if (meta_block.is_dir) {
         descriptor->type = FILE_TYPE_DIR;
@@ -723,7 +723,7 @@ err_out:
         kfree(descriptor);
     }
 
-    return err_code;
+    return (void *)err_code;
 }
 
 int neofs_read(struct disk *disk, void *descriptor, uint32_t size, uint32_t nmemb, char *out_ptr) {

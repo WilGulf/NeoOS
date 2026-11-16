@@ -18,50 +18,38 @@
 ; See NOTICE for the full list of GPL-derived files in this project.
 ;
 
+bits 64
+
 global task_return
 task_return:
-    mov ebp, esp
-    mov ebx, [ebp+4]
-    push dword [ebx+44]
-    push dword [ebx+40]
+    push qword[rdi+88]
+    push qword[rdi+80]
+    mov rax, [rdi+72]
+    or rax, 0x200
+    push rax
 
-    mov eax, [ebx+36]
-    or eax, 0x200
-    push eax
+    push qword 0x2B
+    push qword[rdi+56]
 
-    push dword [ebx+32]
-    push dword [ebx+28]
-
-    mov ax, [ebx+44]
-    mov ds, ax
-    mov es, ax
-    mov fs, ax
-    mov gs, ax
-
-    push dword [ebp+4]
     call restore_general_purpose_registers
-    add esp, 4
-
-    iretd
+    
+    iretq
 
 global restore_general_purpose_registers
 restore_general_purpose_registers:
-    push ebp
-    mov ebp, esp
-    mov ebx, [ebp+8]
-    mov edi, [ebx]
-    mov esi, [ebx+4]
-    mov ebp, [ebx+8]
-    mov edx, [ebx+16]
-    mov ecx, [ebx+20]
-    mov eax, [ebx+24]
-    mov ebx, [ebx+12]
-    add esp, 4
+    mov rsi, [rdi+8]
+    mov rbp, [rdi+16]
+    mov rbx, [rdi+24]
+    mov rdx, [rdi+32]
+    mov rcx, [rdi+40]
+    mov rax, [rdi+48]
+
+    mov rdi, [rdi]
     ret
 
 global user_registers
 user_registers:
-    mov ax, 0x23
+    mov ax, 0x2B
     mov ds, ax
     mov es, ax
     mov fs, ax

@@ -31,31 +31,30 @@
 #define USER_PROGRAM_STACK_SIZE 1024 * 16
 #define PROGRAM_VIRTUAL_STACK_ADDRESS_END PROGRAM_VIRTUAL_STACK_ADDRESS_START - USER_PROGRAM_STACK_SIZE 
 
-#define USER_DATA_SEGMENT 0x23
-#define USER_CODE_SEGMENT 0x1B
+#define USER_DATA_SEGMENT 0x33
+#define USER_CODE_SEGMENT 0x2B
 
 struct interrupt_frame;
 
 struct registers {
-    uint32_t edi;
-    uint32_t esi;
-    uint32_t ebp;
-    uint32_t ebx;
-    uint32_t edx;
-    uint32_t ecx;
-    uint32_t eax;
-
-    uint32_t ip;
-    uint32_t cs;
-    uint32_t flags;
-    uint32_t esp;
-    uint32_t ss;
+    uint64_t rdi;
+    uint64_t rsi;
+    uint64_t rbp;
+    uint64_t rbx;
+    uint64_t rdx;
+    uint64_t rcx;
+    uint64_t rax;
+    uint64_t ip;
+    uint64_t cs;
+    uint64_t flags;
+    uint64_t rsp;
+    uint64_t ss;
 };
 
 struct process;
 
 struct task {
-    struct paging_4gb_chunk *page_directory;
+    struct paging_descriptor *paging_desc;
     struct registers registers;
     struct process *process;
     struct task *next;

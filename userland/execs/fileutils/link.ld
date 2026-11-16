@@ -1,19 +1,14 @@
 ENTRY(_start)
-OUTPUT_FORMAT(elf32-i386)
+OUTPUT_FORMAT(elf64-x86-64)
 
 SECTIONS {
     . = 0x400000;
 
-    .text : ALIGN (0x1000)
+    .text : ALIGN(0x1000)
     {
         *(.text)
     }
-
-    .asm : ALIGN (0x1000)
-    {
-        *(.asm)
-    }
-
+    
     .rodata : ALIGN (0x1000)
     {
         *(.rodata*)

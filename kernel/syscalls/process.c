@@ -128,7 +128,7 @@ void *isr80h_command14_fork(struct interrupt_frame *frame) {
 
 void *isr80h_command16_get_processes(struct interrupt_frame *frame) {
     void *out = task_get_stack_item(task_current(), 0);
-    uint16_t max = task_get_stack_item(task_current(), 1);
+    uint16_t max = (uint16_t)task_get_stack_item(task_current(), 1);
 
     struct process_public processes[max];
     memset(&processes, 0, sizeof(processes));
@@ -155,7 +155,7 @@ void *isr80h_command17_terminate_process(struct interrupt_frame *frame) {
     check_process_promise(task_current()->process, PROMISE_KILL);
     check_allowed_with_privilege(task_current()->process, PRIVILEGE_KILL);
 
-    uint16_t id = task_get_stack_item(task_current(), 0);
+    uint16_t id = (uint16_t)task_get_stack_item(task_current(), 0);
     struct process *process = process_get(id);
     if (process != NULL) {
         if (process->privilege < task_current()->process->privilege) {

@@ -107,7 +107,7 @@ load_memory_map:
     out 0x92, al
 
     mov eax, 1
-    mov ecx, 100
+    mov ecx, 250
     mov edi, 0x0100000
 
 

@@ -334,7 +334,8 @@ void *multiheap_alloc(struct multiheap *multiheap, size_t size) {
     void *allocation_ptr = multiheap_alloc_first_pass(multiheap, size);
     if (allocation_ptr) {
         return allocation_ptr;
-    }    
+    }
+    return NULL;
 }
 
 void *multiheap_palloc(struct multiheap *multiheap, size_t size) {

@@ -20,15 +20,15 @@
 #include "memory/memory.h"
 #include "panic.h"
 #include "timer/timer.h"
-
-/*
-#include "gdt/gdt.h"
 #include "idt/idt.h"
+#include "gdt/gdt.h"
 #include "task/task.h"
 #include "task/process.h"
 #include "syscalls/isr80h.h"
 #include "drivers/disk/disk.h"
 #include "drivers/fs/path_parser.h"
+
+/*
 #include "drivers/keyboard/keyboard.h"
 */
 
@@ -39,6 +39,8 @@ extern uint32_t kernel_physical_end;
 extern uint32_t stack_top;
 
 struct paging_descriptor *kernel_paging_descriptor = 0;
+struct tss tss;
+extern struct gdt_entry gdt[]; 
 
 void kernel_page() {
     kernel_registers();
@@ -57,7 +59,11 @@ struct kernel_version *get_kernel_version() {
     return &kernel_version;
 }
 
-int kmain() {    
+struct paging_descriptor *kernel_descriptor() {
+    return kernel_paging_descriptor;
+}
+
+int kmain() {
     fb_clear();
     kprintf("\n");
     
@@ -73,6 +79,54 @@ int kmain() {
     kprintf("Paging inititalized\n");
 
     kheap_post_paging();
+
+    idt_init();
+    timer_init();
+
+    void *mb_stack_tss_end = kzalloc(0x100000);
+    void *mb_stack_tss_begin = (void *)(((uintptr_t)mb_stack_tss_end) + 0x100000);
+    paging_map(kernel_paging_descriptor, mb_stack_tss_end, mb_stack_tss_end, 0);
+    
+    memset(&tss, 0x00, sizeof(tss));
+    tss.rsp0 = (uint64_t)mb_stack_tss_begin;
+    tss.iopb_offset = sizeof(tss);
+
+    struct tss_descriptor *tss_desc = (struct tss_descriptor *)&gdt[7];
+    gdt_set_tss(tss_desc, &tss, sizeof(tss) - 1, 0x89, 0x00);
+    
+    tss_load(0x38);
+
+    isr80h_register_commands();
+
+    ramdisk_init();
+    fs_init();
+
+    kprintf("Found %d disks\n", disks_search_and_init());
+
+    kprintf("Handing over to launcher\n");
+    int fd = fopen("1:/sysro/boot.cfg", "r");
+    if (fd < 0) {
+        panic("Could not open launcher", 1);
+    }
+
+    char line[256];
+    char launcher[MAX_PATH];
+    while (fgets(line, sizeof(line), fd)) {
+        if (!strncmp(line, "LAUNCHER=", 9)) {
+            strncpy(launcher, line + 9, sizeof(launcher));
+        }
+    }
+    fclose(fd);
+
+    struct process *process = 0;
+    int res = process_load_switch(launcher, &process);
+    if (res != ALL_OK) {
+        panic("Failed to load launcher", res);
+    }
+
+    task_run_first_ever_task();
+
+    //enable_interrupts();
 
     /*
 

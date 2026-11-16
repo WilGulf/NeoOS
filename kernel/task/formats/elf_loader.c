@@ -24,6 +24,7 @@
 #include "../../include/config.h"
 #include "../../include/util.h"
 #include "../../drivers/fs/file.h"
+#include "../../drivers/io/io.h"
 #include "../../memory/kheap.h"
 #include "../../memory/paging.h"
 #include "../../kernel.h"
@@ -36,7 +37,7 @@ static kbool elf_valid_signature(void *buffer) {
 }
 
 static kbool elf_valid_class(struct elf_header *header) {
-    return header->e_ident[EI_CLASS] == ELFCLASSNONE || header->e_ident[EI_CLASS] == ELFCLASS32;
+    return header->e_ident[EI_CLASS] == ELFCLASSNONE || header->e_ident[EI_CLASS] == ELFCLASS64;
 }
 
 static kbool elf_valid_encoding(struct elf_header *header) {
@@ -63,27 +64,27 @@ struct elf_header *elf_header(struct elf_file *file) {
     return file->elf_memory;
 }
 
-struct elf32_shdr *elf_sheader(struct elf_header *header) {
-    return (struct elf32_shdr *)((int)header + header->e_shoff);
+struct elf64_shdr *elf_sheader(struct elf_header *header) {
+    return (struct elf64_shdr *)((elf64_off)header + header->e_shoff);
 }
 
-struct elf32_phdr *elf_pheader(struct elf_header *header) {
+struct elf64_phdr *elf_pheader(struct elf_header *header) {
     if (header->e_phoff == 0) {
         return 0;
     }
 
-    return (struct elf32_phdr *)((int)header + header->e_phoff);
+    return (struct elf64_phdr *)((elf64_off)header + header->e_phoff);
 }
 
-struct elf32_phdr *elf_program_header(struct elf_header *header, int index) {
+struct elf64_phdr *elf_program_header(struct elf_header *header, int index) {
     return &elf_pheader(header)[index];
 }
 
-struct elf32_shdr *elf_section(struct elf_header *header, int index) {
+struct elf64_shdr *elf_section(struct elf_header *header, int index) {
     return &elf_sheader(header)[index];
 }
 
-void *elf_phdr_physical_address(struct elf_file *file, struct elf32_phdr *phdr) {
+void *elf_phdr_physical_address(struct elf_file *file, struct elf64_phdr *phdr) {
     return elf_image_memory(file) + (phdr->p_vaddr - (int)file->image_virtual_base_address);
 }
 
@@ -107,17 +108,23 @@ void *elf_physical_end(struct elf_file *file) {
     return file->physical_end_address;
 }
 
-int elf_validate_loaded(struct elf_header *header) {
-    return (elf_valid_signature(header) && elf_valid_class(header) && elf_valid_encoding(header) && elf_has_program_header(header) && elf_is_executable(header)) ? ALL_OK : -ERROR_INVALID_FORMAT;
+int elf_validate_loaded(struct elf_header *h) {
+    if (!elf_valid_signature(h))   { kprintf("elf: bad magic %x %x %x %x\n", h->e_ident[0], h->e_ident[1], h->e_ident[2], h->e_ident[3]); return -ERROR_INVALID_FORMAT; }
+    if (!elf_valid_class(h))       { kprintf("elf: bad class %d\n", h->e_ident[EI_CLASS]); return -ERROR_INVALID_FORMAT; }
+    if (!elf_valid_encoding(h))    { kprintf("elf: bad encoding %d\n", h->e_ident[EI_DATA]); return -ERROR_INVALID_FORMAT; }
+    if (!elf_has_program_header(h)){ kprintf("elf: no phdrs\n"); return -ERROR_INVALID_FORMAT; }
+    if (h->e_type != ET_EXEC)      { kprintf("elf: type %d (3 = PIE/DYN)\n", h->e_type); return -ERROR_INVALID_FORMAT; }
+    if (h->e_entry < PROGRAM_VIRTUAL_ADDRESS) { kprintf("elf: entry %llx < %llx\n", h->e_entry, (uint64_t)PROGRAM_VIRTUAL_ADDRESS); return -ERROR_INVALID_FORMAT; }
+    return ALL_OK;
 }
 
-int elf_process_phdr_pt_load(struct elf_file *elf_file, struct elf32_phdr *phdr) {
+int elf_process_phdr_pt_load(struct elf_file *elf_file, struct elf64_phdr *phdr) {
     if (elf_file->virtual_base_address >= (void *)phdr->p_vaddr || elf_file->virtual_base_address == 0x00) {
         elf_file->virtual_base_address = (void *)phdr->p_vaddr;
         elf_file->physical_base_address = elf_memory(elf_file) + phdr->p_offset;
     }
 
-    uint32_t end_virtual_address = phdr->p_vaddr + phdr->p_memsz;
+    uintptr_t end_virtual_address = phdr->p_vaddr + phdr->p_memsz;
     if (elf_file->virtual_end_address <= (void *)(end_virtual_address) || elf_file->virtual_end_address == 0x00) {
         elf_file->virtual_end_address = (void *)end_virtual_address;
         elf_file->physical_end_address = elf_memory(elf_file) + phdr->p_offset + phdr->p_filesz;
@@ -126,7 +133,7 @@ int elf_process_phdr_pt_load(struct elf_file *elf_file, struct elf32_phdr *phdr)
     return 0;
 }
 
-int elf_process_pheader(struct elf_file *elf_file, struct elf32_phdr *phdr) {
+int elf_process_pheader(struct elf_file *elf_file, struct elf64_phdr *phdr) {
     int res = 0;
     switch(phdr->p_type) {
         case PT_LOAD:
@@ -141,7 +148,7 @@ int elf_process_pheaders(struct elf_file *elf_file) {
     int res = 0;
     struct elf_header *header = elf_header(elf_file);
     for (int i = 0; i < header->e_phnum; i++) {
-        struct elf32_phdr *phdr = elf_program_header(header, i);
+        struct elf64_phdr *phdr = elf_program_header(header, i);
         res = elf_process_pheader(elf_file, phdr);
         if (res < 0) {
             break;
@@ -184,12 +191,12 @@ out:
 }
 
 int elf_build_image(struct elf_file *file) {
-    uint32_t virtual_base_address = 0;
-    uint32_t virtual_end_address = 0;
+    uint64_t virtual_base_address = 0;
+    uint64_t virtual_end_address = 0;
 
     struct elf_header *header = elf_header(file);
     for (int i = 0; i < header->e_phnum; i++) {
-        struct elf32_phdr *phdr = elf_program_header(header, i);
+        struct elf64_phdr *phdr = elf_program_header(header, i);
 
         if (phdr->p_type != PT_LOAD) {
             continue;
@@ -210,7 +217,7 @@ int elf_build_image(struct elf_file *file) {
     file->elf_image_memory = kzalloc(virtual_end_address - virtual_base_address);
 
     for (int i = 0; i < header->e_phnum; i++) {
-        struct elf32_phdr *phdr = elf_program_header(header, i);
+        struct elf64_phdr *phdr = elf_program_header(header, i);
 
         if (phdr->p_type != PT_LOAD) {
             continue;
@@ -221,7 +228,8 @@ int elf_build_image(struct elf_file *file) {
         }
     }
 
-    file->image_virtual_base_address = virtual_base_address;
+    file->image_virtual_base_address = (void *)(uintptr_t)virtual_base_address;
+    return 0;
 }
 
 int elf_load(const char *filename, struct elf_file **file_out) {

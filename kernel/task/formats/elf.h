@@ -1,27 +1,7 @@
-/*
- *
- * Copyright (C) 2026 Daniel McCarthy <daniel@dragonzap.com>
-  * This file is drerived from the PeachOS Kernel (github.com/nibblebits/PeachOS).
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * version 2 as published by the Free Software Foundation.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
- * See the GNU General Public License version 2 for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, see <https://www.gnu.org/licenses/>.
- * 
- * See NOTICE for the full list of GPL-derived files in this project.
- */
-
-#include "../../include/stdint.h"
-
 #ifndef ELF_H
 #define ELF_H
+
+#include "../../include/stdint.h"
 
 #define PF_X 0x01
 #define PF_W 0x02
@@ -33,7 +13,7 @@
 #define PT_INTERP 3
 #define PT_NOTE 4
 #define PT_SHLIB 5
-#define PT_PHOR 6
+#define PT_PHDR 6
 
 #define SHT_NULL 0
 #define SHT_PROGBITS 1
@@ -72,72 +52,80 @@
 
 #define SHN_UNDEF 0
 
-typedef uint16_t elf32_half;
-typedef uint32_t elf32_word;
-typedef int32_t elf32_sword;
-typedef uint32_t elf32_addr;
-typedef uint32_t elf32_off;
+typedef uint64_t elf64_addr;
+typedef uint64_t elf64_off;
+typedef uint16_t elf64_half;
+typedef uint32_t elf64_word;
+typedef uint32_t elf64_sword;
+typedef uint64_t elf64_xword;
+typedef uint64_t elf64_sxword;
 
-struct elf32_phdr {
-    elf32_word p_type;
-    elf32_off p_offset;
-    elf32_addr p_vaddr;
-    elf32_addr p_addr;
-    elf32_word p_filesz;
-    elf32_word p_memsz;
-    elf32_word p_flags;
-    elf32_word p_align;
+struct elf64_phdr
+{
+    elf64_word p_type;
+    elf64_word p_flags;
+    elf64_off p_offset;
+    elf64_addr p_vaddr;
+    elf64_addr p_paddr;
+    elf64_xword p_filesz;
+    elf64_xword p_memsz;
+    elf64_xword p_align;
 } __attribute__((packed));
 
-struct elf32_shdr {
-    elf32_word sh_name;
-    elf32_word sh_type;
-    elf32_word sh_flags;
-    elf32_addr sh_addr;
-    elf32_off sh_offset;
-    elf32_word sh_size;
-    elf32_word sh_link;
-    elf32_word sh_info;
-    elf32_word sh_addralign;
-    elf32_word sh_entsize;
+struct elf64_shdr
+{
+    elf64_word sh_name;
+    elf64_word sh_type;
+    elf64_xword sh_flags;
+    elf64_addr sh_addr;
+    elf64_off sh_offset;
+    elf64_xword sh_size;
+    elf64_word sh_link;
+    elf64_word sh_info;
+    elf64_xword sh_addralign;
+    elf64_xword sh_entsize;
 } __attribute__((packed));
 
-struct elf_header {
+struct elf_header
+{
     unsigned char e_ident[EI_NIDENT];
-    elf32_half e_type;
-    elf32_half e_machine;
-    elf32_word e_version;
-    elf32_addr e_entry;
-    elf32_off e_phoff;
-    elf32_off e_shoff;
-    elf32_word e_flags;
-    elf32_half e_ehsize;
-    elf32_half e_phentsize;
-    elf32_half e_phnum;
-    elf32_half e_shentsize;
-    elf32_half e_shnum;
-    elf32_half e_shstrndx;
+    elf64_half e_type;
+    elf64_half e_machine;
+    elf64_word e_version;
+    elf64_addr e_entry;
+    elf64_off e_phoff;
+    elf64_off e_shoff;
+    elf64_word e_flags;
+    elf64_half e_ehsize;
+    elf64_half e_phentsize;
+    elf64_half e_phnum;
+    elf64_half e_shentsize;
+    elf64_half e_shnum;
+    elf64_half e_shstrndx;
 } __attribute__((packed));
 
-struct elf32_dyn {
-    elf32_sword d_tag;
-    union {
-        elf32_word d_val;
-        elf32_addr d_ptr;
+struct elf64_dyn
+{
+    elf64_sxword d_tag;
+    union 
+    {
+        elf64_xword d_val;
+        elf64_addr d_ptr;
     } d_un;
-
+    
 } __attribute__((packed));
 
-struct elf32_sym {
-    elf32_word st_name;
-    elf32_addr st_value;
-    elf32_word st_size;
+struct elf64_sym
+{
+    elf64_word st_name;
     unsigned char st_info;
     unsigned char st_other;
-    elf32_half st_shndx;
+    elf64_half st_shndx;
+    elf64_addr st_value;
+    elf64_xword st_size;
 } __attribute__((packed));
 
-uint32_t elf_get_entry(struct elf_header *elf_header);
-void *elf_get_entry_ptr(struct elf_header *elf_header);
+void* elf_get_entry_ptr(struct elf_header* elf_header);
+elf64_addr elf_get_entry(struct elf_header* elf_header);
 
 #endif

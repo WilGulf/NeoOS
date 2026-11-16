@@ -28,16 +28,17 @@
 #include "../task/process.h"
 #include "../drivers/io/io.h"
 #include "../timer/timer.h"
+#include "../memory/kheap.h"
 
-struct idt_desc idt_descriptors[TOTAL_INTERRUPTS];
-struct idtr_desc idtr_descriptor;
+struct idt_descriptor idt_descriptors[TOTAL_INTERRUPTS];
+struct idtr_descriptor idtr_descriptor;
 
 extern void *interrupt_pointer_table[TOTAL_INTERRUPTS];
 
 static INTERRUPT_CALLBACK_FUNCTION interrupt_callbacks[TOTAL_INTERRUPTS];
 static ISR80H_COMMAND isr80h_commands[MAX_ISR80H_COMMANDS];
 
-extern void idt_load(struct idtr_desc *ptr);
+extern void idt_load(struct idtr_descriptor *ptr);
 extern void no_interrupt();
 extern void isr80h_wrapper();
 
@@ -84,31 +85,42 @@ void *isr80h_handle_command(int command, struct interrupt_frame *frame) {
 
 void *isr80h_handler(int command, struct interrupt_frame *frame) {
     void *res = 0;
+    
     kernel_page();
     task_current_save_state(frame);
     res = isr80h_handle_command(command, frame);
     task_page();
+    
     return res;
 }
 
 void interrupt_handler(int interrupt, struct interrupt_frame *frame) {
     kernel_page();
+
     if (interrupt_callbacks[interrupt] != 0) {
         task_current_save_state(frame);
         interrupt_callbacks[interrupt]();
     }
 
     task_page();
+    
     outb(0x20, 0x20);
 }
 
 void idt_set(int interrupt_no, void *address) {
-    struct idt_desc *desc = &idt_descriptors[interrupt_no];
-    desc->offset_lower = (uint32_t)address & 0x0000FFFF;
-    desc->selector = 0x08;
-    desc->zero = 0x00;
+    struct idt_descriptor *desc = &idt_descriptors[interrupt_no];
+    uintptr_t _address = (uintptr_t)address;
+    desc->offset1 = _address & 0x000000000000FFFF;
+    desc->selector = 0x18;
+    desc->ist = 0;
+
     desc->type_attr = 0xEE;
-    desc->offset_upper = (uint32_t)address >> 16;
+    if (interrupt_no <= 0x31) {
+        desc->type_attr = 0x8E;
+    }
+
+    desc->offset2 = (_address >> 16) & 0x000000000000FFFF;
+    desc->offset3 = (_address >> 32) & 0x00000000FFFFFFFF;
 }
 
 void idt_handle_exception() {
@@ -126,7 +138,7 @@ void idt_clock() {
 void idt_init() {
     memset(idt_descriptors, 0, sizeof(idt_descriptors));
     idtr_descriptor.limit = sizeof(idt_descriptors) - 1;
-    idtr_descriptor.base = idt_descriptors;
+    idtr_descriptor.base = (uint64_t)idt_descriptors;
 
     outb(0x20, 0x11);
     outb(0xA0, 0x11);

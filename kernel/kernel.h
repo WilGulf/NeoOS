@@ -2,6 +2,7 @@
 #define KERNEL_H
 
 void kernel_page();
+struct paging_descriptor *kernel_descriptor();
 void kernel_registers();
 
 struct kernel_version {

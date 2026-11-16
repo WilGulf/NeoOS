@@ -3,7 +3,6 @@
 	kernel/drivers/io/fb_io.o kernel/drivers/io/kprint.o kernel/drivers/io/io_ports.o \
 	kernel/drivers/keyboard/keyboard.o kernel/drivers/keyboard/ps2.o \
 	kernel/gdt/gdt_asm.o kernel/gdt/gdt.o \
-	kernel/idt/idt.o kernel/idt/idt_asm.o kernel/timer/timer.o \
 	kernel/include/util.o \
 	kernel/memory/paging.o kernel/memory/paging_asm.o kernel/memory/heap.o kernel/memory/kheap.o\
 	kernel/drivers/disk/disk.o kernel/drivers/fs/file.o \
@@ -11,22 +10,20 @@
 	kernel/drivers/fs/ramfs/ramfs.o kernel/drivers/fs/neofs/neofs.o \
 	kernel/panic.o \
 	kernel/task/task.o kernel/task/task_asm.o kernel/task/process.o kernel/task/formats/elf.o kernel/task/formats/elf_loader.o \
-	kernel/syscalls/isr80h.o \
-	kernel/syscalls/io.o \
-	kernel/syscalls/heap.o \
-	kernel/syscalls/process.o \
-	kernel/syscalls/promise.o \
-	kernel/syscalls/privilege.o \
-	kernel/syscalls/kernel.o \
-	kernel/syscalls/fs.o \
-	kernel/syscalls/timer.o
 
 OBJECTS = kernel/loader.o kernel/kmain.o kernel/kernel.o kernel/panic.o \
 	kernel/include/util.o \
-	kernel/timer/timer.o \
+	kernel/idt/idt.o kernel/idt/idt_asm.o kernel/timer/timer.o \
+	kernel/gdt/gdt.o kernel/gdt/gdt_asm.o \
 	kernel/drivers/io/fb_io.o kernel/drivers/io/kprint.o kernel/drivers/io/io_ports.o \
-	kernel/memory/heap.o kernel/memory/kheap.o kernel/memory/multiheap.o kernel/memory/paging.o kernel/memory/paging_asm.o kernel/memory/memory.o
-
+	kernel/drivers/keyboard/keyboard.o kernel/drivers/keyboard/ps2.o \
+	kernel/memory/heap.o kernel/memory/kheap.o kernel/memory/multiheap.o kernel/memory/paging.o kernel/memory/paging_asm.o kernel/memory/memory.o \
+	kernel/task/task.o kernel/task/task_asm.o kernel/task/process.o \
+	kernel/task/formats/elf.o kernel/task/formats/elf_loader.o \
+	kernel/drivers/disk/disk.o kernel/drivers/disk/disk_streamer.o \
+	kernel/drivers/fs/file.o kernel/drivers/fs/path_parser.o \
+	kernel/drivers/fs/neofs/neofs.o kernel/drivers/fs/ramfs/ramfs.o \
+	kernel/syscalls/isr80h.o kernel/syscalls/io.o kernel/syscalls/heap.o kernel/syscalls/process.o kernel/syscalls/promise.o kernel/syscalls/privilege.o kernel/syscalls/kernel.o kernel/syscalls/fs.o kernel/syscalls/timer.o
 
 #C compiler
 CC = x86_64-elf-gcc
@@ -46,7 +43,7 @@ QEMUFLAGS ?=
 
 .PHONY: all run clean kernel_clean mkdir
 
-all: output/nexus.bin #userland_execs disk_contents
+all: output/nexus.bin disk_content
 
 output:
 	mkdir -p output
@@ -67,9 +64,9 @@ output/nexus.bin: output/boot.bin output/kernel.bin
 	dd if=/dev/zero bs=1M count=16 >> $@
 
 run: all
-	$(QEMU) -hda output/nexus.bin $(QEMUFLAGS)
+	$(QEMU) -drive file=output/nexus.bin,format=raw -drive file=output/disk.img,format=raw $(QEMUFLAGS)
 
-disk_contents: output/disk.img
+disk_content: userland_execs output/disk.img
 	./fstools/copy.neofs --disk output/disk.img if=userland/configs/boot.cfg trgt=sysro/boot.cfg --flags r
 
 	./fstools/copy.neofs --disk output/disk.img if=userland/launch/output/launch.elf trgt=sysro/launch --flags rx
@@ -130,4 +127,4 @@ kernel_clean:
 	rm -f output/*
 	find kernel -name "*.o" -delete
 
-clean: kernel_clean #userland_clean
+clean: kernel_clean userland_clean

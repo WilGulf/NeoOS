@@ -1,341 +1,252 @@
+bits 64
+
 section .text
 
 global exit:function
 exit:
-    push ebp
-    mov ebp, esp
-    mov eax, 0
+    mov rax, 0
     int 0x80
-    pop ebp
     ret
 
 global promise:function
 promise:
-    push ebp
-    mov ebp, esp
-    mov eax, 1
-    push dword[ebp+8]
+    push qword rdi
+    mov rax, 1
     int 0x80
-    add esp, 4
-    pop ebp
+    add rsp, 8
     ret
 
 global drop_privilege:function
 drop_privilege:
-    push ebp
-    mov ebp, esp
-    mov eax, 2
-    push dword[ebp+8]
+    push qword rdi
+    mov rax, 2
     int 0x80
-    add esp, 4
-    pop ebp
+    add rsp, 8
     ret
 
 global get_kernel:function
 get_kernel:
-    push ebp
-    mov ebp, esp
-    mov eax, 3
-    push dword[ebp+8]
+    push qword rdi
+    mov rax, 3
     int 0x80
-    add esp, 4
-    pop ebp
+    add rsp, 8
     ret
 
 global print:function
 print:
-    push ebp
-    mov ebp, esp
-    push dword[ebp+8]
-    mov eax, 4
+    push qword rdi
+    mov rax, 4
     int 0x80
-    add esp, 4
-    pop ebp
+    add rsp, 8
     ret
 
 global putchar
 putchar:
-    push ebp
-    mov ebp, esp
-    push dword [ebp+8]
-    mov eax, 5
+    push qword rdi
+    mov rax, 5
     int 0x80
-    add esp, 4
-    pop ebp
+    add rsp, 8
     ret
 
 global clear:function
 clear:
-    push ebp
-    mov ebp, esp
-    mov eax, 6
+    mov rax, 6
     int 0x80
-    pop ebp
     ret
 
 
 global getkey:function
 getkey:
-    push ebp
-    mov ebp, esp
-    mov eax, 7
+    mov rax, 7
     int 0x80
-    pop ebp
     ret
     
 global getkey_event:function
 getkey_event:
-    push ebp
-    mov ebp, esp
-    mov eax, 8
-    push dword[ebp+8]
+    push qword rdi
+    mov rax, 8
     int 0x80
-    add esp, 4
-    pop ebp
+    add rsp, 8
     ret
 
 
 global kmalloc:function
 kmalloc:
-    push ebp
-    mov ebp, esp
-    mov eax, 9
-    push dword[ebp+8]
+    push qword rdi
+    mov rax, 9
     int 0x80
-    add esp, 4
-    pop ebp
+    add rsp, 8
     ret
 
 global kfree:function
 kfree:
-    push ebp
-    mov ebp, esp
-    mov eax, 10
-    push dword[ebp+8]
+    push qword rdi
+    mov rax, 10
     int 0x80
-    add esp, 4
-    pop ebp
+    add rsp, 8
     ret
 
 global process_get_arguments:function
 process_get_arguments:
-    push ebp
-    mov ebp, esp
-    mov eax, 11
-    push dword[ebp+8]
+    push qword rdi
+    mov rax, 11
     int 0x80
-    add esp, 4
-    pop ebp
+    add rsp, 8
     ret
 
 global system_run:function
 system_run:
-    push ebp
-    mov ebp, esp
-    mov eax, 12
-    push dword[ebp+8]
+    push qword rdi
+    mov rax, 12
     int 0x80
-    add esp, 4
-    pop ebp
+    add rsp, 8
     ret
 
 global system_run_as:function
 system_run_as:
-    push ebp
-    mov ebp, esp
-    mov eax, 13
-    push dword[ebp+12]
-    push dword[ebp+8]
+    push qword rsi
+    push qword rdi
+    mov rax, 13
     int 0x80
-    add esp, 8
-    pop ebp
+    add rsp, 16
     ret
 
 global fork_run:function
 fork_run:
-    push ebp
-    mov ebp, esp
-    mov eax, 14
-    push dword[ebp+8]
+    push qword rdi
+    mov rax, 14
     int 0x80
-    add esp, 4
-    pop ebp
+    add rsp, 8
     ret
 
 global fork_run_as:function
 fork_run_as:
-    push ebp
-    mov ebp, esp
-    mov eax, 15
-    push dword[ebp+12]
-    push dword[ebp+8]
+    push qword rsi
+    push qword rdi
+    mov rax, 15
     int 0x80
-    add esp, 8
-    pop ebp
+    add rsp, 16
     ret
-    
 
 global get_processes:function
 get_processes:
-    push ebp
-    mov ebp, esp
-    mov eax, 16
-    push dword[ebp+12]
-    push dword[ebp+8]
+    push qword rsi
+    push qword rdi
+    mov rax, 16
     int 0x80
-    add esp, 8
-    pop ebp
+    add rsp, 16
     ret
 
 global kill:function
 kill:
-    push ebp
-    mov ebp, esp
-    mov eax, 17
-    push dword[ebp+8]
+    push qword rdi
+    mov rax, 17
     int 0x80
-    add esp, 4
-    pop ebp
+    add rsp, 8
     ret
 
 global fopen:function
 fopen:
-    push ebp
-    mov ebp, esp
-    mov eax, 18
-    push dword[ebp+12]
-    push dword[ebp+8]
+    push qword rsi
+    push qword rdi
+    mov rax, 18
     int 0x80
-    add esp, 8
-    pop ebp
+    add rsp, 16
     ret
 
 global fclose:function
 fclose:
-    push ebp
-    mov ebp, esp
-    mov eax, 19
-    push dword[ebp+8]
+    push qword rdi
+    mov rax, 19
     int 0x80
-    add esp, 4
-    pop ebp
+    add rsp, 8
     ret
 
 global fread:function
 fread:
-    push ebp
-    mov ebp, esp
-    mov eax, 20
-    push dword[ebp+20]
-    push dword[ebp+16]
-    push dword[ebp+12]
-    push dword[ebp+8]
+    push qword rcx
+    push qword rdx
+    push qword rsi
+    push qword rdi
+    mov rax, 20
     int 0x80
-    add esp, 16
-    pop ebp
+    add rsp, 32
     ret
 
 global fstat:function
 fstat:
-    push ebp
-    mov ebp, esp
-    mov eax, 21
-    push dword[ebp+12]
-    push dword[ebp+8]
+    push qword rsi
+    push qword rdi
+    mov rax, 21
     int 0x80
-    add esp, 8
-    pop ebp
+    add rsp, 16
     ret
 
 ;22 fseek
 
 global get_ticks_ms:function
 get_ticks_ms:
-    push ebp
-    mov ebp, esp
-    mov eax, 23
+    mov rax, 23
     int 0x80
-    pop ebp
     ret
 
 global remove:function
 remove:
-    push ebp
-    mov ebp, esp
-    mov eax, 26
-    push dword[ebp+8]
+    push qword rdi
+    mov rax, 26
     int 0x80
-    add esp, 4
-    pop ebp
+    add rsp, 8
     ret
 
 global fwrite:function
 fwrite:
-    push ebp
-    mov ebp, esp
-    mov eax, 27
-    push dword[ebp+20]
-    push dword[ebp+16]
-    push dword[ebp+12]
-    push dword[ebp+8]
+    push qword rcx
+    push qword rdx
+    push qword rsi
+    push qword rdi
+    mov rax, 27
     int 0x80
-    add esp, 16
-    pop ebp
+    add rsp, 32
     ret
 
 global sys_readdir:function
 sys_readdir:
-    push ebp
-    mov ebp, esp
-    mov eax, 28
-    push dword[ebp+12]
-    push dword[ebp+8]
+    push qword rsi
+    push qword rdi
+    mov rax, 28
     int 0x80
-    add esp, 8
-    pop ebp
+    add rsp, 16
     ret
 
 global chwd:function
 chwd:
-    push ebp
-    mov ebp, esp
-    mov eax, 29
-    push dword[ebp+8]
+    push qword rdi
+    mov rax, 29
     int 0x80
-    add esp, 4
-    pop ebp
+    add rsp, 8
     ret
 
 global get_cwd:function
 get_cwd:
-    push ebp
-    mov ebp, esp
-    mov eax, 30
-    push dword[ebp+12]
-    push dword[ebp+8]
+    push qword rsi
+    push qword rdi
+    mov rax, 30
     int 0x80
-    add esp, 8
-    pop ebp
+    add rsp, 16
     ret
 
 global create:function
 create:
-    push ebp
-    mov ebp, esp
-    mov eax, 31
-    push dword[ebp+8]
+    push qword rdi
+    mov rax, 31
     int 0x80
-    add esp, 4
-    pop ebp
+    add rsp, 8
     ret
 
 global mkdir:function
 mkdir:
-    push ebp
-    mov ebp, esp
-    mov eax, 32
-    push dword[ebp+8]
+    push qword rdi
+    mov rax, 32
     int 0x80
-    add esp, 4
-    pop ebp
+    add rsp, 8
     ret

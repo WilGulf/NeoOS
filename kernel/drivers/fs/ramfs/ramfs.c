@@ -277,7 +277,7 @@ err_out:
         ramfs_free_file_descriptor(descriptor);
     }
 
-    return err_code;
+    return (void *)err_code;
 }
 
 int ramfs_read(struct disk *disk, void *descriptor, uint32_t size, uint32_t nmemb, char *out_ptr) {

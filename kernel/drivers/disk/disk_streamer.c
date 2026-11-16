@@ -7,7 +7,7 @@
 struct disk_stream *disk_streamer_new(char disk_id) {
     struct disk_stream *streamer = kmalloc(sizeof(struct disk_stream));
     if (!streamer) {
-        return -ERROR_NO_MEM;
+        return NULL;
     }
     memset(streamer, 0, sizeof(struct disk_stream));
     streamer->disk_id = disk_id;
