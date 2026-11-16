@@ -51,7 +51,7 @@ int main(int argc, char **argv) {
             putchar(' ');
         }
         if (machine) {
-            printf("i386");
+            printf("x86_64");
             putchar(' ');
         }
     }

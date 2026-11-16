@@ -20,7 +20,7 @@ int main(int argc, char **argv) {
     printf("\033[35mA    M              dMMb  dMMM\033[0m      OS: NeoOS v0.1.1\n");
     printf("\033[35mMA   M              M  M  M         ----------------\n");
     printf("\033[35mMAl  M              M  M  M   \033[0m      Kernel: %s-%d-%d-%d.%s\n", info.version.name, info.version.version_major, info.version.version_minor, info.version.version_patch, info.version.extension);
-    printf("\033[35mM A  M  dMMb  dMMb  M  M  M   \033[0m      Machine: i386\n");
+    printf("\033[35mM A  M  dMMb  dMMb  M  M  M   \033[0m      Machine: x86_64\n");
     printf("\033[35mM ll M  M  M  M  M  M  M  TMMb\033[0m      Uptime: ");
 
     if (hours)
