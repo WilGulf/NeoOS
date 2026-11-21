@@ -8,17 +8,16 @@
 #include "../../../include/util.h"
 #include "../../../memory/kheap.h"
 
-#include "../../io/io.h"
-
 struct master_block {
-    uint32_t magic;
+    uint64_t magic;
+    uint64_t block_size;
+    uint64_t bitmap_meta_block;
 
-    uint32_t block_size;
+    uint64_t first_block;
+    uint64_t block_count;
 
-    uint32_t bitmap_meta_block;
-
-    uint32_t first_block;
-    uint32_t block_count;
+    uint8_t uuid[16];
+    char volume_name[11];
 } __attribute__((packed));
 
 struct meta_block {
@@ -27,15 +26,15 @@ struct meta_block {
 
     uint8_t is_dir;
     uint8_t flags;
-    uint32_t size;
+    uint64_t size;
 
-    uint32_t start;
-    uint32_t next;
-    uint32_t parent;
+    uint64_t start;
+    uint64_t next;
+    uint64_t parent;
 } __attribute__((packed));
 
 struct block {
-    uint32_t next;
+    uint64_t next;
 } __attribute__((packed));
 
 #define NEOFS_MAGIC 0x4E454F46
@@ -60,30 +59,33 @@ struct block {
 struct neofs_private {
     struct master_block master_block;
 
-    uint32_t BLOCK_SIZE;
-    uint32_t DATA_SIZE;
+    uint64_t BLOCK_SIZE;
+    uint64_t DATA_SIZE;
 
     struct disk_stream *stream;
+
+    char volume_name[11];
 };
 
 struct neofs_file_descriptor {
     int meta_block;
     FILE_MODE mode;
     FILE_TYPE type;
-    uint32_t pos;
+    uint64_t pos;
 };
 
 int neofs_resolve(struct disk *disk);
-int neofs_seek(struct disk *disk, void *private, uint32_t offset, FILE_SEEK_MODE seek_mode);
+int neofs_seek(struct disk *disk, void *private, uint64_t offset, FILE_SEEK_MODE seek_mode);
 void *neofs_open(struct disk *disk, struct path_part *path, FILE_MODE mode);
-int neofs_read(struct disk *disk, void *descriptor, uint32_t size, uint32_t nmemb, char *out_ptr);
+int neofs_read(struct disk *disk, void *descriptor, uint64_t size, uint64_t nmemb, char *out_ptr);
 int neofs_stat(struct disk *disk, void *private, struct file_stat *stat);
-int neofs_write(struct disk *disk, void *private, uint32_t size, uint32_t nmemb, const char *in);
+int neofs_write(struct disk *disk, void *private, uint64_t size, uint64_t nmemb, const char *in);
 int neofs_remove(struct disk *disk, struct path_part *path);
 int neofs_close(void *private);
 struct dirent neofs_readdir(struct disk *disk, void *private);
 int neofs_create(struct disk *disk, struct path_part *path);
 int neofs_mkdir(struct disk *disk, struct path_part *path);
+int neofs_volume_name(void *private, char *name_out, size_t max);
 
 struct filesystem neofs = {
     .resolve = neofs_resolve,
@@ -97,10 +99,11 @@ struct filesystem neofs = {
     .readdir = neofs_readdir,
     .create = neofs_create,
     .mkdir = neofs_mkdir,
+    .volume_name = neofs_volume_name,
 };
 
-int read_file(uint32_t file_meta_block_n, void *out, struct disk *disk);
-int write_file(uint32_t file_meta_block_n, void *in, uint32_t total, struct disk *disk);
+int read_file(uint64_t file_meta_block_n, void *out, struct disk *disk);
+int write_file(uint64_t file_meta_block_n, void *in, uint64_t total, struct disk *disk);
 
 struct filesystem *neofs_init() {
     strcpy(neofs.name, "NEOFS");
@@ -112,12 +115,12 @@ static void neofs_init_private(struct disk *disk, struct neofs_private *private)
     private->stream = disk_streamer_new(disk->id);
 }
 
-static int block_is_valid(uint32_t block, struct disk *disk) {
+static int block_is_valid(uint64_t block, struct disk *disk) {
     struct neofs_private *private = disk->fs_private;
     return block < private->master_block.block_count;
 }
 
-static int neofs_read_block(struct disk *disk, uint32_t block, uint32_t size, void *out) {
+static int neofs_read_block(struct disk *disk, uint64_t block, uint64_t size, void *out) {
     if (!block_is_valid(block, disk))
         return -1;
         
@@ -130,7 +133,7 @@ static int neofs_read_block(struct disk *disk, uint32_t block, uint32_t size, vo
     return disk_streamer_read(private->stream, out, size);
 }
 
-static int neofs_read_block_data(struct disk *disk, uint32_t block, uint32_t size, void *out) {
+static int neofs_read_block_data(struct disk *disk, uint64_t block, uint64_t size, void *out) {
     if (!block_is_valid(block, disk))
         return -1;
 
@@ -143,7 +146,7 @@ static int neofs_read_block_data(struct disk *disk, uint32_t block, uint32_t siz
     return disk_streamer_read(private->stream, out, size);
 }
 
-static int neofs_write_block(struct disk *disk, uint32_t block, uint32_t size, void *in) {
+static int neofs_write_block(struct disk *disk, uint64_t block, uint64_t size, void *in) {
     if (!block_is_valid(block, disk))
         return -1;
 
@@ -168,21 +171,21 @@ static int get_master_block(struct master_block *out, struct disk *disk) {
     return disk_streamer_read(private->stream, out, sizeof(struct master_block));
 }
 
-static int get_meta_block(uint32_t block, struct meta_block *out, struct disk *disk) {
+static int get_meta_block(uint64_t block, struct meta_block *out, struct disk *disk) {
     if (!block_is_valid(block, disk))
         return -1;
 
     return neofs_read_block(disk, block, sizeof(struct meta_block), out);
 }
 
-static int get_block(uint32_t block, struct block *out, struct disk *disk) {
+static int get_block(uint64_t block, struct block *out, struct disk *disk) {
     if (!block_is_valid(block, disk))
         return -1;
 
     return neofs_read_block(disk, block, sizeof(struct block), out);
 }
 
-static int get_free_block(uint32_t start, struct disk *disk) {
+static int get_free_block(uint64_t start, struct disk *disk) {
     struct neofs_private *private = disk->fs_private;
     struct meta_block bitmap;
     if (get_meta_block(private->master_block.bitmap_meta_block, &bitmap, disk) < 0)
@@ -194,7 +197,7 @@ static int get_free_block(uint32_t start, struct disk *disk) {
     }
     read_file(private->master_block.bitmap_meta_block, buffer, disk);
 
-    for (uint32_t bit = start; bit < private->master_block.block_count; bit++) {
+    for (uint64_t bit = start; bit < private->master_block.block_count; bit++) {
         unsigned char mask = 1 << (bit % 8);
         if (!(buffer[bit / 8] & mask)) {
             kfree(buffer);
@@ -210,7 +213,7 @@ static int get_free_block(uint32_t start, struct disk *disk) {
     return -1;
 }
 
-int set_block_on_bitmap(uint32_t block, bool state, struct disk *disk) {
+int set_block_on_bitmap(uint64_t block, kbool state, struct disk *disk) {
     if (!block_is_valid(block, disk))
         return -1;
         
@@ -239,7 +242,7 @@ int set_block_on_bitmap(uint32_t block, bool state, struct disk *disk) {
     return 0;
 }
 
-static uint32_t get_next_block(uint32_t block, struct disk *disk) {
+static uint64_t get_next_block(uint64_t block, struct disk *disk) {
     struct block read_block;
     if (get_block(block, &read_block, disk) < 0)
         return -1;
@@ -247,7 +250,7 @@ static uint32_t get_next_block(uint32_t block, struct disk *disk) {
     return read_block.next;
 }
 
-static int remove_meta_block(uint32_t block, struct disk *disk) {
+static int remove_meta_block(uint64_t block, struct disk *disk) {
     struct meta_block empty_block;
     memset(&empty_block, 0, sizeof(empty_block));
 
@@ -256,7 +259,7 @@ static int remove_meta_block(uint32_t block, struct disk *disk) {
     return 0;
 }
 
-static int remove_block(uint32_t block, struct disk *disk) {
+static int remove_block(uint64_t block, struct disk *disk) {
     struct block empty_block;
     memset(&empty_block, 0, sizeof(empty_block));
 
@@ -318,6 +321,7 @@ int neofs_resolve(struct disk *disk) {
     private->master_block = master_block;
     private->BLOCK_SIZE = master_block.block_size;
     private->DATA_SIZE = master_block.block_size - sizeof(struct block);
+    strcpy(private->volume_name, master_block.volume_name);
 
 out:
     if (stream) {
@@ -332,7 +336,7 @@ out:
     return res;
 }
 
-static int create_meta_block(uint32_t parent, kbool is_dir, const char *name, struct disk *disk) {
+static int create_meta_block(uint64_t parent, kbool is_dir, const char *name, struct disk *disk) {
     int new_block_n = get_free_block(1, disk);
     if (new_block_n < 0) {
         return -1;
@@ -424,7 +428,7 @@ static int name_matches(struct meta_block *meta_block, const char *part) {
     }
 }
 
-int read_file(uint32_t file_meta_block_n, void *out, struct disk *disk) {
+int read_file(uint64_t file_meta_block_n, void *out, struct disk *disk) {
     struct neofs_private *private = disk->fs_private;
     
     struct meta_block file_meta_block;
@@ -450,7 +454,7 @@ int read_file(uint32_t file_meta_block_n, void *out, struct disk *disk) {
     return total_to_read;
 }
 
-int write_file(uint32_t file_meta_block_n, void *in, uint32_t total, struct disk *disk) {
+int write_file(uint64_t file_meta_block_n, void *in, uint64_t total, struct disk *disk) {
     struct meta_block file_meta_block;
     if (get_meta_block(file_meta_block_n, &file_meta_block, disk) < 0)
         return -1;
@@ -645,7 +649,7 @@ out:
     return res;
 }
    
-int neofs_seek(struct disk *disk, void *private, uint32_t offset, FILE_SEEK_MODE seek_mode) {
+int neofs_seek(struct disk *disk, void *private, uint64_t offset, FILE_SEEK_MODE seek_mode) {
     int res = 0;
     struct neofs_file_descriptor *desc = private;
 
@@ -726,7 +730,7 @@ err_out:
     return (void *)err_code;
 }
 
-int neofs_read(struct disk *disk, void *descriptor, uint32_t size, uint32_t nmemb, char *out_ptr) {
+int neofs_read(struct disk *disk, void *descriptor, uint64_t size, uint64_t nmemb, char *out_ptr) {
     struct neofs_file_descriptor *desc = descriptor;
     struct neofs_private *private = disk->fs_private;
 
@@ -747,16 +751,16 @@ int neofs_read(struct disk *disk, void *descriptor, uint32_t size, uint32_t nmem
     }
 
     size_t remaining = meta_block.size - desc->pos;
-    uint32_t requested = size * nmemb;
+    uint64_t requested = size * nmemb;
     if (requested > remaining) {
         requested = remaining;
     }
 
-    uint32_t total_to_read = 0;
+    uint64_t total_to_read = 0;
 
     int blocks_offset = desc->pos / private->DATA_SIZE;
 
-    uint32_t block = meta_block.start;
+    uint64_t block = meta_block.start;
     struct block temp;
     if (get_block(block, &temp, disk) < 0)
         return -1;
@@ -776,7 +780,7 @@ int neofs_read(struct disk *disk, void *descriptor, uint32_t size, uint32_t nmem
 
     kbool first = true;
     while (block && requested > 0) {    
-        uint32_t offset;
+        uint64_t offset;
         if (first) {
             offset = desc->pos % private->DATA_SIZE;
             first = false;
@@ -784,8 +788,8 @@ int neofs_read(struct disk *disk, void *descriptor, uint32_t size, uint32_t nmem
             offset = 0;
         }
 
-        uint32_t available = private->DATA_SIZE - offset;
-        uint32_t size = requested < remaining ? requested : remaining;
+        uint64_t available = private->DATA_SIZE - offset;
+        uint64_t size = requested < remaining ? requested : remaining;
         size_t to_read = (size > available) ? available : size;
         char buffer[private->DATA_SIZE];
         int res = neofs_read_block_data(disk, block, private->DATA_SIZE, buffer);
@@ -819,9 +823,9 @@ int neofs_stat(struct disk *disk, void *private, struct file_stat *stat) {
     return 0;
 }
 
-int neofs_write(struct disk *disk, void *descriptor, uint32_t size, uint32_t nmemb, const char *in) {
+int neofs_write(struct disk *disk, void *descriptor, uint64_t size, uint64_t nmemb, const char *in) {
     struct neofs_private *private = disk->fs_private;
-    uint32_t total = size * nmemb;
+    uint64_t total = size * nmemb;
 
     struct neofs_file_descriptor *desc = descriptor;
     if (!(desc->mode == FILE_MODE_WRITE | desc->mode == FILE_MODE_APPEND)) {
@@ -837,7 +841,7 @@ int neofs_write(struct disk *disk, void *descriptor, uint32_t size, uint32_t nme
     }
     
     if (desc->mode == FILE_MODE_APPEND) {
-        uint32_t buffer_size = file_meta_block.size + total;
+        uint64_t buffer_size = file_meta_block.size + total;
         char *buffer = kzalloc(buffer_size);
         if (!buffer) {
             return -ERROR_NO_MEM;
@@ -858,7 +862,7 @@ int neofs_write(struct disk *disk, void *descriptor, uint32_t size, uint32_t nme
     }
 }
 
-static int remove_file(uint32_t file_meta_block_n, struct disk *disk) {
+static int remove_file(uint64_t file_meta_block_n, struct disk *disk) {
     if (file_meta_block_n <= 1) {
         return -1;
     }
@@ -1039,7 +1043,7 @@ int neofs_create(struct disk *disk, struct path_part *path) {
     struct path_part *save = tmp->next;
     tmp->next = NULL;
 
-    uint32_t parent = neofs_get_path_meta_block(path, false, disk);
+    uint64_t parent = neofs_get_path_meta_block(path, false, disk);
 
     tmp->next = save;
 
@@ -1073,7 +1077,7 @@ int neofs_mkdir(struct disk *disk, struct path_part *path) {
     struct path_part *save = tmp->next;
     tmp->next = NULL;
 
-    uint32_t parent = neofs_get_path_meta_block(path, false, disk);
+    uint64_t parent = neofs_get_path_meta_block(path, false, disk);
 
     tmp->next = save;
 
@@ -1087,4 +1091,11 @@ int neofs_mkdir(struct disk *disk, struct path_part *path) {
     } else {
         return -ERROR_IO;
     }
+}
+
+int neofs_volume_name(void *private, char *name_out, size_t max) {
+    struct neofs_private *neofs_private = (struct neofs_private *)private;
+    strncpy(name_out, neofs_private->volume_name, max);
+    *(name_out + max) = '\0';
+    return 0;
 }

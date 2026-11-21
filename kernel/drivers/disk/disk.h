@@ -4,10 +4,12 @@
 #include "../fs/file.h"
 #include "../../include/stdint.h"
 
-#define MAX_DISKS 4
+#define MAX_DISKS 36
+//0..9 & A..Z
 
 #define DISK_TYPE_REAL 0
-#define DISK_TYPE_PSEUDO 1
+#define DISK_TYPE_PARTITION 1
+#define DISK_TYPE_PSEUDO 2
 #define SECTOR_SIZE 512
 
 typedef unsigned int DISK_TYPE;
@@ -20,11 +22,16 @@ struct disk {
 
     struct filesystem* filesystem;
 
+    size_t starting_lba;
+    size_t ending_lba;
+
     void *fs_private;
 
     uint32_t ata_drive_port;
     uint32_t ata_base_port;
 };
+
+int disk_new(char id, int type, int starting_lba, int ending_lba, size_t sector_size, struct disk **disk_out, int ata_drive_port, int ata_base_port);
 
 int disks_search_and_init();
 void ramdisk_init();

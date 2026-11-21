@@ -11,12 +11,13 @@ struct ramfs_file *first_file;
 
 int ramfs_resolve(struct disk *disk);
 void *ramfs_open(struct disk *disk, struct path_part *path, FILE_MODE mode);
-int ramfs_read(struct disk *disk, void *descriptor, uint32_t size, uint32_t nmemb, char *out_ptr);
+int ramfs_read(struct disk *disk, void *descriptor, uint64_t size, uint64_t nmemb, char *out_ptr);
 int ramfs_stat(struct disk *disk, void *descriptor, struct file_stat *stat);
-int ramfs_seek(struct disk *disk, void *descriptor, uint32_t offset, FILE_SEEK_MODE seek_mode);
-int ramfs_write(struct disk *disk, void *private, uint32_t size, uint32_t nmemb, const char *in);
+int ramfs_seek(struct disk *disk, void *descriptor, uint64_t offset, FILE_SEEK_MODE seek_mode);
+int ramfs_write(struct disk *disk, void *private, uint64_t size, uint64_t nmemb, const char *in);
 int ramfs_remove(struct disk *disk, struct path_part *path);
 int ramfs_close(void *private);
+int ramfs_volume_name(void *private, char *name_out, size_t max);
 
 struct filesystem ramfs = {
     .resolve = ramfs_resolve,
@@ -27,12 +28,13 @@ struct filesystem ramfs = {
     .write = ramfs_write,
     .remove = ramfs_remove,
     .close = ramfs_close,
+    .volume_name = ramfs_volume_name,
 };
 
 struct ramfs_file_descriptor {
     FILE_MODE mode;
     struct ramfs_file *file;
-    uint32_t pos;
+    uint64_t pos;
 };
 
 int ramfs_resolve(struct disk *disk) {
@@ -280,7 +282,7 @@ err_out:
     return (void *)err_code;
 }
 
-int ramfs_read(struct disk *disk, void *descriptor, uint32_t size, uint32_t nmemb, char *out_ptr) {
+int ramfs_read(struct disk *disk, void *descriptor, uint64_t size, uint64_t nmemb, char *out_ptr) {
     int res = 0;
     struct ramfs_file_descriptor *desc = descriptor;
     struct ramfs_file *file = desc->file;
@@ -290,7 +292,7 @@ int ramfs_read(struct disk *disk, void *descriptor, uint32_t size, uint32_t nmem
         return 0;
     }
 
-    uint32_t total_to_read = size * nmemb;
+    uint64_t total_to_read = size * nmemb;
     if (total_to_read > (file->total_size - desc->pos)) {
         total_to_read = file->total_size - desc->pos;
     }
@@ -314,7 +316,7 @@ int ramfs_stat(struct disk *disk, void *descriptor, struct file_stat *stat) {
     return 0;
 }
 
-int ramfs_seek(struct disk *disk, void *descriptor, uint32_t offset, FILE_SEEK_MODE seek_mode) {
+int ramfs_seek(struct disk *disk, void *descriptor, uint64_t offset, FILE_SEEK_MODE seek_mode) {
     int res = 0;
     struct ramfs_file_descriptor *desc = descriptor;
     struct ramfs_file *file = desc->file;
@@ -356,7 +358,7 @@ out:
     return res;
 }
 
-int ramfs_write(struct disk *disk, void *private, uint32_t size, uint32_t nmemb, const char *in) {
+int ramfs_write(struct disk *disk, void *private, uint64_t size, uint64_t nmemb, const char *in) {
     int res = 0;
     struct ramfs_file_descriptor *desc = private;
     struct ramfs_file *file = desc->file;
@@ -366,7 +368,7 @@ int ramfs_write(struct disk *disk, void *private, uint32_t size, uint32_t nmemb,
         return -ERROR_IO;
     }
 
-    uint32_t total_to_write = size * nmemb;
+    uint64_t total_to_write = size * nmemb;
     if (total_to_write > (file->total_size - desc->pos)) {
         total_to_write = file->total_size - desc->pos;
     }
@@ -398,5 +400,10 @@ int ramfs_remove(struct disk *disk, struct path_part *path) {
 
 int ramfs_close(void *descriptor) {
     ramfs_free_file_descriptor((struct ramfs_file_descriptor *)descriptor);
+    return 0;
+}
+
+int ramfs_volume_name(void *private, char *name_out, size_t max) {
+    strncpy(name_out, "RAMFS", max);
     return 0;
 }

@@ -7,8 +7,10 @@
 #include "../../include/stdint.h"
 #include "../../include/status.h"
 #include "../../include/util.h"
+#include "../../memory/kheap.h"
 
-struct disk disks[MAX_DISKS];
+struct disk *disks[MAX_DISKS];
+struct disk *system_disk;
 struct disk ram;
 
 int disk_read_sector(int ata_base_port, int ata_drive_port, int lba, int total, void *buf) {
@@ -145,31 +147,102 @@ int ata_wait(int ata_base_port) {
     return 0;
 }
 
-struct disk *get_free_disk() {
+int get_free_disk_index(void) {
     for (int i = 0; i < MAX_DISKS; i++) {
-        if (!disks[i].filesystem) {
-            return &disks[i];
+        if (disks[i] == NULL) {
+            return i;
+        }
+    }
+
+    return -1;
+}
+
+kbool id_available(char id) {
+    if (!id) {
+        return false;
+    }
+
+    if (id == '@') {
+        //LINKED TO SYSTEM DISK, CAN'T BE USED FOR A DISK
+        return false;
+    }
+
+    if (id == 'D') {
+        //KERNELS RAM FILESYSTEM, CAN'T BE USED FOR A DISK
+        return false;
+    }
+
+    //CAN'T BE USED IF ALREADY IN USE
+    for (int i = 0; i < MAX_DISKS; i++) {
+        if (disks[i]->id == id) {
+            return false;
+        }
+    }
+
+    //PASSED
+    return true;
+}
+
+char get_id(void) {
+    //LOOP THROUGH 0..9
+    for (int i = 0; i < 10; i++) {
+        if (id_available('0' + i)) {
+            return '0' + i;
+        }
+    }
+
+    //LOOP TROUGH A..Z
+    for (int i = 0; i < 26; i++) {
+        if (id_available('A' + i)) {
+            return 'A' + i;
         }
     }
 
     return 0;
 }
 
-int init_disk(int ata_drive_port, int ata_base_port, char id) {
-    struct disk *disk = get_free_disk();
-    if (!disk) {
-        return -ERROR_IO;
+int disk_new(char id, int type, int starting_lba, int ending_lba, size_t sector_size, struct disk **disk_out, int ata_drive_port, int ata_base_port) {
+    if (!id) {
+        id = get_id();    
+    }
+    
+    if (!id_available(id)) {
+        return -ERROR_INVALID_ARG;
     }
 
-    memset(disk, 0, sizeof(struct disk));
-    disk->type = DISK_TYPE_REAL;
-    disk->sector_size = SECTOR_SIZE;
+    int res = 0;
+    struct disk *disk = kzalloc(sizeof(struct disk));
+    if (!disk) {
+        res = -ERROR_NO_MEM;
+        goto out;
+    }
+
     disk->id = id;
+    disk->type = type;
+    disk->sector_size = sector_size;
+    disk->starting_lba = starting_lba;
+    disk->ending_lba = ending_lba;
     disk->ata_drive_port = ata_drive_port;
     disk->ata_base_port = ata_base_port;
+    
     disk->filesystem = fs_resolve(disk);
+    if (disk->filesystem) {
+        
+    }
 
-    return 0;
+    if (disk_out) {
+        *disk_out = disk;
+    }
+
+    int disk_index = get_free_disk_index();
+    if (disk_index < 0) {
+        res = -1;
+        goto out;
+    }
+
+    disks[disk_index] = disk;
+out:
+    return res;
 }
 
 int check_drive(int drive, int ata_base_port) {
@@ -213,19 +286,19 @@ int disks_search_and_init() {
     int disks_found = 0;
     
     if (check_drive(0xA0, 0x1F0) == true) {
-        init_disk(0xA0, 0x1F0, '0');
+        disk_new(0, DISK_TYPE_REAL, 0, 0, SECTOR_SIZE, NULL, 0xA0, 0x1F0);
         disks_found++;
     }
     if (check_drive(0xB0, 0x1F0) == true) {
-        init_disk(0xB0, 0x1F0, '1');
+        disk_new(0, DISK_TYPE_REAL, 0, 0, SECTOR_SIZE, NULL, 0xB0, 0x1F0);
         disks_found++;
     }
     if (check_drive(0xA0, 0x170) == true) {
-        init_disk(0xA0, 0x170, '2');
+        disk_new(0, DISK_TYPE_REAL, 0, 0, SECTOR_SIZE, NULL, 0xA0, 0x170);
         disks_found++;
     }
     if (check_drive(0xB0, 0x170) == true) {
-        init_disk(0xB0, 0x170, '3');
+        disk_new(0, DISK_TYPE_REAL, 0, 0, SECTOR_SIZE, NULL, 0xB0, 0x170);
         disks_found++;
     }
 
@@ -244,22 +317,39 @@ struct disk *disk_get(char id) {
         return &ram;
     }
 
-    if (char_is_digit(id)) {
-        int index = char_to_int(id);
-        for (int i = 0; i < MAX_DISKS; i++) {
-            if (disks[i].id == id) {
-                return &disks[i];
-            }
+    if (id == '@') {
+        return system_disk;
+    }
+
+    for (int i = 0; i < MAX_DISKS; i++) {
+        if (disks[i]->id == id) {
+            return disks[i];
         }
     }
 
-    return 0;
+    return NULL;
 }
 
 int disk_read_block(struct disk *idisk, uint32_t lba, int total, void *buf) {
-    return disk_read_sector(idisk->ata_base_port, idisk->ata_drive_port, lba, total, buf);
+    size_t absolute_lba = idisk->starting_lba + lba;
+    size_t absolute_ending_lba = absolute_lba + total;
+    if (absolute_ending_lba > idisk->ending_lba) {
+        if (idisk->starting_lba != 0 && idisk->ending_lba != 0) {
+            return ERROR_IO;
+        }
+    }
+
+    return disk_read_sector(idisk->ata_base_port, idisk->ata_drive_port, absolute_lba, total, buf);
 }
 
 int disk_write_block(struct disk *idisk, uint32_t lba, int total, void *buf) {
+    size_t absolute_lba = idisk->starting_lba + lba;
+    size_t absolute_ending_lba = absolute_lba + total;
+    if (absolute_ending_lba > idisk->ending_lba) {
+        if (idisk->starting_lba != 0 && idisk->ending_lba != 0) {
+            return ERROR_IO;
+        }
+    }
+
     return disk_write_sector(idisk->ata_base_port, idisk->ata_drive_port, lba, total, buf);
 }

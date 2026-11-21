@@ -4,6 +4,7 @@
 #include "stdint.h"
 
 #define CEIL_DIV(a, b) (((a) + (b) - 1) / (b))
+#define offsetof(TYPE, ELEMENT) ((size_t)&(((TYPE *)0)->ELEMENT))
 
 void *memset(void *ptr, int c, size_t size);
 void *memcpy(void *dest, void *src, int len);

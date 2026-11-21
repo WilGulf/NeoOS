@@ -60,7 +60,7 @@ struct heap {
 uintptr_t heap_align_value_to_upper(uintptr_t val);
 uintptr_t heap_align_value_to_lower(uintptr_t val);
 
-bool heap_is_address_within_heap(struct heap *heap, void *addr);
+kbool heap_is_address_within_heap(struct heap *heap, void *addr);
 int64_t heap_address_to_block(struct heap *heap, void *address);
 
 void heap_callbacks_set(struct heap *heap, HEAP_BLOCK_ALLOCATED_CALLBACK_FUNCTION allocated_function, HEAP_BLOCK_FREE_CALLBACK_FUNCTION free_function);

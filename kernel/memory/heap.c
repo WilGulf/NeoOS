@@ -93,7 +93,7 @@ static int heap_get_entry_type(HEAP_BLOCK_TABLE_ENTRY entry) {
     return entry & 0x0F;
 }
 
-bool heap_is_address_within_heap(struct heap *heap, void *addr) {
+kbool heap_is_address_within_heap(struct heap *heap, void *addr) {
     return (addr >= heap->saddr && addr <= heap->eaddr);
 }
 

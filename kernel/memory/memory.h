@@ -3,8 +3,8 @@
 
 #include "../include/stdint.h"
 
-#define MEMORY_MAP_LOCATION 0x7E00
-#define MEMORY_MAP_TOTAL_ENTRIES_LOCATION 0x7DFE
+#define MEMORY_MAP_TOTAL_ENTRIES_LOCATION 0x210000
+#define MEMORY_MAP_LOCATION 0x210008
 
 struct e820_entry {
     uint64_t base_addr;

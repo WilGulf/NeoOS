@@ -74,7 +74,7 @@ struct paging_descriptor {
 
 struct paging_pml_entries *paging_pml4_entries_new();
 struct paging_descriptor *paging_current_descriptor();
-bool paging_is_aligned(void *addr);
+kbool paging_is_aligned(void *addr);
 void *paging_align_address(void *ptr);
 void *paging_align_to_lower_page(void *addr);
 

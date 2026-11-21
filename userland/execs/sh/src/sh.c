@@ -37,7 +37,7 @@ void print_prompt(void) {
 
 int main(int argc, char **argv) {
     // VARIABLES
-    char path1[256 + 9] = "1:/execs/";
+    char path1[256 + 9] = "@:/execs/";
 
     char cmd[256] = "";
     char *p;

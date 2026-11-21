@@ -35,7 +35,7 @@ struct paging_pml_entries *paging_pml4_entries_new() {
     return entries_descriptor;
 }
 
-static bool paging_map_level_is_valid(paging_map_level_t level) {
+static kbool paging_map_level_is_valid(paging_map_level_t level) {
     return level == PAGING_MAP_LEVEL_4;
 }
 
@@ -61,11 +61,11 @@ void paging_switch(struct paging_descriptor *desc) {
     paging_load_directory((uint64_t *)(&desc->pml->entries[0]));
 }
 
-bool paging_is_aligned(void *addr) {
+kbool paging_is_aligned(void *addr) {
     return ((uintptr_t)addr % PAGE_SIZE) == 0;
 }
 
-static bool paging_null_entry(struct paging_descriptor_entry *entry) {
+static kbool paging_null_entry(struct paging_descriptor_entry *entry) {
     struct paging_descriptor_entry null_desc = {0};
     return memcmp(entry, &null_desc, sizeof(struct paging_descriptor_entry)) == 0;
 }

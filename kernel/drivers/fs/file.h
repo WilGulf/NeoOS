@@ -28,7 +28,6 @@
 #define MAX_FILE_DESCRIPTORS 512
 
 typedef unsigned int FILE_SEEK_MODE;
-
 enum {
     SEEK_SET,
     SEEK_CUR,
@@ -75,16 +74,17 @@ struct dirent {
 struct disk;
 
 typedef void *(*FS_OPEN_FUNCTION)(struct disk *disk, struct path_part *path, FILE_MODE mode);
-typedef int (*FS_READ_FUNCTION)(struct disk *disk, void *private, uint32_t size, uint32_t nmemb, char *out);
+typedef int (*FS_READ_FUNCTION)(struct disk *disk, void *private, uint64_t size, uint64_t nmemb, char *out);
 typedef int (*FS_RESOLVE_FUNCTION)(struct disk *disk);
-typedef int (*FS_SEEK_FUNCTION)(struct disk *disk, void *private, uint32_t offset, FILE_SEEK_MODE seek_mode);
+typedef int (*FS_SEEK_FUNCTION)(struct disk *disk, void *private, uint64_t offset, FILE_SEEK_MODE seek_mode);
 typedef int (*FS_STAT_FUNCTION)(struct disk *disk, void *private, struct file_stat *stat);
-typedef int (*FS_WRITE_FUNCTION)(struct disk *disk, void *private, uint32_t size, uint32_t nmemb, const char *in);
+typedef int (*FS_WRITE_FUNCTION)(struct disk *disk, void *private, uint64_t size, uint64_t nmemb, const char *in);
 typedef int (*FS_REMOVE_FUNCTION)(struct disk *disk, struct path_part *path);
 typedef int (*FS_CLOSE_FUNCTION)(void *private);
 typedef struct dirent (*FS_READDIR_FUNCTION)(struct disk *disk, void *private);
 typedef int (*FS_CREATE_FUNCTION)(struct disk *disk, struct path_part *path);
 typedef int (*FS_MKDIR_FUNCTION)(struct disk *disk, struct path_part *path);
+typedef int (*FS_VOLUME_NAME_FUNCTION)(void *private, char *name_out, size_t max);
 
 struct filesystem {
     FS_RESOLVE_FUNCTION resolve;
@@ -98,6 +98,7 @@ struct filesystem {
     FS_READDIR_FUNCTION readdir;
     FS_CREATE_FUNCTION create;
     FS_MKDIR_FUNCTION mkdir;
+    FS_VOLUME_NAME_FUNCTION volume_name;
 
     char name[20];
 };

@@ -27,6 +27,7 @@
 #include "task/process.h"
 #include "syscalls/isr80h.h"
 #include "drivers/disk/disk.h"
+#include "drivers/disk/gpt.h"
 #include "drivers/fs/path_parser.h"
 
 /*
@@ -107,6 +108,7 @@ int kmain() {
     fs_init();
 
     kprintf("Found %d disks\n", disks_search_and_init());
+    gpt_init();
 
     kprintf("Handing over to launcher\n");
     int fd = fopen("1:/sysro/boot.cfg", "r");
@@ -130,60 +132,6 @@ int kmain() {
     }
 
     task_run_first_ever_task();
-
-    //enable_interrupts();
-
-    /*
-
-    gdt_init();
-    kprintf("GDT initialized\n");
-    idt_init();
-    kprintf("IDT initialized\n");
-
-    timer_init();
-
-    void *kernel_stack = kzalloc(4096);
-    set_tss_stack(&stack_top);
-
-    kernel_chunk = paging_new_4gb(PAGING_IS_WRITEABLE | PAGING_IS_PRESENT);
-    
-    paging_switch(kernel_chunk);
-    kprintf("Paging switch\n");
-
-    enable_paging();
-    kprintf("Paging enabled\n");
-
-    ramdisk_init();
-    fs_init();
-    kprintf("RamFS initialized\n");
-
-    isr80h_register_commands();
-
-    kprintf("Registering disk devices\n");
-    kprintf("Found %d disks\n", disks_search_and_init());
-
-    kprintf("Keyboard drivers initialized\n");
-    keyboard_init();
-
-    kprintf("Handing over to launch\n");
-    int fd = fopen("0:/sysro/boot.cfg", "r");
-
-    char line[256];
-    char launch[MAX_PATH];
-    while (fgets(line, sizeof(line), fd)) {
-        if (!strncmp(line, "LAUNCH=", 7)) {
-            strncpy(launch, line + 7, sizeof(launch));
-        }
-    }
-
-    struct process *process = 0;
-    int res = process_load_switch(launch, &process);
-    if (res != ALL_OK) {
-        panic("Failed to load launcher", res);
-    }
-
-    task_run_first_ever_task();
-    */
 
     while (1) {}
 

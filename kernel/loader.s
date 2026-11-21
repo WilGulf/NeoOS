@@ -1,4 +1,4 @@
-bits 32
+bits 64
 
 extern kmain
 
@@ -10,37 +10,17 @@ LONG_MODE_DATA_SEG equ 0x20
 section .text
 global loader
 loader:
-    mov ax, DATA_SEG
-    mov ds, ax
-    mov es, ax
-    mov fs, ax
-    mov gs, ax
-    mov ss, ax
-    mov ebp, 0x00200000
-    mov esp, ebp
+    cli
+    mov al, 'A'
+    out 0xE9, al
+    jmp long_mode_entry
+
+long_mode_entry:
+    mov rax, pml4_table
+    mov cr3, rax
 
     lgdt [gdt_descriptor]
 
-    mov eax, cr4
-    or eax, 1 << 5
-    mov cr4, eax
-
-    mov eax, pml4_table
-    mov cr3, eax
-
-    mov ecx, 0xC0000080
-    rdmsr
-    or eax, 0x100
-    wrmsr
-
-    mov eax, cr0
-    or eax, 1 << 31
-    mov cr0, eax
-
-    jmp LONG_MODE_CODE_SEG:long_mode_entry
-
-bits 64
-long_mode_entry:
     mov ax, LONG_MODE_DATA_SEG
     mov ds, ax
     mov es, ax
@@ -53,6 +33,11 @@ long_mode_entry:
     mov rsp, 0x00200000
     mov rbp, rsp
 
+    push qword 0x18
+    push qword long_mode_new_gdt_complete
+    retfq
+
+long_mode_new_gdt_complete:
     mov al, 0x11
     out 0x20, al
 
@@ -178,7 +163,7 @@ gdt_end:
 
 gdt_descriptor:
     dw gdt_end - gdt - 1
-    dd gdt
+    dq gdt
 
 align 0x1000
 pml4_table:
