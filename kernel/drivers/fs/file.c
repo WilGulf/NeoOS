@@ -80,6 +80,10 @@ static int file_new_descriptor(struct file_descriptor **desc_out) {
     for (int i = 0; i < MAX_FILE_DESCRIPTORS; i++) {
         if (file_descriptors[i] == 0) {
             struct file_descriptor *desc = kzalloc(sizeof(struct file_descriptor));
+            if (!desc) {
+                return -ERROR_NO_MEM;
+            }
+
             desc->index = i + 1;
             file_descriptors[i] = desc;
             *desc_out = desc;
@@ -92,7 +96,7 @@ static int file_new_descriptor(struct file_descriptor **desc_out) {
 }
 
 static struct file_descriptor *file_get_descriptor(int fd) {
-    if (fd <= 0 || fd >= MAX_FILE_DESCRIPTORS) {
+    if (fd <= 0 || fd > MAX_FILE_DESCRIPTORS) {
         return 0;
     }
 
@@ -103,7 +107,7 @@ static struct file_descriptor *file_get_descriptor(int fd) {
 struct filesystem *fs_resolve(struct disk *disk) {
     struct filesystem *fs = 0;
     for (int i = 0; i < MAX_FILESYSTEMS; i++) {
-        if (filesystems[i] != 0 && filesystems[i]->resolve(disk) == 0) {
+        if (filesystems[i] && filesystems[i]->resolve(disk) == 0) {
             fs = filesystems[i];
             break;
         }
@@ -174,12 +178,12 @@ int fopen(const char *filename, const char *mode_str) {
     res = desc->index;
 
 out:
-    if (res < 0) {
-        if (root_path) {
-            path_parser_free(root_path);
-            root_path = NULL;
-        }
+    if (root_path) {
+        path_parser_free(root_path);
+        root_path = NULL;
+    }
 
+    if (res < 0) {
         if (descriptor_private_data && disk) {
             disk->filesystem->close(descriptor_private_data);
             descriptor_private_data = NULL;
@@ -189,8 +193,6 @@ out:
             file_free_descriptor(desc);
             desc = NULL;
         }
-        
-        res = 0;
     }
 
     return res;
@@ -282,6 +284,8 @@ int remove(const char *filename) {
     }
     
     disk->filesystem->remove(disk, root_path->first);
+
+    path_parser_free(root_path);
     return 0;
 }
 
@@ -366,6 +370,8 @@ int create(const char *filename) {
     }
     
     disk->filesystem->create(disk, root_path->first);
+
+    path_parser_free(root_path);
     return 0;
 }
 
@@ -392,5 +398,7 @@ int mkdir(const char *filename) {
     }
     
     disk->filesystem->mkdir(disk, root_path->first);
+
+    path_parser_free(root_path);
     return 0;
 }

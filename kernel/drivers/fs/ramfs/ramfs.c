@@ -18,6 +18,7 @@ int ramfs_write(struct disk *disk, void *private, uint64_t size, uint64_t nmemb,
 int ramfs_remove(struct disk *disk, struct path_part *path);
 int ramfs_close(void *private);
 int ramfs_volume_name(void *private, char *name_out, size_t max);
+int ramfs_volume_uuid(void *private, uuid_t *uuid_out);
 
 struct filesystem ramfs = {
     .resolve = ramfs_resolve,
@@ -29,6 +30,7 @@ struct filesystem ramfs = {
     .remove = ramfs_remove,
     .close = ramfs_close,
     .volume_name = ramfs_volume_name,
+    .volume_uuid = ramfs_volume_uuid,
 };
 
 struct ramfs_file_descriptor {
@@ -405,5 +407,11 @@ int ramfs_close(void *descriptor) {
 
 int ramfs_volume_name(void *private, char *name_out, size_t max) {
     strncpy(name_out, "RAMFS", max);
+    return 0;
+}
+
+int ramfs_volume_uuid(void *private, uuid_t *uuid_out) {
+    (void)private;
+    memset(uuid_out, 0, sizeof(uuid_t));
     return 0;
 }

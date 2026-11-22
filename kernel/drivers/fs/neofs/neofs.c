@@ -3,6 +3,8 @@
 #include "../file.h"
 #include "../../disk/disk_streamer.h"
 
+#include "../../io/io.h"
+
 #include "../../../include/stdint.h"
 #include "../../../include/status.h"
 #include "../../../include/util.h"
@@ -86,6 +88,7 @@ struct dirent neofs_readdir(struct disk *disk, void *private);
 int neofs_create(struct disk *disk, struct path_part *path);
 int neofs_mkdir(struct disk *disk, struct path_part *path);
 int neofs_volume_name(void *private, char *name_out, size_t max);
+int neofs_volume_uuid(void *private, uuid_t *uuid_out);
 
 struct filesystem neofs = {
     .resolve = neofs_resolve,
@@ -100,6 +103,7 @@ struct filesystem neofs = {
     .create = neofs_create,
     .mkdir = neofs_mkdir,
     .volume_name = neofs_volume_name,
+    .volume_uuid = neofs_volume_uuid,
 };
 
 int read_file(uint64_t file_meta_block_n, void *out, struct disk *disk);
@@ -276,12 +280,6 @@ int neofs_resolve(struct disk *disk) {
     disk->fs_private = private;
     disk->filesystem = &neofs;
 
-    struct disk_stream *stream = disk_streamer_new(disk->id);
-    if (!stream) {
-        res = -ERROR_NO_MEM;
-        goto out;
-    }
-
     struct master_block master_block;
     if (get_master_block(&master_block, disk) < 0) {
         res = -1;
@@ -324,10 +322,6 @@ int neofs_resolve(struct disk *disk) {
     strcpy(private->volume_name, master_block.volume_name);
 
 out:
-    if (stream) {
-        disk_stream_close(stream);
-    }
-
     if (res < 0) {
         kfree(private);
         disk->fs_private = 0;
@@ -707,8 +701,10 @@ void *neofs_open(struct disk *disk, struct path_part *path, FILE_MODE mode) {
     descriptor->type = FILE_TYPE_FILE;
 
     struct meta_block meta_block;
-    if (get_meta_block(meta_block_n, &meta_block, disk) < 0)
+    if (get_meta_block(meta_block_n, &meta_block, disk) < 0) {
+        kfree(descriptor);
         return (void *)-1;
+    }
 
     if (meta_block.is_dir) {
         descriptor->type = FILE_TYPE_DIR;
@@ -1095,7 +1091,13 @@ int neofs_mkdir(struct disk *disk, struct path_part *path) {
 
 int neofs_volume_name(void *private, char *name_out, size_t max) {
     struct neofs_private *neofs_private = (struct neofs_private *)private;
-    strncpy(name_out, neofs_private->volume_name, max);
-    *(name_out + max) = '\0';
+    strncpy(name_out, neofs_private->volume_name, max - 1);
+    name_out[max - 1] = '\0';
+    return 0;
+}
+
+int neofs_volume_uuid(void *private, uuid_t *uuid_out) {
+    struct neofs_private *neofs_private = (struct neofs_private *)private;
+    memcpy(uuid_out, neofs_private->master_block.uuid, sizeof(uuid_t));
     return 0;
 }

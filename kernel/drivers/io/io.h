@@ -12,14 +12,9 @@ uint8_t inb(uint16_t port);
 uint16_t inw(uint16_t port);
 uint16_t inl(uint16_t port);
 
-int writer(char *buf);
-void fb_putc(char c);
-void fb_clear();
-void fb_scroll();
+void putc(char c);
 
-void fb_enable_cursor();
-void fb_disable_cursor();
-
+int klogf(const char *fmt, ...);
 int kprintf(const char *fmt, ...);
 int snprintf(char *out, size_t len, char *fmt, ...);
 int sprintf(char *out, char *fmt, ...);

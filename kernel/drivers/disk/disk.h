@@ -37,7 +37,11 @@ int disks_search_and_init();
 void ramdisk_init();
 
 struct disk *disk_get(char id);
+struct disk *disk_get_by_uuid(uuid_t *uuid);
+
 int disk_read_block(struct disk *idisk, uint32_t lba, int total, void *buf);
 int disk_write_block(struct disk *idisk, uint32_t lba, int total, void *buf);
+
+void disk_set_system_disk(struct disk *disk);
 
 #endif

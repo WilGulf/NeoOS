@@ -10,6 +10,9 @@ LONG_MODE_DATA_SEG equ 0x20
 section .text
 global loader
 loader:
+    ;store bootinfo
+    mov r12, rdi
+
     cli
     mov al, 'A'
     out 0xE9, al
@@ -89,6 +92,9 @@ long_mode_new_gdt_complete:
     push kernel_physical_end
 
     xor ebp, ebp
+
+    ;restore bootinfo
+    mov rdi, r12
     call kmain
 
 .halt:

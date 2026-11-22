@@ -1,5 +1,6 @@
 #include "panic.h"
 
+#include "drivers/io/fb/console.h"
 #include "drivers/io/io.h"
 #include "timer/timer.h"
 #include "include/va_list.h"
@@ -28,7 +29,7 @@ int pprintf(const char *fmt, ...) {
         message
     );
 
-    writer(buffer);
+    console_writer(buffer);
 
     return 0;
 }

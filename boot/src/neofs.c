@@ -11,13 +11,14 @@
 
 struct master_block {
     uint64_t magic;
-
     uint64_t block_size;
-
     uint64_t bitmap_meta_block;
 
     uint64_t first_block;
     uint64_t block_count;
+
+    uint8_t uuid[16];
+    char volume_name[11];
 } __attribute__((packed));
 
 struct meta_block {
@@ -1067,4 +1068,9 @@ int neofs_mkdir(struct path_part *path) {
     } else {
         return -1;
     }
+}
+
+EFI_STATUS neofs_volume_uuid(uint8_t uuid_out[16]) {
+    memcpy(uuid_out, private.master_block.uuid, sizeof(private.master_block.uuid));
+    return EFI_SUCCESS;
 }

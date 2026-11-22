@@ -1,8 +1,13 @@
-#include "io.h"
+#include "console.h"
 
-#include "../../include/util.h"
-#include "../../include/va_list.h"
-#include "../../timer/timer.h"
+#include "../../../include/util.h"
+#include "../../../include/stdint.h"
+#include "../../../include/va_list.h"
+#include "../../../timer/timer.h"
+
+void putc(char c) {
+    console_putc(c, true);
+}
 
 int vsprintf(char *out, const char *fmt, va_list arg_ptr) {
     const char *p;
@@ -77,16 +82,16 @@ int sprintf(char *out, char *fmt, ...) {
 }
 
 int snprintf(char *out, size_t len, char *fmt, ...) {
-
+    
 }
 
-int kprintf(const char *fmt, ...) {
+int klogf(const char *fmt, ...) {
     va_list args;
 
     char message[1024];
     char buffer[1152];
 
-    uint32_t ms = 0;//timer_get_ms();
+    uint32_t ms = timer_get_ms();
     int sec = ms / 1000;
     int sec_ms = ms % 1000;
 
@@ -104,7 +109,20 @@ int kprintf(const char *fmt, ...) {
         message
     );
 
-    writer(buffer);
+    console_writer(buffer);
+
+    return 0;
+}
+
+int kprintf(const char *fmt, ...) {
+    char message[1024];
+    
+    va_list args;
+    va_start(args, fmt);
+    vsprintf(message, fmt, args);
+    va_end(args);
+
+    console_writer(message);
 
     return 0;
 }

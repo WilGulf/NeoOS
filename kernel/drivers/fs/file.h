@@ -85,6 +85,7 @@ typedef struct dirent (*FS_READDIR_FUNCTION)(struct disk *disk, void *private);
 typedef int (*FS_CREATE_FUNCTION)(struct disk *disk, struct path_part *path);
 typedef int (*FS_MKDIR_FUNCTION)(struct disk *disk, struct path_part *path);
 typedef int (*FS_VOLUME_NAME_FUNCTION)(void *private, char *name_out, size_t max);
+typedef int (*FS_VOLUME_UUID_FUNCTION)(void *private, uuid_t *uuid_out);
 
 struct filesystem {
     FS_RESOLVE_FUNCTION resolve;
@@ -99,6 +100,7 @@ struct filesystem {
     FS_CREATE_FUNCTION create;
     FS_MKDIR_FUNCTION mkdir;
     FS_VOLUME_NAME_FUNCTION volume_name;
+    FS_VOLUME_UUID_FUNCTION volume_uuid;
 
     char name[20];
 };

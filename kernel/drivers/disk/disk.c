@@ -210,11 +210,9 @@ int disk_new(char id, int type, int starting_lba, int ending_lba, size_t sector_
         return -ERROR_INVALID_ARG;
     }
 
-    int res = 0;
     struct disk *disk = kzalloc(sizeof(struct disk));
     if (!disk) {
-        res = -ERROR_NO_MEM;
-        goto out;
+        return -ERROR_NO_MEM;
     }
 
     disk->id = id;
@@ -224,25 +222,22 @@ int disk_new(char id, int type, int starting_lba, int ending_lba, size_t sector_
     disk->ending_lba = ending_lba;
     disk->ata_drive_port = ata_drive_port;
     disk->ata_base_port = ata_base_port;
+
+    int disk_index = get_free_disk_index();
+    if (disk_index < 0) {
+        kfree(disk);
+        return -ERROR_NO_MEM;
+    }
+
+    disks[disk_index] = disk;
     
     disk->filesystem = fs_resolve(disk);
-    if (disk->filesystem) {
-        
-    }
 
     if (disk_out) {
         *disk_out = disk;
     }
 
-    int disk_index = get_free_disk_index();
-    if (disk_index < 0) {
-        res = -1;
-        goto out;
-    }
-
-    disks[disk_index] = disk;
-out:
-    return res;
+    return 0;
 }
 
 int check_drive(int drive, int ata_base_port) {
@@ -322,12 +317,39 @@ struct disk *disk_get(char id) {
     }
 
     for (int i = 0; i < MAX_DISKS; i++) {
-        if (disks[i]->id == id) {
+        if (disks[i] && disks[i]->id == id) {
             return disks[i];
         }
     }
 
     return NULL;
+}
+
+struct disk *disk_get_by_uuid(uuid_t *uuid) {
+    if (!uuid) {
+        return NULL;
+    }
+
+    for (int i = 0; i < MAX_DISKS; i++) {
+        if (disks[i] && disks[i]->filesystem && disks[i]->fs_private) {
+            uuid_t disk_uuid;
+            disks[i]->filesystem->volume_uuid(disks[i]->fs_private, &disk_uuid);
+
+            if (memcmp(disk_uuid, uuid, sizeof(uuid_t)) == 0) {
+                return disks[i];
+            }
+        }
+    }
+
+    return NULL;
+}
+
+void disk_set_system_disk(struct disk *disk) {
+    if (!disk) {
+        return;
+    }
+    
+    system_disk = disk;
 }
 
 int disk_read_block(struct disk *idisk, uint32_t lba, int total, void *buf) {
@@ -351,5 +373,5 @@ int disk_write_block(struct disk *idisk, uint32_t lba, int total, void *buf) {
         }
     }
 
-    return disk_write_sector(idisk->ata_base_port, idisk->ata_drive_port, lba, total, buf);
+    return disk_write_sector(idisk->ata_base_port, idisk->ata_drive_port, absolute_lba, total, buf);
 }

@@ -4,6 +4,7 @@
 
 #include "../task/task.h"
 #include "../drivers/keyboard/keyboard.h"
+#include "../drivers/io/fb/console.h"
 #include "../drivers/io/io.h"
 #include "../kernel.h"
 
@@ -17,7 +18,7 @@ void *isr80h_command4_print(struct interrupt_frame *frame) {
     void *user_space_msg_buffer = task_get_stack_item(task_current(), 0);
     char buf[1024];
     copy_string_from_task(task_current(), user_space_msg_buffer, buf, sizeof(buf));
-    writer(buf);
+    console_writer(buf);
     return 0;
 }
 
@@ -29,7 +30,7 @@ void *isr80h_command5_putchar(struct interrupt_frame *frame) {
     }
     
     char c = (char)(int)task_get_stack_item(task_current(), 0);
-    fb_putc(c);
+    putc(c);
     return 0;
 }
 
@@ -40,7 +41,7 @@ void *isr80h_command6_fb_clear(struct interrupt_frame *frame) {
         return 0;
     }
 
-    fb_clear();
+    console_clear(true);
     return 0;
 }
 

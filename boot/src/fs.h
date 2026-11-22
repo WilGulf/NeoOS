@@ -58,5 +58,6 @@ int neofs_close(void *private);
 struct dirent neofs_readdir(void *private);
 int neofs_create(struct path_part *path);
 int neofs_mkdir(struct path_part *path);
+EFI_STATUS neofs_volume_uuid(uint8_t uuid_out[16]);
 
 #endif

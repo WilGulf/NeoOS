@@ -16,6 +16,8 @@ typedef unsigned long uintptr_t;
 
 typedef _Bool kbool;
 
+typedef uint8_t uuid_t[16];
+
 #define NULL ((void *)0)
 
 #define true 1

@@ -5,85 +5,41 @@
 #include "disk.h"
 #include "fs.h"
 #include "path_parser.h"
+#include "memory.h"
 
-#define MEMORY_MAP_TOTAL_ENTRIES_LOCATION 0x210000
-#define MEMORY_MAP_LOCATION 0x210008
+#define BOOTINFO_MAGIC 0x4E45585553
 
-typedef struct __attribute__((packed)) e820_entry_t {
-    UINT64 base_addr;
-    UINT64 length;
-    UINT32 type;
-    UINT32 extended_attr;
-} e820_entry_t;
+typedef uint8_t uuid_t[16];
 
-typedef struct __attribute__((packed)) e820_entries_t {
-    UINT64 count;
-    e820_entry_t entries[];
-} e820_entries_t;
+struct boot_graphics_info {
+    EFI_GRAPHICS_OUTPUT_BLT_PIXEL *framebuffer;
+    uint32_t horizontal_resolution;
+    uint32_t vertical_resolution;
+    uint32_t pixels_pre_scanline;
+} __attribute__((packed));
 
-EFI_STATUS setup_memory_maps(void) {
+struct bootinfo {
+    uint64_t magic;
+    uuid_t system_uuid;
+    uint64_t command_line_ptr;
+    uint64_t command_line_len;
+    struct boot_graphics_info boot_graphics_info;
+} __attribute__((packed));
+
+EFI_STATUS get_framebuffer_info(EFI_GRAPHICS_OUTPUT_PROTOCOL **graphics_out) {
     EFI_STATUS res;
-    UINTN memory_map_size = 0;
-    EFI_MEMORY_DESCRIPTOR *memory_map = NULL;
-    UINTN map_key;
-    UINTN descriptor_size;
-    UINT32 descriptor_version;
 
-    res = uefi_call_wrapper(gBS->GetMemoryMap, 5, &memory_map_size, NULL, &map_key, &descriptor_size, &descriptor_version);
-
-    if (res != EFI_BUFFER_TOO_SMALL && EFI_ERROR(res)) {
-        return res;
-    }
-
-    memory_map_size += descriptor_size * 10;
-
-    memory_map = AllocatePool(memory_map_size);
-    if (!memory_map) {
-        return EFI_OUT_OF_RESOURCES;
-    }
-
-    res = uefi_call_wrapper(gBS->GetMemoryMap, 5, &memory_map_size, memory_map, &map_key, &descriptor_size, &descriptor_version);
-    if (EFI_ERROR(res)) {
-        FreePool(memory_map);
-        return res;
-    }
-
-    UINTN descriptor_count = memory_map_size / descriptor_size;
-    EFI_MEMORY_DESCRIPTOR *descriptor = memory_map;
-    UINTN total_descriptors = 0;
-    for (UINTN i = 0; i < descriptor_count; i++) {
-        if (descriptor->Type == EfiConventionalMemory) {
-            total_descriptors++;
-        }
-
-        descriptor = (EFI_MEMORY_DESCRIPTOR *)((UINT8 *)descriptor + descriptor_size);
-    }
-
-    EFI_PHYSICAL_ADDRESS memory_map_location_e820 = MEMORY_MAP_TOTAL_ENTRIES_LOCATION;
-    UINTN memory_map_size_e820 = (sizeof(e820_entry_t) * total_descriptors) + sizeof(UINT64);
-    res = uefi_call_wrapper(gBS->AllocatePages, 4, AllocateAddress, EfiLoaderData, EFI_SIZE_TO_PAGES(memory_map_size_e820), &memory_map_location_e820);
+    res = uefi_call_wrapper(gBS->LocateProtocol, 3, &gEfiGraphicsOutputProtocolGuid, NULL, (VOID **)graphics_out);
     if (EFI_ERROR(res)) {
         return res;
     }
 
-    e820_entries_t *e820_entries = (e820_entries_t *)memory_map_location_e820;
-    UINTN conventional_memory_i = 0;
-    descriptor = memory_map;
-    for (UINTN i = 0; i < descriptor_count; i++) {
-        if (descriptor->Type == EfiConventionalMemory) {
-            e820_entry_t *e820_entry = &e820_entries->entries[conventional_memory_i];
-            e820_entry->base_addr = descriptor->PhysicalStart;
-            e820_entry->length = descriptor->NumberOfPages * 4096;
-            e820_entry->type = 1;
-            e820_entry->extended_attr = 0;
-            conventional_memory_i++;
-        }
-
-        descriptor = (EFI_MEMORY_DESCRIPTOR *)((UINT8 *)descriptor + descriptor_size);
-    } 
-
-    e820_entries->count = total_descriptors;
-    FreePool(memory_map);
+    EFI_GRAPHICS_OUTPUT_MODE_INFORMATION *info;
+    UINTN info_size;
+    res = uefi_call_wrapper((*graphics_out)->QueryMode, 4, *graphics_out, (*graphics_out)->Mode->Mode, &info_size, &info);
+    if (EFI_ERROR(res)) {
+        return res;
+    }
 
     return EFI_SUCCESS;
 }
@@ -138,11 +94,31 @@ EFI_STATUS EFIAPI efi_main(IN EFI_HANDLE ImageHandle, IN EFI_SYSTEM_TABLE *Syste
 
     memcpy((VOID *)kernel_base, buffer, size);
 
+    EFI_GRAPHICS_OUTPUT_PROTOCOL *graphics_out = NULL;
+    res = get_framebuffer_info(&graphics_out);
+    if (EFI_ERROR(res)) {
+        Print(L"Failed to get graphics info: %r\n", res);
+        return res;    
+    }
+
+    struct bootinfo *bootinfo = AllocatePool(sizeof(struct bootinfo));
+    neofs_volume_uuid(bootinfo->system_uuid);
+
+    bootinfo->magic = BOOTINFO_MAGIC;
+    bootinfo->command_line_len = 0;
+    bootinfo->command_line_ptr = 0;
+
+    bootinfo->boot_graphics_info.framebuffer = (EFI_GRAPHICS_OUTPUT_BLT_PIXEL *)graphics_out->Mode->FrameBufferBase;
+    bootinfo->boot_graphics_info.pixels_pre_scanline = graphics_out->Mode->Info->PixelsPerScanLine;
+    bootinfo->boot_graphics_info.horizontal_resolution = graphics_out->Mode->Info->HorizontalResolution;
+    bootinfo->boot_graphics_info.vertical_resolution = graphics_out->Mode->Info->VerticalResolution;
+
     Print(L"Loading kernel.bin ...\n");
 
     uefi_call_wrapper(gBS->ExitBootServices, 2, ImageHandle, 0);
 
-    __asm__("jmp *%0" : : "r"(kernel_base));
+    typedef void (__attribute__((sysv_abi)) *kernel_entry_t)(struct bootinfo *);
+    ((kernel_entry_t)(UINTN)kernel_base)(bootinfo);
 
     return EFI_SUCCESS;
 }
