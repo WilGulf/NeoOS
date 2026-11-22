@@ -7,6 +7,7 @@
 #define offsetof(TYPE, ELEMENT) ((size_t)&(((TYPE *)0)->ELEMENT))
 
 void *memset(void *ptr, int c, size_t size);
+void *memmove(void *dest, void *src, size_t len);
 void *memcpy(void *dest, void *src, int len);
 int memcmp(void* s1, void* s2, int count);
 

@@ -15,11 +15,13 @@ int rows = 0;
 int pos_x = 0;
 int pos_y = 0;
 
+uint32_t font_h = 0;
+
 int console_init(void) {
     uint32_t res_h = get_resolution_height();
     uint32_t res_w = get_resolution_width();
 
-    uint32_t font_h = get_font_height();
+    font_h = get_font_height();
     uint32_t font_w = get_font_width();
 
     if (!res_h || !res_w || !font_h || !font_w) {
@@ -44,6 +46,8 @@ void console_clear(kbool refresh) {
 }
 
 void console_scroll(kbool refresh) {
+    graphics_scroll(font_h);
+    
     if (refresh) {
         graphics_refresh();
     }

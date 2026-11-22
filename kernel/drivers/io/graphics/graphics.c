@@ -38,6 +38,35 @@ void graphics_reset_framebuffer(void) {
     memset(loaded_graphics_info->pixels, 0, framebuffer_size);
 }
 
+void graphics_scroll(uint32_t vertical_pixels) {
+    if (!loaded_graphics_info) {
+        return;
+    }
+    
+    if (!vertical_pixels) {
+        return;
+    }
+
+    if (vertical_pixels > framebuffer_height) {
+        graphics_reset_framebuffer();
+        return;
+    }
+
+    size_t row_size = framebuffer_pixels_per_scanline * sizeof(struct fb_pixel);
+
+    memmove(
+        loaded_graphics_info->pixels,
+        (struct fb_pixel *)loaded_graphics_info->pixels + vertical_pixels * framebuffer_pixels_per_scanline,
+        (framebuffer_height - vertical_pixels) * row_size
+    );
+
+    memset(
+        (struct fb_pixel *)loaded_graphics_info->pixels + (framebuffer_height - vertical_pixels) * framebuffer_pixels_per_scanline,
+        0,
+        vertical_pixels * row_size
+    );
+}
+
 void graphics_init(struct graphics_info *graphics_info) {
     if (loaded_graphics_info) {
         panic("", 1);

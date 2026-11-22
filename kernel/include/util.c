@@ -18,6 +18,27 @@ void *memset(void *ptr, int c, size_t size) {
     return ptr;
 }
 
+void *memmove(void *dest, void *src, size_t len) {
+    char *cdest;
+    char *csrc;
+
+    cdest = (char *)dest;
+    csrc = (char *)src;
+    if (dest <= src) {
+        while (len--) {
+            *cdest++ = *csrc++;
+        }
+    } else if (dest > src) {
+        cdest += len - 1;
+        csrc += len - 1;
+        while (len--) {
+            *cdest-- = *csrc--;
+        }
+    }
+
+    return (dest);
+}
+
 void *memcpy(void *dest, void *src, int len) {
     char *d = dest;
     char *s = src;

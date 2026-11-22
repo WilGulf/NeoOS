@@ -19,12 +19,15 @@ struct graphics_info {
     struct fb_pixel *pixels;
 };
 
+void graphics_init(struct graphics_info *graphics_info);
+
 size_t get_resolution_width(void);
 size_t get_resolution_height(void);
 
 void graphics_refresh(void);
+
 void graphics_reset_framebuffer(void);
+void graphics_scroll(uint32_t vertical_pixels);
 void graphics_draw_pixel(uint32_t x, uint32_t y, struct fb_pixel pixel);
-void graphics_init(struct graphics_info *graphics_info);
 
 #endif
