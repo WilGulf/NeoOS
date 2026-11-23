@@ -6,7 +6,7 @@ global exit:function
 exit:
     mov rax, 0
     int 0x80
-    ret
+    ud2
 
 global promise:function
 promise:
@@ -40,7 +40,7 @@ print:
     add rsp, 8
     ret
 
-global putchar
+global putchar:function
 putchar:
     push qword rdi
     mov rax, 5
@@ -182,7 +182,15 @@ fstat:
     add rsp, 16
     ret
 
-;22 fseek
+global fseek:function
+fseek:
+    push qword rdx
+    push qword rsi
+    push qword rdi
+    mov rax, 22
+    int 0x80
+    add rsp, 24
+    ret
 
 global get_ticks_ms:function
 get_ticks_ms:

@@ -81,21 +81,22 @@ disk_content: userland_execs output/kernel.bin output/disk.img
 
 	./fstools/copy.neofs --disk output/disk.img --offset 17825792 if=userland/launch/output/launch.elf trgt=sysro/launch --flags rx
 
-	./fstools/copy.neofs --disk output/disk.img --offset 17825792 if=userland/execs/sh/output/sh.elf 				trgt=execs/sh 		--flags rx
+	./fstools/copy.neofs --disk output/disk.img --offset 17825792 if=userland/execs/sh/output/sh.elf 			trgt=execs/sh 		--flags rx
 	./fstools/copy.neofs --disk output/disk.img --offset 17825792 if=userland/execs/fetch/output/fetch.elf 		trgt=execs/fetch 	--flags rx
-	./fstools/copy.neofs --disk output/disk.img --offset 17825792 if=userland/execs/echo/output/echo.elf 			trgt=execs/echo 	--flags rx
+	./fstools/copy.neofs --disk output/disk.img --offset 17825792 if=userland/execs/echo/output/echo.elf 		trgt=execs/echo 	--flags rx
 	./fstools/copy.neofs --disk output/disk.img --offset 17825792 if=userland/execs/sysinfo/output/sysinfo.elf 	trgt=execs/sysinfo 	--flags rx
 	./fstools/copy.neofs --disk output/disk.img --offset 17825792 if=userland/execs/fileutils/output/read.elf 	trgt=execs/read 	--flags rx
 	./fstools/copy.neofs --disk output/disk.img --offset 17825792 if=userland/execs/running/output/running.elf 	trgt=execs/running 	--flags rx
-	./fstools/copy.neofs --disk output/disk.img --offset 17825792 if=userland/execs/kill/output/kill.elf 			trgt=execs/kill 	--flags rx
-	./fstools/copy.neofs --disk output/disk.img --offset 17825792 if=userland/execs/test/output/test.elf 			trgt=execs/test 	--flags rx
-	./fstools/copy.neofs --disk output/disk.img --offset 17825792 if=userland/execs/fileutils/output/rm.elf 		trgt=execs/rm 		--flags rx
-	./fstools/copy.neofs --disk output/disk.img --offset 17825792 if=userland/execs/fileutils/output/crt.elf 		trgt=execs/crt 		--flags rx
+	./fstools/copy.neofs --disk output/disk.img --offset 17825792 if=userland/execs/kill/output/kill.elf 		trgt=execs/kill 	--flags rx
+	./fstools/copy.neofs --disk output/disk.img --offset 17825792 if=userland/execs/test/output/test.elf 		trgt=execs/test 	--flags rx
+	./fstools/copy.neofs --disk output/disk.img --offset 17825792 if=userland/execs/fileutils/output/rm.elf 	trgt=execs/rm 		--flags rx
+	./fstools/copy.neofs --disk output/disk.img --offset 17825792 if=userland/execs/fileutils/output/crt.elf 	trgt=execs/crt 		--flags rx
 	./fstools/copy.neofs --disk output/disk.img --offset 17825792 if=userland/execs/fileutils/output/list.elf 	trgt=execs/list 	--flags rx
 	./fstools/copy.neofs --disk output/disk.img --offset 17825792 if=userland/execs/fileutils/output/mkdir.elf 	trgt=execs/mkdir 	--flags rx
-	./fstools/copy.neofs --disk output/disk.img --offset 17825792 if=userland/execs/help/output/help.elf 			trgt=execs/help 	--flags rx
-	./fstools/copy.neofs --disk output/disk.img --offset 17825792 if=userland/execs/uptime/output/uptime.elf 		trgt=execs/uptime 	--flags rx
+	./fstools/copy.neofs --disk output/disk.img --offset 17825792 if=userland/execs/help/output/help.elf 		trgt=execs/help 	--flags rx
+	./fstools/copy.neofs --disk output/disk.img --offset 17825792 if=userland/execs/uptime/output/uptime.elf 	trgt=execs/uptime 	--flags rx
 	./fstools/copy.neofs --disk output/disk.img --offset 17825792 if=userland/execs/pwd/output/pwd.elf 			trgt=execs/pwd 	 	--flags rx
+	./fstools/copy.neofs --disk output/disk.img --offset 17825792 if=userland/execs/fbtest/output/fbtest.elf 	trgt=execs/fbtest 	--flags rx
 
 output/disk.img: output output/BOOTX64.EFI
 	dd if=/dev/zero of=output/disk.img bs=1M count=64
@@ -125,6 +126,7 @@ userland_execs:
 	cd ./userland/execs/test && $(MAKE) all
 	cd ./userland/execs/pwd && $(MAKE) all
 	cd ./userland/execs/fileutils && $(MAKE) all
+	cd ./userland/execs/fbtest && $(MAKE) all
 
 userland_clean:
 	cd ./userland/libs/stdlib && $(MAKE) clean 
@@ -141,6 +143,7 @@ userland_clean:
 	cd ./userland/execs/test && $(MAKE) clean
 	cd ./userland/execs/pwd && $(MAKE) clean
 	cd ./userland/execs/fileutils && $(MAKE) clean
+	cd ./userland/execs/fbtest && $(MAKE) clean
 
 kernel_clean:
 	rm -rf output/*

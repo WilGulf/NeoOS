@@ -45,9 +45,6 @@ void *isr80h_command19_fclose(struct interrupt_frame *frame) {
 }
 
 void *isr80h_command20_fread(struct interrupt_frame *frame) {
-    check_process_promise(task_current()->process, PROMISE_FS);
-    check_allowed_with_privilege(task_current()->process, PRIVILEGE_FS_DATA);
-
     void *out = task_get_stack_item(task_current(), 0);
     size_t size = (size_t)task_get_stack_item(task_current(), 1);
     size_t count = (size_t)task_get_stack_item(task_current(), 2);
@@ -60,13 +57,20 @@ void *isr80h_command20_fread(struct interrupt_frame *frame) {
 }
 
 void *isr80h_command21_fstat(struct interrupt_frame *frame) {
-    check_process_promise(task_current()->process, PROMISE_FS);
-    check_allowed_with_privilege(task_current()->process, PRIVILEGE_FS_DATA);
-
     int fd = (int)task_get_stack_item(task_current(), 0);
     void *out = task_get_stack_item(task_current(), 1);
     task_page();
     fstat(fd, out);
+    kernel_page();
+    return (void *)0;
+}
+
+void *isr80h_command22_fseek(struct interrupt_frame *frame) {
+    int fd = (int)task_get_stack_item(task_current(), 0);
+    int offset = (int)task_get_stack_item(task_current(), 1);
+    int mode = (int)task_get_stack_item(task_current(), 2);
+    task_page();
+    fseek(fd, offset, mode);
     kernel_page();
     return (void *)0;
 }
@@ -97,26 +101,18 @@ void *isr80h_command26_remove(struct interrupt_frame *frame) {
 }
 
 void *isr80h_command27_fwrite(struct interrupt_frame *frame) {
-    check_process_promise(task_current()->process, PROMISE_FS);
-    check_allowed_with_privilege(task_current()->process, PRIVILEGE_FS_DATA);
-
-    void *user_space_msg_buffer = task_get_stack_item(task_current(), 0);
-    char buffer[1024];
-    copy_string_from_task(task_current(), user_space_msg_buffer, buffer, sizeof(buffer));
-
+    void *in = task_get_stack_item(task_current(), 0);
     size_t size = (size_t)task_get_stack_item(task_current(), 1);
     size_t count = (size_t)task_get_stack_item(task_current(), 2);
     int fd = (int)task_get_stack_item(task_current(), 3);
     
-    int res = fwrite(buffer, size, count, fd);
-    
+    task_page();
+    int res = fwrite(in, size, count, fd);
+    kernel_page();
     return (void *)res;
 }
 
 void *isr80h_command28_readdir(struct interrupt_frame *frame) {
-    check_process_promise(task_current()->process, PROMISE_FS);
-    check_allowed_with_privilege(task_current()->process, PRIVILEGE_FS_DATA);
-
     int fd = (int)task_get_stack_item(task_current(), 0);
     void *out = task_get_stack_item(task_current(), 1);
 

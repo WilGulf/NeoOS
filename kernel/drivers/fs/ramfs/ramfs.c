@@ -6,8 +6,7 @@
 #include "../../../include/status.h"
 #include "../../../include/util.h"
 #include "../../../memory/kheap.h"
-
-struct ramfs_file *first_file;
+#include "../../../syscalls/promise.h"
 
 int ramfs_resolve(struct disk *disk);
 void *ramfs_open(struct disk *disk, struct path_part *path, FILE_MODE mode);
@@ -35,377 +34,473 @@ struct filesystem ramfs = {
 
 struct ramfs_file_descriptor {
     FILE_MODE mode;
-    struct ramfs_file *file;
     uint64_t pos;
+    struct ramfs_file *file;
 };
 
+static struct ramfs_file *ramfs_root;
+
 int ramfs_resolve(struct disk *disk) {
+    (void)disk;
     return -ERROR_FS_NOT_US;
 }
 
 struct filesystem *ramfs_init() {
+    ramfs_root = kzalloc(sizeof(struct ramfs_file));
+    strcpy(ramfs_root->name, "root\0");
+    ramfs_root->type = RAMFILE_TYPE_DIR;
+    ramfs_root->privilege_requirement = 6;
+    ramfs_root->promise_requirement = PROMISE_FS;
+    
     strcpy(ramfs.name, "RAMFS");
     return &ramfs;
 }
 
-struct ramfs_file *ramfs_create_fullpath(struct path_part *path) {
-    struct ramfs_file *current_dir = first_file;
-    struct ramfs_file *parent = 0;
-    struct ramfs_file *file = 0;
+struct ramfs_file *ramfs_create_file(struct path_part *path) {
+    kbool changed = false;
 
-    while (path->part) {
-        file = 0;
-        struct ramfs_file *current_file = current_dir;
-
-        while (current_file) {
-            if (!strcmp(current_file->name, path->part)) {
-                file = current_file;
-                break;
-            }
-
-            current_file = current_file->next;
+    struct ramfs_file *current = ramfs_root;
+    
+    while (path && path->part) {
+        if (current->type != RAMFILE_TYPE_DIR) {
+            return NULL;
         }
 
-        if (!file) {
-            file = kzalloc(sizeof(struct ramfs_file));
-            if (!file) {
-                return 0;
-            }
+        struct ramfs_file *last_sibling = NULL;
+        struct ramfs_file *child = current->first_child;
+        while (child && strncmp(child->name, path->part, RAMFS_MAX_NAME) != 0) {
+            last_sibling = child;
+            child = child->sibling;
+        }
 
-            strncpy(file->name, path->part, sizeof(file->name));
-            file->name[sizeof(file->name) - 1] = '\0';
-
-            if (parent) {
-                file->parent = parent;
-                file->parent->total_children++;
-
-                if (!file->parent->first_child) {
-                    file->parent->first_child = file;
-                } else {
-                    current_file = file->parent->first_child;
-                    while (current_file) {
-                        if (current_file->next) {
-                            current_file = current_file->next;
-                        } else {
-                            current_file->next = file;
-                            file->prev = current_file;
-                            break;
-                        }
-                    }
-                }
-            } else {
-                file->parent = 0;
-                if (!first_file) {
-                    first_file = file;
-                } else {
-                    current_file = first_file;
-                    while (current_file) {
-                        if (current_file->next) {
-                            current_file = current_file->next;
-                        } else {
-                            current_file->next = file;
-                            file->prev = current_file;
-                            break;
-                        }
-                    }
-                }
-            }
-
+        if (!child) {
+            changed = true;
             if (path->next) {
-                file->is_dir = 1;
-                parent = file;
-                current_dir = file;
-            } else {
-                file->is_dir = 0;
-                file->total_size = 4096;
-                file->memory = kzalloc(file->total_size);
+                struct ramfs_file *new_dir = kzalloc(sizeof(struct ramfs_file));
+                if (!new_dir) {
+                    return NULL;
+                }
 
-                return file;
+                strncpy(new_dir->name, path->part, RAMFS_MAX_NAME);
+                new_dir->type = RAMFILE_TYPE_DIR;
+                if (last_sibling) {
+                    last_sibling->sibling = new_dir;
+                } else {
+                    current->first_child = new_dir;
+                }
+
+                child = new_dir;
+            } else {
+                struct ramfs_file *new_file = kzalloc(sizeof(struct ramfs_file));
+                if (!new_file) {
+                    return NULL;
+                }
+
+                strncpy(new_file->name, path->part, RAMFS_MAX_NAME);
+                new_file->type = RAMFILE_TYPE_INVALID;
+
+                if (last_sibling) {
+                    last_sibling->sibling = new_file;
+                } else {
+                    current->first_child = new_file;
+                }
+
+                child = new_file;
             }
         }
 
+        current = child;
         path = path->next;
     }
 
-    return file;
+    if (!changed) {
+        return NULL;
+    }
+
+    return current;
 }
 
+struct ramfs_file *ramfs_lookup(struct path_part *path) {
+    struct ramfs_file *current = ramfs_root;
+    while (path && path->part) {
+        if (current->type != RAMFILE_TYPE_DIR) {
+            return NULL;
+        }
+
+        struct ramfs_file *child = current->first_child;
+        while (child && strncmp(child->name, path->part, RAMFS_MAX_NAME) != 0) {
+            child = child->sibling;
+        }
+
+        if (!child) {
+            return NULL;
+        }
+
+        current = child;
+        path = path->next;
+    }
+
+    return current;
+}
+
+struct ramfs_file *ramfs_lookup_parent(struct path_part *path) {
+    struct ramfs_file *parent = NULL;
+    struct ramfs_file *current = ramfs_root;
+
+    while (path && path->part) {
+        if (current->type != RAMFILE_TYPE_DIR) {
+            return NULL;
+        }
+
+        struct ramfs_file *child = current->first_child;
+        while (child && strncmp(child->name, path->part, RAMFS_MAX_NAME) != 0) {
+            child = child->sibling;
+        }
+
+        if (!child) {
+            return NULL;
+        }
+
+        parent = current;
+        current = child;
+        path = path->next;
+    }
+
+    return parent;
+}
+
+int ramfs_remove_file(struct ramfs_file *file) {
+    if (!file) {
+        return -ERROR_INVALID_ARG;
+    }
+
+    if (file->type == RAMFILE_TYPE_DATA) {
+        if (file->data) {
+            kfree(file->data);
+        }
+
+        kfree(file);
+
+        return ALL_OK;
+    } else if (file->type == RAMFILE_TYPE_FUNCTIONS) {
+        kfree(file);
+        return ALL_OK;
+    } else if (file->type == RAMFILE_TYPE_DIR) {
+        struct ramfs_file *child = file->first_child;
+        
+        while (child) {
+            struct ramfs_file *sibling = child->sibling;
+            ramfs_remove_file(child);
+            child = sibling;
+        }
+
+        kfree(file);
+    }
+
+    return -ERROR_IO;
+}
+
+int kernel_create_function_ramfile(const char *path, void *priv, size_t size, FUNCTION_RAMFILE_READ read_function, FUNCTION_RAMFILE_WRITE write_function, uint8_t privilege_req, uint8_t promise_req, uint8_t flags) {
+    struct path_root *root_path = parse_path(path, NULL);
+    if (!root_path || root_path->drive_id != 'D') {
+        path_parser_free(root_path);
+        return -ERROR_INVALID_ARG;
+    }
+
+    struct ramfs_file *file = ramfs_create_file(root_path->first);
+    
+    path_parser_free(root_path);
+    
+    if (!file) {
+        return -ERROR_IO;
+    }
+
+    file->type = RAMFILE_TYPE_FUNCTIONS;
+    file->private = priv;
+    file->size = size;
+    file->read = read_function;
+    file->write = write_function;
+    file->privilege_requirement = privilege_req;
+    file->promise_requirement = promise_req;
+    file->flags = flags;
+    
+    return ALL_OK;
+}
+
+int kernel_create_data_ramfile(const char *path, size_t filesize, uint8_t privilege_req, uint8_t promise_req, uint8_t flags) {
+    struct path_root *root_path = parse_path(path, NULL);
+    if (!root_path || root_path->drive_id != 'D') {
+        path_parser_free(root_path);
+        return -ERROR_INVALID_ARG;
+    }
+
+    struct ramfs_file *file = ramfs_create_file(root_path->first);
+    
+    path_parser_free(root_path);
+    
+    if (!file) {
+        return -ERROR_IO;
+    }
+
+    file->type = RAMFILE_TYPE_DATA;
+    
+    file->size = filesize;
+    file->data = kzalloc(filesize);
+    if (!file->data) {
+        return -ERROR_NO_MEM;
+    }
+
+    file->privilege_requirement = privilege_req;
+    file->promise_requirement = promise_req;
+    file->flags = flags;
+    
+    return ALL_OK;    
+}
+
+void *kernel_get_data_ramfile_data(const char *path, size_t *size_out) {
+    struct path_root *root_path = parse_path(path, NULL);
+    if (!root_path || root_path->drive_id != 'D') {
+        path_parser_free(root_path);
+        return NULL;
+    }
+
+    struct ramfs_file *file = ramfs_lookup(root_path->first);
+    
+    path_parser_free(root_path);
+
+    if (file && file->type == RAMFILE_TYPE_DATA && file->data) {
+        if (size_out) {
+            *size_out = file->size;
+        }
+
+        return file->data;
+    }
+
+    return NULL;
+}
 
 static int ramfs_free_file_descriptor(struct ramfs_file_descriptor *descriptor) {
     kfree(descriptor);
     return 0;
 }
 
-int ramfs_remove_file(struct ramfs_file *file) {
-    if (file->first_child) {
-        struct ramfs_file *child = file->first_child;
-        for (int i = 0; i < file->total_children; i++) {
-            ramfs_remove_file(child);
-            if (child->next) {
-                child = child->next;
-            } else {
-                break;
-            }
-        }
-    }
-
-    if (file->prev) {
-        file->prev->next = file->next;
-    }
-    if (file->next) {
-        file->next->prev = file->prev;
-    }
-    if (file->parent) {
-        file->parent->total_children--;
-    }
-    if (file == file->parent->first_child) {
-        if (file->next) {
-            file->parent->first_child = file->next;
-        } else {
-            file->parent->first_child = 0;
-        }
-    }
-
-    file->next = 0;
-    file->prev = 0;
-
-    if (file->memory) {
-        kfree(file->memory);
-    }
-
-    kfree(file);
-}
-
-int ramfs_remove_path(struct path_part *path) {
-    struct ramfs_file *file = 0;
-    struct ramfs_file *current_file = first_file;
-    while (path->next) {
-        for (int i = 0; i < current_file->total_children; i++) {
-            if (!strcmp(current_file->name, path->part)) {
-                file = current_file;
-                break;
-            } else {
-                current_file = current_file->next;
-            }
-        }
-
-        path = path->next;
-        current_file = file->first_child;
-    }
-
-    for (int i = 0; i < current_file->parent->total_children; i++) {
-        if (!strcmp(current_file->name, path->part)) {
-            file = current_file;
-        } else {
-            current_file = current_file->next;
-        }
-    }
-
-    if (!file) {
-        return 0;
-    }
-    
-    ramfs_remove_file(file);
-}
-
 void *ramfs_open(struct disk *disk, struct path_part *path, FILE_MODE mode) {
-    int err_code;
-    struct path_part *original_path = path;
-    struct ramfs_file_descriptor *descriptor = 0;
-    struct ramfs_file *file = 0;
+    (void)disk;
 
-    struct ramfs_file *first_in_dir = first_file;
-    struct ramfs_file *searched_file = first_file;
-
-    while (path->part) {
-        if (!strcmp(searched_file->name, path->part)) {
-            if (path->next) {
-                if (searched_file->is_dir) {
-                    first_in_dir = searched_file->first_child;
-                    searched_file = searched_file->first_child;
-                }
-
-                path = path->next;
-            } else {
-                file = searched_file;
-                break;
-            }
-        } else {
-            if (!searched_file->next) {
-                break;
-            }
-            if (searched_file->next == first_in_dir) {
-                break;
-            }
-
-            searched_file = searched_file->next;
-        }
+    struct ramfs_file *file = ramfs_lookup(path);
+    if (!file) {
+        return NULL;
     }
 
-    if (mode == FILE_MODE_READ || mode == FILE_MODE_APPEND) {
-        if (!file) {
-            goto err_out;
-        }
+    if (file->type != RAMFILE_TYPE_DATA && file->type != RAMFILE_TYPE_FUNCTIONS) {
+        return NULL;
     }
 
-    if (mode == FILE_MODE_WRITE) {
-        if (!file) {
-            file = ramfs_create_fullpath(original_path);
-        }
-
-        if (file) {
-            memset(file->memory, 0, file->total_size);
-        } else {
-            goto err_out;
-        }
-    }
-
-    descriptor = kzalloc(sizeof(struct ramfs_file_descriptor));
-    if (!descriptor) {
-        err_code = -ERROR_NO_MEM;
-        goto err_out;
-    }
-
-    descriptor->file = file;
     if (mode == FILE_MODE_APPEND) {
-        descriptor->pos = file->size;
-    } else {
-        descriptor->pos = 0;
+        return NULL;
     }
 
-    descriptor->mode = mode;
-    return descriptor;
-
-err_out:
-    if (descriptor) {
-        ramfs_free_file_descriptor(descriptor);
+    if (mode == FILE_MODE_READ && !(file->flags & RAMFS_FLAG_R)) {
+        return NULL;
+    }
+    if (mode == FILE_MODE_WRITE && !(file->flags & RAMFS_FLAG_W)) {
+        return NULL;
     }
 
-    return (void *)err_code;
+    struct ramfs_file_descriptor *desc = kzalloc(sizeof(struct ramfs_file_descriptor));
+    if (!desc) {
+        return NULL;
+    }
+
+    desc->file = file;
+    desc->mode = mode;
+    desc->pos = 0;
+
+    return desc;
 }
 
 int ramfs_read(struct disk *disk, void *descriptor, uint64_t size, uint64_t nmemb, char *out_ptr) {
-    int res = 0;
-    struct ramfs_file_descriptor *desc = descriptor;
-    struct ramfs_file *file = desc->file;
-    int offset = desc->pos;
-
+    (void)disk;
+    struct ramfs_file_descriptor *desc = (struct ramfs_file_descriptor *)descriptor;
     if (desc->mode != FILE_MODE_READ) {
-        return 0;
-    }
-
-    uint64_t total_to_read = size * nmemb;
-    if (total_to_read > (file->total_size - desc->pos)) {
-        total_to_read = file->total_size - desc->pos;
+        return -ERROR_IO;
     }
     
-    memcpy(out_ptr, file->memory + desc->pos, total_to_read);
-    offset += total_to_read;
-
-    desc->pos = offset;
-    res = nmemb;
-
-    return res;
-}
-
-int ramfs_stat(struct disk *disk, void *descriptor, struct file_stat *stat) {
-    struct ramfs_file_descriptor *desc = descriptor;
     struct ramfs_file *file = desc->file;
-
-    stat->filesize = file->size;
-    stat->flags = 0x00;
-
-    return 0;
-}
-
-int ramfs_seek(struct disk *disk, void *descriptor, uint64_t offset, FILE_SEEK_MODE seek_mode) {
-    int res = 0;
-    struct ramfs_file_descriptor *desc = descriptor;
-    struct ramfs_file *file = desc->file;
-    if (file->is_dir) {
-        res = -ERROR_INVALID_ARG;
-        goto out;
-    }
-
-    if (offset >= file->total_size) {
-        res = -ERROR_IO;
-        goto out;
-    }
-
-    if (desc->mode == FILE_MODE_APPEND) {
-        desc->pos = desc->file->size;
-        res = 0;
-        goto out;
-    }
-
-    switch(seek_mode) {
-        case SEEK_SET:
-            desc->pos = offset;
-            break;
-        
-        case SEEK_END:
-            res = -ERROR_UNIMPL;
-            break;
-
-        case SEEK_CUR:
-            desc->pos += offset;
-            break;
-        
-        default:
-            res = -ERROR_INVALID_ARG;
-            break;
-    }
-
-out:
-    return res;
-}
-
-int ramfs_write(struct disk *disk, void *private, uint64_t size, uint64_t nmemb, const char *in) {
-    int res = 0;
-    struct ramfs_file_descriptor *desc = private;
-    struct ramfs_file *file = desc->file;
-    int offset = desc->pos;
-
-    if (!(desc->mode == FILE_MODE_WRITE || desc->mode == FILE_MODE_APPEND)) {
+    if (!file) {
         return -ERROR_IO;
     }
 
-    uint64_t total_to_write = size * nmemb;
-    if (total_to_write > (file->total_size - desc->pos)) {
-        total_to_write = file->total_size - desc->pos;
+    if (file->type == RAMFILE_TYPE_DATA) {
+        if (!file->data) {
+            return -ERROR_IO;
+        }
+
+        uint64_t to_read = size * nmemb;
+        if (to_read > (file->size - desc->pos)) {
+            to_read = (file->size - desc->pos);
+        }
+
+        memcpy(out_ptr, file->data + desc->pos, to_read);
+        desc->pos += to_read;
+
+        return to_read;
+    } else if (file->type == RAMFILE_TYPE_FUNCTIONS) {
+        if (!file->read) {
+            return -ERROR_IO;
+        }
+
+        if (desc->pos >= file->size) {
+            return 0;
+        }
+
+        uint64_t to_read = size * nmemb;
+        if (to_read > (file->size - desc->pos)) {
+            to_read = (file->size - desc->pos);
+        }
+
+        int res = file->read(file->private, desc->pos, 1, to_read, out_ptr);
+        if (res > 0) {
+            desc->pos += res;
+        }
+
+        return res;
+    } else {
+        return -ERROR_IO;
+    }
+}
+
+int ramfs_stat(struct disk *disk, void *descriptor, struct file_stat *stat) {
+    (void)disk;
+    struct ramfs_file_descriptor *desc = (struct ramfs_file_descriptor *)descriptor;
+    
+    struct ramfs_file *file = desc->file;
+    if (!file) {
+        return -ERROR_IO;
     }
 
-    if (desc->pos >= file->total_size) {
-        return 0;
+    stat->filesize = file->size;
+    stat->flags = file->flags;
+
+    return ALL_OK;
+}
+
+int ramfs_seek(struct disk *disk, void *descriptor, uint64_t offset, FILE_SEEK_MODE seek_mode) {
+    (void)disk;
+
+    struct ramfs_file_descriptor *desc = (struct ramfs_file_descriptor *)descriptor;
+    if (!desc->file) {
+        return -ERROR_IO;
+    }
+
+    if (seek_mode == SEEK_SET) {
+        desc->pos = offset;
+        return ALL_OK;
+    }
+
+    if (seek_mode == SEEK_CUR) {
+        desc->pos += offset;
+        return ALL_OK;
+    }
+
+    if (seek_mode == SEEK_END) {
+        desc->pos = (desc->file->size + offset);
+        return ALL_OK;
+    }
+
+    return -ERROR_INVALID_ARG;
+}
+
+int ramfs_write(struct disk *disk, void *descriptor, uint64_t size, uint64_t nmemb, const char *in) {
+    (void)disk;
+    struct ramfs_file_descriptor *desc = (struct ramfs_file_descriptor *)descriptor;
+    if (desc->mode != FILE_MODE_WRITE && desc->mode != FILE_MODE_APPEND) {
+        return -ERROR_IO;
     }
     
-    memcpy(file->memory + offset, in, total_to_write);
-    offset += total_to_write;
-
-    desc->pos = offset;
-    res = total_to_write / size;
-    if (offset > file->size) {
-        file->size = offset;
+    struct ramfs_file *file = desc->file;
+    if (!file) {
+        return -ERROR_IO;
     }
 
-    if (desc->mode == FILE_MODE_APPEND) {
-        desc->pos = file->size;
-    }
+    if (file->type == RAMFILE_TYPE_DATA) {
+        if (!file->data) {
+            return -ERROR_IO;
+        }
 
-    return res;
+        uint64_t to_write = size * nmemb;
+        if (to_write > (file->size - desc->pos)) {
+            to_write = (file->size - desc->pos);
+        }
+
+        memcpy(file->data + desc->pos, in, to_write);
+        desc->pos += to_write;
+
+        return to_write;
+    } else if (file->type == RAMFILE_TYPE_FUNCTIONS) {
+        if (!file->write) {
+            return -ERROR_IO;
+        }
+
+        if (desc->pos >= file->size) {
+            return 0;
+        }
+
+        uint64_t to_write = size * nmemb;
+        if (to_write > (file->size - desc->pos)) {
+            to_write = (file->size - desc->pos);
+        }
+
+        int res = file->write(file->private, desc->pos, 1, to_write, in);
+        if (res > 0) {
+            desc->pos += res;
+        }
+
+        return res;
+    } else {
+        return -ERROR_IO;
+    }
 }
 
 int ramfs_remove(struct disk *disk, struct path_part *path) {
-    ramfs_remove_path(path);
-    return 0;
+    (void)disk;
+
+    struct ramfs_file *file = ramfs_lookup(path);
+    if (!file) {
+        return -ERROR_IO;
+    }
+
+    struct ramfs_file *parent = ramfs_lookup_parent(path);
+    if (!parent) {
+        return -ERROR_IO;
+    }
+    
+    struct ramfs_file *child = parent->first_child;
+    if (child == file) {
+        parent->first_child = file->sibling;
+        ramfs_remove_file(file);
+        return ALL_OK;
+    }
+
+    while (child) {
+        if (child->sibling == file) {
+            child->sibling = file->sibling;
+        }
+
+        child = child->sibling;
+    }
+
+    ramfs_remove_file(file);
+    return ALL_OK;
 }
 
 int ramfs_close(void *descriptor) {
-    ramfs_free_file_descriptor((struct ramfs_file_descriptor *)descriptor);
-    return 0;
+    ramfs_free_file_descriptor(descriptor);
+    return ALL_OK;
 }
 
 int ramfs_volume_name(void *private, char *name_out, size_t max) {
+    (void)private;
     strncpy(name_out, "RAMFS", max);
     return 0;
 }

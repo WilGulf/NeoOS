@@ -1,10 +1,13 @@
 #include "graphics.h"
 
+#include "../io.h"
 #include "../../../panic.h"
 #include "../../../kernel.h"
 #include "../../../memory/kheap.h"
 #include "../../../memory/paging.h"
 #include "../../../include/util.h"
+#include "../../fs/ramfs/ramfs.h"
+#include "../../../syscalls/promise.h"
 
 
 struct graphics_info *loaded_graphics_info = NULL;
@@ -67,6 +70,57 @@ void graphics_scroll(uint32_t vertical_pixels) {
     );
 }
 
+int fb0_on_read(void *private, uint64_t offset, uint64_t size, uint64_t nmemb, char *out) {
+    return 0;
+}
+
+int fb0_on_write(void *private, uint64_t offset, uint64_t size, uint64_t nmemb, const char *in) {
+    (void)private;
+    if (!loaded_graphics_info || offset >= framebuffer_size) {
+        return 0;
+    }
+
+    size_t len = size * nmemb;
+    if (len > framebuffer_size - offset) len = framebuffer_size - offset;
+
+    memcpy((uint8_t *)loaded_graphics_info->pixels + offset, in, len);
+    return len;
+}
+
+int fb0ctl_on_write(void *private, uint64_t offset, uint64_t size, uint64_t nmemb, const char *in) {
+    (void)private;
+    (void)offset;
+    if (!loaded_graphics_info) {
+        return 0;
+    }
+
+    char command[1024] = "";
+    
+    int to_read = 0;
+    if ((size * nmemb) >= sizeof(command)) {
+        to_read = sizeof(command) - 1;
+    } else {
+        to_read =(size * nmemb);
+    }
+
+    memcpy(command, in, to_read);
+
+    int res = 0;
+
+    kernel_page();
+
+    if (strcmp(command, "FLUSH") == 0) {
+        graphics_refresh();
+        res = to_read;
+        return res;
+    }
+
+    task_page();
+
+out:
+    return res;
+}
+
 void graphics_init(struct graphics_info *graphics_info) {
     if (loaded_graphics_info) {
         panic("", 1);
@@ -86,4 +140,38 @@ void graphics_init(struct graphics_info *graphics_info) {
     paging_map_to(kernel_descriptor(), new_framebuffer_memory, framebuffer, framebuffer_end, PAGING_IS_WRITEABLE | PAGING_IS_PRESENT);
     loaded_graphics_info = graphics_info;
     graphics_refresh();
+
+    //SETUP FB0
+    kernel_create_function_ramfile(
+        "D:/func/fb0",
+        NULL,
+        framebuffer_pixels_per_scanline * framebuffer_height * sizeof(struct fb_pixel),
+        fb0_on_read,
+        fb0_on_write,
+        6,
+        PROMISE_FB,
+        RAMFS_FLAG_W | RAMFS_FLAG_R
+    );
+
+    kernel_create_function_ramfile(
+        "D:/func/fb0ctl",
+        NULL,
+        1024,
+        NULL,
+        fb0ctl_on_write,
+        6,
+        PROMISE_FB,
+        RAMFS_FLAG_W
+    );
+
+    kernel_create_data_ramfile(
+        "D:/data/fb0",
+        1024,
+        6,
+        PROMISE_FB,
+        RAMFS_FLAG_R
+    );
+
+    void *data = kernel_get_data_ramfile_data("D:/data/fb0", NULL);
+    memcpy(data, loaded_graphics_info, sizeof(struct graphics_info));
 }

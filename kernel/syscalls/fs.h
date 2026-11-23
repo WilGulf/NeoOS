@@ -7,6 +7,7 @@ void *isr80h_command18_fopen(struct interrupt_frame *frame);
 void *isr80h_command19_fclose(struct interrupt_frame *frame);
 void *isr80h_command20_fread(struct interrupt_frame *frame);
 void *isr80h_command21_fstat(struct interrupt_frame *frame);
+void *isr80h_command22_fseek(struct interrupt_frame *frame);
 void *isr80h_command27_fwrite(struct interrupt_frame *frame);
 void *isr80h_command26_remove(struct interrupt_frame *frame);
 void *isr80h_command28_readdir(struct interrupt_frame *frame);

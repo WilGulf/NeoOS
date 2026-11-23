@@ -23,6 +23,13 @@ struct file_stat {
     uint32_t filesize;
 };
 
+typedef unsigned int FILE_SEEK_MODE;
+enum {
+    SEEK_SET,
+    SEEK_CUR,
+    SEEK_END,
+};
+
 char *itoa(int i);
 int atoi(const char *str);
 
@@ -42,6 +49,7 @@ int fstat(int fd, struct file_stat *stat);
 size_t fwrite(const void *in, size_t size, size_t nmemb, int fd);
 int remove(const char *filename);
 int create(const char *filename);
+int fseek(int fd, int offset, FILE_SEEK_MODE whence);
 
 char *fgets(char *str, int size, int fd);
 

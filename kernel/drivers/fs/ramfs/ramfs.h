@@ -3,29 +3,50 @@
 
 #define RAMFS_MAX_NAME 32
 
+#include "../file.h"
 #include "../../../include/stdint.h"
 
 struct disk;
-
 struct filesystem *ramfs_init();
-int ramfs_resolve(struct disk *disk);
 
+typedef int RAMFILE_TYPE;
+enum {
+    RAMFILE_TYPE_INVALID,
+    RAMFILE_TYPE_DIR,
+    RAMFILE_TYPE_DATA,
+    RAMFILE_TYPE_FUNCTIONS,
+};
+
+#define RAMFS_FLAG_R 0b001
+#define RAMFS_FLAG_W 0b010
+
+typedef int (*FUNCTION_RAMFILE_READ)(void *private, uint64_t offset, uint64_t size, uint64_t nmemb, char *out);
+typedef int (*FUNCTION_RAMFILE_WRITE)(void *private, uint64_t offset, uint64_t size, uint64_t nmemb, const char *in);
 
 struct ramfs_file {
-    char name[32];
+    char name[RAMFS_MAX_NAME];
+    RAMFILE_TYPE type;
 
-    uint8_t is_dir;
-    uint8_t total_children;
+    uint8_t flags; //RWX
+    uint8_t privilege_requirement; //LEVELS 0..8
+    uint8_t promise_requirement; //EG PROMISE_FB
+
     struct ramfs_file *first_child;
+    struct ramfs_file *sibling;
+    
+    //RAMFILE_TYPE_DATA
+    void *data;
+    size_t size;
 
-    void *memory;
-    uint32_t size;
-    uint32_t total_size;
-
-    struct ramfs_file *parent;
-
-    struct ramfs_file *next;
-    struct ramfs_file *prev;
+    //RAMFILE_TYPE_FUNCTION
+    void *private;
+    FUNCTION_RAMFILE_READ read;
+    FUNCTION_RAMFILE_WRITE write;
 };
+
+//ONLY USED BY KERNEL TO INTERRACT WITH THE FILESYSTEM
+int kernel_create_function_ramfile(const char *path, void *priv, size_t size, FUNCTION_RAMFILE_READ read_function, FUNCTION_RAMFILE_WRITE write_function, uint8_t privilege_req, uint8_t promise_req, uint8_t flags);
+int kernel_create_data_ramfile(const char *path, size_t filesize, uint8_t privilege_req, uint8_t promise_req, uint8_t flags);
+void  *kernel_get_data_ramfile_data(const char *path, size_t *size_out);
 
 #endif

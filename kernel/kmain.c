@@ -109,6 +109,9 @@ int kmain(struct bootinfo *bootinfo) {
 
     kheap_post_paging();
 
+    ramdisk_init();
+    fs_init();
+
     graphics_init(&default_graphics_info);
     
     if (fb_init(spleen_12x24) < 0) {
@@ -140,9 +143,6 @@ int kmain(struct bootinfo *bootinfo) {
     tss_load(0x38);
 
     isr80h_register_commands();
-
-    ramdisk_init();
-    fs_init();
 
     kprintf("Found %d disks\n", disks_search_and_init());
     gpt_init();
