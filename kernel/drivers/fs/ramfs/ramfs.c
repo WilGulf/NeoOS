@@ -200,7 +200,19 @@ int ramfs_remove_file(struct ramfs_file *file) {
     return -ERROR_IO;
 }
 
-int kernel_create_function_ramfile(const char *path, void *priv, size_t size, FUNCTION_RAMFILE_READ read_function, FUNCTION_RAMFILE_WRITE write_function, uint8_t privilege_req, uint8_t promise_req, uint8_t flags) {
+int kernel_create_function_ramfile(
+    const char *path,
+    void *priv,
+    size_t size,
+    FUNCTION_TYPE type,
+    FUNCTION_RAMFILE_OPEN open_function,
+    FUNCTION_RAMFILE_CLOSE close_function,
+    FUNCTION_RAMFILE_READ read_function,
+    FUNCTION_RAMFILE_WRITE write_function,
+    uint8_t privilege_req,
+    uint8_t promise_req,
+    uint8_t flags
+) {
     struct path_root *root_path = parse_path(path, NULL);
     if (!root_path || root_path->drive_id != 'D') {
         path_parser_free(root_path);
@@ -216,8 +228,11 @@ int kernel_create_function_ramfile(const char *path, void *priv, size_t size, FU
     }
 
     file->type = RAMFILE_TYPE_FUNCTIONS;
+    file->function_type = type;
     file->private = priv;
     file->size = size;
+    file->open = open_function;
+    file->close = close_function;
     file->read = read_function;
     file->write = write_function;
     file->privilege_requirement = privilege_req;
@@ -289,7 +304,13 @@ void *ramfs_open(struct disk *disk, struct path_part *path, FILE_MODE mode) {
 
     struct ramfs_file *file = ramfs_lookup(path);
     if (!file) {
-        return NULL;
+        return (void *)-ERROR_BAD_PATH;
+    }
+
+    if (file->type == RAMFILE_TYPE_FUNCTIONS && file->open) {
+        if (file->open(file->private) < 0) {
+            return (void *)-ERROR_IO;
+        }
     }
 
     if (file->type != RAMFILE_TYPE_DATA && file->type != RAMFILE_TYPE_FUNCTIONS) {
@@ -360,7 +381,7 @@ int ramfs_read(struct disk *disk, void *descriptor, uint64_t size, uint64_t nmem
         }
 
         int res = file->read(file->private, desc->pos, 1, to_read, out_ptr);
-        if (res > 0) {
+        if (res > 0 && file->function_type == FUNCTION_TYPE_FILE) {
             desc->pos += res;
         }
 
@@ -390,6 +411,11 @@ int ramfs_seek(struct disk *disk, void *descriptor, uint64_t offset, FILE_SEEK_M
 
     struct ramfs_file_descriptor *desc = (struct ramfs_file_descriptor *)descriptor;
     if (!desc->file) {
+        return -ERROR_IO;
+    }
+
+    struct ramfs_file *file = desc->file;
+    if (file->type == RAMFILE_TYPE_FUNCTIONS && file->function_type == FUNCTION_TYPE_STREAM) {
         return -ERROR_IO;
     }
 
@@ -452,7 +478,7 @@ int ramfs_write(struct disk *disk, void *descriptor, uint64_t size, uint64_t nme
         }
 
         int res = file->write(file->private, desc->pos, 1, to_write, in);
-        if (res > 0) {
+        if (res > 0 && file->function_type == FUNCTION_TYPE_FILE) {
             desc->pos += res;
         }
 
@@ -495,7 +521,22 @@ int ramfs_remove(struct disk *disk, struct path_part *path) {
 }
 
 int ramfs_close(void *descriptor) {
+    struct ramfs_file_descriptor *desc = (struct ramfs_file_descriptor *)descriptor;
+    if (!desc) {
+        return -ERROR_IO;
+    }
+
+    struct ramfs_file *file = desc->file;
+    if (!file) {
+        return -ERROR_IO;
+    }
+
     ramfs_free_file_descriptor(descriptor);
+    
+    if (file->type == RAMFILE_TYPE_FUNCTIONS && file->close) {
+        file->close(file->private);
+    }
+
     return ALL_OK;
 }
 

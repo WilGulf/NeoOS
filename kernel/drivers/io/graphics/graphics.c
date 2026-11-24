@@ -6,8 +6,11 @@
 #include "../../../memory/kheap.h"
 #include "../../../memory/paging.h"
 #include "../../../include/util.h"
+#include "../../../include/status.h"
 #include "../../fs/ramfs/ramfs.h"
 #include "../../../syscalls/promise.h"
+#include "../../../task/process.h"
+#include "../../../task/task.h"
 
 
 struct graphics_info *loaded_graphics_info = NULL;
@@ -18,6 +21,8 @@ size_t framebuffer_width = 0;
 size_t framebuffer_height = 0;
 size_t framebuffer_pixels_per_scanline = 0;
 size_t framebuffer_size = 0;
+
+struct process *framebuffer_owner = NULL;
 
 size_t get_resolution_width(void) {
     return framebuffer_width;
@@ -70,7 +75,25 @@ void graphics_scroll(uint32_t vertical_pixels) {
     );
 }
 
+int fb0_on_open(void *private) {
+    (void)private;
+
+    if (!framebuffer_owner) {
+        framebuffer_owner = task_current()->process;
+        return 0;
+    }
+
+    return -ERROR_IO;
+}
+
+int fb0_on_close(void *private) {
+    (void)private;
+    framebuffer_owner = NULL;
+    return 0;
+}
+
 int fb0_on_read(void *private, uint64_t offset, uint64_t size, uint64_t nmemb, char *out) {
+    (void)private;
     return 0;
 }
 
@@ -94,31 +117,24 @@ int fb0ctl_on_write(void *private, uint64_t offset, uint64_t size, uint64_t nmem
         return 0;
     }
 
-    char command[1024] = "";
-    
-    int to_read = 0;
-    if ((size * nmemb) >= sizeof(command)) {
-        to_read = sizeof(command) - 1;
-    } else {
-        to_read =(size * nmemb);
+    char *command = kmalloc(size * nmemb);
+    if (!command) {
+        return 0;
     }
 
+    int to_read = size * nmemb;
     memcpy(command, in, to_read);
-
-    int res = 0;
 
     kernel_page();
 
     if (strcmp(command, "FLUSH") == 0) {
         graphics_refresh();
-        res = to_read;
-        return res;
+        task_page();
+        return to_read;
     }
 
     task_page();
-
-out:
-    return res;
+    return 0;
 }
 
 void graphics_init(struct graphics_info *graphics_info) {
@@ -146,6 +162,9 @@ void graphics_init(struct graphics_info *graphics_info) {
         "D:/func/fb0",
         NULL,
         framebuffer_pixels_per_scanline * framebuffer_height * sizeof(struct fb_pixel),
+        FUNCTION_TYPE_FILE,
+        NULL,
+        NULL,
         fb0_on_read,
         fb0_on_write,
         6,
@@ -157,6 +176,9 @@ void graphics_init(struct graphics_info *graphics_info) {
         "D:/func/fb0ctl",
         NULL,
         1024,
+        FUNCTION_TYPE_STREAM,
+        NULL,
+        NULL,
         NULL,
         fb0ctl_on_write,
         6,

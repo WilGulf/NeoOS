@@ -33,14 +33,14 @@ void *isr80h_command18_fopen(struct interrupt_frame *frame) {
     char mode[8];
     copy_string_from_task(task_current(), user_space_mode_buffer, mode, sizeof(mode));
 
-    fd = fopen(filename, mode);
+    fd = fopen(filename, mode, task_current()->process->process_file_descriptors);
 
     return (void *)fd;
 }
 
 void *isr80h_command19_fclose(struct interrupt_frame *frame) {
     int fd = (int)task_get_stack_item(task_current(), 0);
-    fclose(fd);
+    fclose(fd, task_current()->process->process_file_descriptors);
     return 0;
 }
 
@@ -51,7 +51,7 @@ void *isr80h_command20_fread(struct interrupt_frame *frame) {
     int fd = (int)task_get_stack_item(task_current(), 3);
     
     task_page();
-    int res = fread(out, size, count, fd);
+    int res = fread(out, size, count, fd, task_current()->process->process_file_descriptors);
     kernel_page();
     return (void *)res;
 }
@@ -60,7 +60,7 @@ void *isr80h_command21_fstat(struct interrupt_frame *frame) {
     int fd = (int)task_get_stack_item(task_current(), 0);
     void *out = task_get_stack_item(task_current(), 1);
     task_page();
-    fstat(fd, out);
+    fstat(fd, out, task_current()->process->process_file_descriptors);
     kernel_page();
     return (void *)0;
 }
@@ -70,7 +70,7 @@ void *isr80h_command22_fseek(struct interrupt_frame *frame) {
     int offset = (int)task_get_stack_item(task_current(), 1);
     int mode = (int)task_get_stack_item(task_current(), 2);
     task_page();
-    fseek(fd, offset, mode);
+    fseek(fd, offset, mode, task_current()->process->process_file_descriptors);
     kernel_page();
     return (void *)0;
 }
@@ -107,7 +107,7 @@ void *isr80h_command27_fwrite(struct interrupt_frame *frame) {
     int fd = (int)task_get_stack_item(task_current(), 3);
     
     task_page();
-    int res = fwrite(in, size, count, fd);
+    int res = fwrite(in, size, count, fd, task_current()->process->process_file_descriptors);
     kernel_page();
     return (void *)res;
 }
@@ -116,7 +116,7 @@ void *isr80h_command28_readdir(struct interrupt_frame *frame) {
     int fd = (int)task_get_stack_item(task_current(), 0);
     void *out = task_get_stack_item(task_current(), 1);
 
-    struct dirent dirent = readdir(fd);
+    struct dirent dirent = readdir(fd, task_current()->process->process_file_descriptors);
     task_page();
     memcpy(out, &dirent, sizeof(dirent));
     kernel_page();

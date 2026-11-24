@@ -30,7 +30,6 @@
 
 
 struct filesystem *filesystems[MAX_FILESYSTEMS];
-struct file_descriptor *file_descriptors[MAX_FILE_DESCRIPTORS];
 
 static struct filesystem **fs_get_free_filesystem() {
     int i = 0;
@@ -59,23 +58,24 @@ static void fs_static_load() {
     fs_insert_filesystem(ramfs_init());
 }
 
-void fs_load() {
+void fs_init() {
     memset(filesystems, 0, sizeof(filesystems));
     fs_static_load();
 }
 
-void fs_init() {
-    memset(file_descriptors, 0, sizeof(file_descriptors));
-    fs_load();
+static int file_free_descriptor(struct file_descriptor *file_descriptors[MAX_FILE_DESCRIPTORS], struct file_descriptor *desc) {
+    for (int i = 0; i < MAX_FILE_DESCRIPTORS; i++) {
+        if (file_descriptors[i] == desc) {
+            kfree(desc);
+            file_descriptors[i] = NULL;
+            return 0;
+        }
+    }
+    
+    return -ERROR_IO;
 }
 
-static int file_free_descriptor(struct file_descriptor *desc) {
-    file_descriptors[desc->index - 1] = 0;
-    kfree(desc);
-    return 0;
-}
-
-static int file_new_descriptor(struct file_descriptor **desc_out) {
+static int file_new_descriptor(struct file_descriptor *file_descriptors[MAX_FILE_DESCRIPTORS], struct file_descriptor **desc_out) {
     int res = -ERROR_NO_MEM;
     for (int i = 0; i < MAX_FILE_DESCRIPTORS; i++) {
         if (file_descriptors[i] == 0) {
@@ -95,7 +95,7 @@ static int file_new_descriptor(struct file_descriptor **desc_out) {
     return res;
 }
 
-static struct file_descriptor *file_get_descriptor(int fd) {
+static struct file_descriptor *file_get_descriptor(struct file_descriptor *file_descriptors[MAX_FILE_DESCRIPTORS], int fd) {
     if (fd <= 0 || fd > MAX_FILE_DESCRIPTORS) {
         return 0;
     }
@@ -130,7 +130,7 @@ FILE_MODE file_get_mode_by_string(const char *str) {
     return mode;
 }
 
-int fopen(const char *filename, const char *mode_str) {    
+int fopen(const char *filename, const char *mode_str, struct file_descriptor *file_descriptors[MAX_FILE_DESCRIPTORS]) {    
     int res = 0;
     struct disk *disk = 0;
     FILE_MODE mode = FILE_MODE_INVALID;
@@ -167,7 +167,7 @@ int fopen(const char *filename, const char *mode_str) {
         goto out;
     }
 
-    res = file_new_descriptor(&desc);
+    res = file_new_descriptor(file_descriptors, &desc);
     if (res < 0) {
         goto out;
     }
@@ -190,17 +190,19 @@ out:
         }
         
         if (desc) {
-            file_free_descriptor(desc);
+            file_free_descriptor(file_descriptors, desc);
             desc = NULL;
         }
+
+        return 0;
     }
 
     return res;
 }
 
-int fseek(int fd, int offset, FILE_SEEK_MODE whence) {
+int fseek(int fd, int offset, FILE_SEEK_MODE whence, struct file_descriptor *file_descriptors[MAX_FILE_DESCRIPTORS]) {
     int res = 0;
-    struct file_descriptor *desc = file_get_descriptor(fd);
+    struct file_descriptor *desc = file_get_descriptor(file_descriptors, fd);
     if (!desc) {
         res = -ERROR_IO;
         goto out;
@@ -211,14 +213,14 @@ out:
     return res;
 }
  
-int fread(void *ptr, uint32_t size, uint32_t nmemb, int fd) {
+int fread(void *ptr, uint32_t size, uint32_t nmemb, int fd, struct file_descriptor *file_descriptors[MAX_FILE_DESCRIPTORS]) {
     int res = 0;
     if (size == 0 || nmemb == 0 || fd < 1) {
         res = -ERROR_INVALID_ARG;
         goto out;
     }
 
-    struct file_descriptor *desc = file_get_descriptor(fd);
+    struct file_descriptor *desc = file_get_descriptor(file_descriptors, fd);
     if (!desc) {
         res = -ERROR_INVALID_ARG;
         goto out;
@@ -229,9 +231,9 @@ out:
     return res;
 }
 
-int fstat(int fd, struct file_stat *stat) {
+int fstat(int fd, struct file_stat *stat, struct file_descriptor *file_descriptors[MAX_FILE_DESCRIPTORS]) {
     int res = 0;
-    struct file_descriptor *desc = file_get_descriptor(fd);
+    struct file_descriptor *desc = file_get_descriptor(file_descriptors, fd);
     if (!desc) {
         res = -ERROR_IO;
         goto out;
@@ -242,14 +244,14 @@ out:
     return res;
 }
 
-int fwrite(const void *ptr, uint32_t size, uint32_t nmemb, int fd) {
+int fwrite(const void *ptr, uint32_t size, uint32_t nmemb, int fd, struct file_descriptor *file_descriptors[MAX_FILE_DESCRIPTORS]) {
     int res = 0;
     if (size == 0 || nmemb == 0 || fd < 1) {
         res = -ERROR_INVALID_ARG;
         goto out;
     }
 
-    struct file_descriptor *desc = file_get_descriptor(fd);
+    struct file_descriptor *desc = file_get_descriptor(file_descriptors, fd);
     if (!desc) {
         res = -ERROR_INVALID_ARG;
         goto out;
@@ -289,9 +291,9 @@ int remove(const char *filename) {
     return 0;
 }
 
-int fclose(int fd) {
+int fclose(int fd, struct file_descriptor *file_descriptors[MAX_FILE_DESCRIPTORS]) {
     int res = 0;
-    struct file_descriptor *desc = file_get_descriptor(fd);
+    struct file_descriptor *desc = file_get_descriptor(file_descriptors, fd);
     if (!desc) {
         res = -ERROR_IO;
         goto out;
@@ -299,18 +301,18 @@ int fclose(int fd) {
 
     res = desc->filesystem->close(desc->private);
     if (res == ALL_OK) {
-        file_free_descriptor(desc);
+        file_free_descriptor(file_descriptors, desc);
     }
 out:
     return res;
 }
 
-struct dirent readdir(int fd) {
+struct dirent readdir(int fd, struct file_descriptor *file_descriptors[MAX_FILE_DESCRIPTORS]) {
     struct dirent dirent;
     dirent.name[0] = 0x00;
     dirent.type = 0;
 
-    struct file_descriptor *desc = file_get_descriptor(fd);
+    struct file_descriptor *desc = file_get_descriptor(file_descriptors, fd);
     if (!desc) {
         return dirent;
     }
@@ -319,7 +321,7 @@ struct dirent readdir(int fd) {
     return dirent;
 }
 
-char *fgets(char *str, int size, int fd) {
+char *fgets(char *str, int size, int fd, struct file_descriptor *file_descriptors[MAX_FILE_DESCRIPTORS]) {
     if (!str || size <= 1) {
         return 0;
     }
@@ -328,7 +330,7 @@ char *fgets(char *str, int size, int fd) {
     while (i < size - 1) {
         char c;
         
-        if (fread(&c, 1, 1, fd) != 1) {
+        if (fread(&c, 1, 1, fd, file_descriptors) != 1) {
             if (i == 0) {
                 return 0;
             }

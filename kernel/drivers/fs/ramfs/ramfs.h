@@ -15,11 +15,19 @@ enum {
     RAMFILE_TYPE_DIR,
     RAMFILE_TYPE_DATA,
     RAMFILE_TYPE_FUNCTIONS,
+    RAMFILE_TYPE_STREAMFUNCTIONS,
+};
+
+typedef int FUNCTION_TYPE;
+enum {
+    FUNCTION_TYPE_FILE,
+    FUNCTION_TYPE_STREAM,
 };
 
 #define RAMFS_FLAG_R 0b001
 #define RAMFS_FLAG_W 0b010
-
+typedef int (*FUNCTION_RAMFILE_OPEN)(void *private);
+typedef int (*FUNCTION_RAMFILE_CLOSE)(void *private);
 typedef int (*FUNCTION_RAMFILE_READ)(void *private, uint64_t offset, uint64_t size, uint64_t nmemb, char *out);
 typedef int (*FUNCTION_RAMFILE_WRITE)(void *private, uint64_t offset, uint64_t size, uint64_t nmemb, const char *in);
 
@@ -40,12 +48,15 @@ struct ramfs_file {
 
     //RAMFILE_TYPE_FUNCTION
     void *private;
+    FUNCTION_TYPE function_type;
+    FUNCTION_RAMFILE_OPEN open;
+    FUNCTION_RAMFILE_CLOSE close;
     FUNCTION_RAMFILE_READ read;
     FUNCTION_RAMFILE_WRITE write;
 };
 
 //ONLY USED BY KERNEL TO INTERRACT WITH THE FILESYSTEM
-int kernel_create_function_ramfile(const char *path, void *priv, size_t size, FUNCTION_RAMFILE_READ read_function, FUNCTION_RAMFILE_WRITE write_function, uint8_t privilege_req, uint8_t promise_req, uint8_t flags);
+int kernel_create_function_ramfile(const char *path, void *priv, size_t size, FUNCTION_TYPE type, FUNCTION_RAMFILE_OPEN open_function, FUNCTION_RAMFILE_CLOSE close_function, FUNCTION_RAMFILE_READ read_function, FUNCTION_RAMFILE_WRITE write_function, uint8_t privilege_req, uint8_t promise_req, uint8_t flags);
 int kernel_create_data_ramfile(const char *path, size_t filesize, uint8_t privilege_req, uint8_t promise_req, uint8_t flags);
 void  *kernel_get_data_ramfile_data(const char *path, size_t *size_out);
 

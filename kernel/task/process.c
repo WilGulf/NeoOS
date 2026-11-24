@@ -30,6 +30,7 @@
 #include "../memory/kheap.h"
 #include "../memory/paging.h"
 #include "../panic.h"
+#include "../kernel.h"
 
 struct process *current_process = 0;
 struct process *input_dest_process = 0;
@@ -138,6 +139,12 @@ int process_terminate(struct process *process) {
 
     process_unlink(process);
     process_memory_free(process);
+
+    for (int i = 0; i < MAX_FILE_DESCRIPTORS; i++) {
+        if (process->process_file_descriptors[i]) {
+            fclose(process->process_file_descriptors[i]->index, process->process_file_descriptors);
+        }
+    }
 
     return 0;
 }
@@ -296,14 +303,14 @@ static int process_load_binary(const char *filename, struct process *process) {
     void *program_data_ptr = 0x00;
 
     int res = 0;
-    int fd = fopen(filename, "r");
+    int fd = fopen(filename, "r", kernel_file_descriptors);
     if (!fd) {
         res = -ERROR_IO;
         goto out;
     }
 
     struct file_stat stat;
-    res = fstat(fd, &stat);
+    res = fstat(fd, &stat, kernel_file_descriptors);
     if (res != ALL_OK) {
         goto out;
     }
@@ -314,7 +321,7 @@ static int process_load_binary(const char *filename, struct process *process) {
         goto out;
     }
 
-    if (fread(program_data_ptr, stat.filesize, 1, fd) != 1) {
+    if (fread(program_data_ptr, stat.filesize, 1, fd, kernel_file_descriptors) != 1) {
         res = -ERROR_IO;
         goto out;
     }
@@ -330,7 +337,7 @@ out:
         }
     }
 
-    fclose(fd);
+    fclose(fd, kernel_file_descriptors);
     return res;
 }
 

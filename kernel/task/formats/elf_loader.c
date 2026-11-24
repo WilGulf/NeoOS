@@ -235,7 +235,7 @@ int elf_build_image(struct elf_file *file) {
 int elf_load(const char *filename, struct elf_file **file_out) {
     struct elf_file *elf_file = allocate_elf_file();
     int fd = 0;
-    int res = fopen(filename, "r");
+    int res = fopen(filename, "r", kernel_file_descriptors);
     if (res <= 0) {
         res = -ERROR_IO;
         goto out;
@@ -243,13 +243,13 @@ int elf_load(const char *filename, struct elf_file **file_out) {
 
     fd = res;
     struct file_stat stat;
-    res = fstat(fd, &stat);
+    res = fstat(fd, &stat, kernel_file_descriptors);
     if (res < 0) {
         goto out;
     }
 
     elf_file->elf_memory = kzalloc(stat.filesize);
-    res = fread(elf_file->elf_memory, stat.filesize, 1, fd);
+    res = fread(elf_file->elf_memory, stat.filesize, 1, fd, kernel_file_descriptors);
     if (res < 0) {
         goto out;
     }
@@ -270,7 +270,7 @@ out:
         elf_file_free(elf_file);
     }
     
-    fclose(fd);
+    fclose(fd, kernel_file_descriptors);
     return res;
 }
 

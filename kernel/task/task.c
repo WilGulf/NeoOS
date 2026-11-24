@@ -29,6 +29,8 @@
 #include "formats/elf_loader.h"
 #include "../kernel.h"
 
+kbool tasker_running = false;
+
 struct task *current_task = 0;
 struct task *task_tail = 0;
 struct task *task_head = 0;
@@ -192,7 +194,7 @@ int task_init(struct task *task, struct process *process) {
 
 void task_next() {
     struct task *next_task = task_get_next();
-    if (!next_task) {
+    if (!next_task && tasker_running) {
         panic("No more tasks\n", 0);
     }
     
@@ -201,6 +203,8 @@ void task_next() {
 }
 
 void task_run_first_ever_task() {
+    tasker_running = true;
+    
     if (!current_task) {
         panic(" task_run_first_ever_task(): No current task exists!\n", 0);
     }
@@ -208,7 +212,7 @@ void task_run_first_ever_task() {
     task_switch(task_head);
     task_return(&task_head->registers);
 
-    enable_interrupts();
+    //enable_interrupts();
 }
 
 void task_add(struct task *task) {

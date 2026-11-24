@@ -17,6 +17,7 @@
 #include "drivers/io/fb/psf/psf.h"
 #include "drivers/io/fb/console.h"
 #include "drivers/io/graphics/graphics.h"
+#include "drivers/fs/file.h"
 #include "memory/kheap.h"
 #include "memory/paging.h"
 #include "panic.h"
@@ -43,7 +44,7 @@ struct paging_descriptor *kernel_paging_descriptor = 0;
 struct tss tss;
 extern struct gdt_entry gdt[]; 
 
-void kernel_page() {
+void kernel_page(void) {
     kernel_registers();
     paging_switch(kernel_paging_descriptor);
 }
@@ -56,11 +57,11 @@ static struct kernel_version kernel_version = {
     .extension = KERNEL_FLAVOUR,
 };
 
-struct kernel_version *get_kernel_version() {
+struct kernel_version *get_kernel_version(void) {
     return &kernel_version;
 }
 
-struct paging_descriptor *kernel_descriptor() {
+struct paging_descriptor *kernel_descriptor(void) {
     return kernel_paging_descriptor;
 }
 
@@ -80,6 +81,8 @@ struct bootinfo {
 } __attribute__((packed));
 
 struct graphics_info default_graphics_info;
+
+struct file_descriptor *kernel_file_descriptors[MAX_FILE_DESCRIPTORS];
 
 int kmain(struct bootinfo *bootinfo) {
     if (bootinfo->magic != BOOTINFO_MAGIC) {
@@ -141,32 +144,32 @@ int kmain(struct bootinfo *bootinfo) {
     gdt_set_tss(tss_desc, &tss, sizeof(tss) - 1, 0x89, 0x00);
     
     tss_load(0x38);
-
+    
     isr80h_register_commands();
-
+    
     kprintf("Found %d disks\n", disks_search_and_init());
     gpt_init();
-
+    
     struct disk *system_disk = disk_get_by_uuid(&system_uuid);
     if (!system_disk) {
         panic("System disk not found\n", 1);
     }
-
+    
     disk_set_system_disk(system_disk);
-
-    int fd = fopen("@:/sysro/boot.cfg", "r");
-    if (fd < 0) {
+    
+    int fd = fopen("@:/sysro/boot.cfg", "r", kernel_file_descriptors);
+    if (!fd) {
         panic("Could not open config", 1);
     }
 
     char line[256];
     char launcher[MAX_PATH];
-    while (fgets(line, sizeof(line), fd)) {
+    while (fgets(line, sizeof(line), fd, kernel_file_descriptors)) {
         if (!strncmp(line, "LAUNCHER=", 9)) {
             strncpy(launcher, line + 9, sizeof(launcher));
         }
     }
-    fclose(fd);
+    fclose(fd, kernel_file_descriptors);
 
     klogf("Handing over to launcher\n");
 

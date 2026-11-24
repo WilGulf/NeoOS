@@ -26,7 +26,7 @@
 
 #include "../include/stdint.h"
 #include "../include/config.h"
-#include "../drivers/fs/path_parser.h"
+#include "../drivers/fs/file.h"
 
 #define MAX_PROGRAM_ALLOCATIONS 1024
 #define MAX_PROCESSES 12
@@ -60,6 +60,8 @@ struct process {
     char filename[MAX_PATH];
     char cwd[MAX_PATH];
     struct task *task;
+
+    struct file_descriptor *process_file_descriptors[MAX_FILE_DESCRIPTORS];
 
     struct process_allocation allocations[MAX_PROGRAM_ALLOCATIONS];
 

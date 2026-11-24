@@ -190,11 +190,11 @@ void *isr80h_command29_chwd(struct interrupt_frame *frame) {
         check_allowed_with_privilege(process, PRIVILEGE_FS_SYS);
     }
 
-    int fd = fopen(clean_path, "r");
+    int fd = fopen(clean_path, "r", kernel_file_descriptors);
     if (!fd) {
         return (void *)-ERROR_IO;
     }
-    fclose(fd);
+    fclose(fd, kernel_file_descriptors);
 
     strncpy(process->cwd, clean_path, sizeof(process->cwd) - 1);
 
