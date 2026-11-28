@@ -258,3 +258,20 @@ mkdir:
     int 0x80
     add rsp, 8
     ret
+
+global mmap:function
+mmap:
+    push qword rdx
+    push qword rsi
+    push qword rdi
+    mov rax, 33
+    add rsp, 24
+    ret
+
+global munmap:function
+munmap:
+    push qword rsi
+    push qword rdi
+    mov rax, 34
+    add rsp, 16
+    ret

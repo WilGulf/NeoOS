@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <stddef.h>
+#include <va_list.h>
 
 #define MODIFIER_SHIFT 0B00000001
 #define MODIFIER_CTRL  0B00000010
@@ -36,6 +37,7 @@ int atoi(const char *str);
 int printf(const char *fmt, ...);
 int snprintf(char *out, size_t len, char *fmt, ...);
 int sprintf(char *out, char *fmt, ...);
+int vsprintf(char *out, const char *fmt, va_list arg_ptr);
 
 void putchar(char c);
 int getkey();
