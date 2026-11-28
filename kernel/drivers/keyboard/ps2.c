@@ -144,6 +144,7 @@ void ps2_keyboard_handle_interrupt() {
                break;
         }
 
+        task_page();
         return;
     }
 
